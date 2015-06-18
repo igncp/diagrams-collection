@@ -1,0 +1,76 @@
+body {
+  margin: 0;
+}
+rect {
+  stroke: #000000;
+}
+.conversion-button {
+  margin: 20px 0 20px 20px;
+  font-size: 30px;
+}
+.layer-node path {
+  cursor: pointer;
+}
+.box-diagram {
+  font-size: 25px;
+}
+.layers-diagram,
+.box-diagram {
+  rect,
+  text {
+    cursor: pointer;
+  }
+}
+.layers-diagram {
+  font-size: 13px;
+  rect,
+  text {
+    cursor: pointer;
+  }
+}
+.graph-diagram {
+  .link path {
+    fill: none;
+    stroke-width: 1.5px;
+  }
+  .node {
+    &.node-hidden {
+      visibility: hidden;
+    }
+    text {
+      text-anchor: middle;
+    }
+    path.triangle,
+    path.square,
+    circle {
+      stroke: #000000;
+      &.bold {
+        stroke-width: 4px;
+      }
+      &.thin {
+        stroke-width: 1px;
+      }
+    }
+  }
+}
+#diagrams-banner {
+  p {
+    font-size: 25px;
+    margin-bottom: 0;
+    margin-left: 20px;
+    margin-top: 10px;
+  }
+}
+
+#diagrams-tooltip {
+  background: #FFFFFF;
+  border: solid 2px #CCCCCC;
+  box-shadow: 0 0 10px 1px #AAAAAA;
+  font-size: 30px;
+  left: 1%;
+  opacity: .9;
+  padding: 20px;
+  position: absolute;
+  width: 95%;
+  word-wrap: break-word;
+}
