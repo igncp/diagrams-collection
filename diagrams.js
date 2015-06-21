@@ -11,7 +11,7 @@
             var position = _.reduce(props, function(memo, property) {
                 return memo[property];
             }, d);
-            return preffix + position + suffix;
+            return (preffix || suffix) ? preffix + position + suffix : position;
         };
     };
     d.utils.applySimpleTransform = function(el) {
@@ -92,12 +92,15 @@
         }
     };
 
+    d.tooltip.onMouseEnterListenerFn = _.partial(d.tooltip, 'show');
+    d.tooltip.onMouseLeaveListenerFn = _.partial(d.tooltip, 'hide');
+
     d.tooltip.setMouseListeners = function(el, elId, text) {
         el.on('mouseenter', function() {
-            d.tooltip('show', elId, text);
+            d.tooltip.onMouseEnterListenerFn(elId, text);
         });
         el.on('mouseleave', function() {
-            d.tooltip('hide');
+            d.tooltip.onMouseLeaveListenerFn();
         });
     };
     d.tooltip.generateATextDescriptionStr = function(text, description) {
@@ -316,33 +319,36 @@
                 },
                 drawConnection = function(connection) {
                     var container = connection.layer.container,
-                        connectionCoords, linkLine, connectionPath;
+                        containerData = connection.layer.containerData,
+                        connectionG, connectionId, connectionCoords, linkLine, connectionPath;
 
                     _.each(connection.connectedTo, function(connectedToLayer) {
                         connectionCoords = calculateTheMostOptimalConnection(connection.layer, connectedToLayer);
 
-                        linkLine = d3.svg.line().x(function(d) {
-                            return d.x;
-                        }).y(function(d) {
-                            return d.y;
-                        });
-                        connectionPath = container.append('path')
+                        linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'));
+                        connectionId = connection.layer.id + '-' + connectedToLayer.layer.id;
+                        connectionG = container.append('g').attr('id', connectionId);
+                        connectionPath = connectionG.append('path')
                             .attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
                                 stroke: '#000',
                                 fill: 'none'
                             });
 
-                        if (connectedToLayer.type === 'dashed') {
-                            connectionPath.style('stroke-dasharray', '5, 5');
-                        }
+                        if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
 
-                        container.append("circle").attr({
+                        connectionG.append("circle").attr({
                             cx: connectionCoords.to.x,
                             cy: connectionCoords.to.y,
                             r: 5,
                             fill: colors[connection.layer.depth - 1]
                         }).style({
                             stroke: '#000'
+                        });
+
+                        containerData.connections = containerData.connections || [];
+                        containerData.connections.push({
+                            el: connectionG,
+                            id: connectionId
                         });
                     });
                 },
@@ -392,12 +398,31 @@
                     svg.attr('height', bottomPointPxs);
                 },
                 calcMaxUnityWidth = function() {
-                    var bodyWidth = document.body.getBoundingClientRect().width,
-                        svgStyle = document.querySelector('.layers-diagram').style;
+                    var bodyWidth = document.body.getBoundingClientRect().width;
 
                     d.layer.maxUnityWidth = Math.floor(bodyWidth / config.widthSize);
                 },
-                drawLayersInContainer = function(layers, container) {
+                showAllLayerContainerConnections = function(childLayer) {
+                    if (childLayer.containerData) {
+                        var connections = childLayer.containerData.connections;
+                        if (connections) {
+                            _.each(connections, function(connection) {
+                                connection.el.style('opacity', 1);
+                            });
+                        }
+                    }
+                },
+                hideAllLayerContainerConnectionsExceptOfLayer = function(childLayer) {
+                    if (childLayer.containerData) {
+                        var connections = childLayer.containerData.connections;
+                        if (connections) {
+                            _.each(connections, function(connection) {
+                                if (connection.id.indexOf(childLayer.id) === -1) connection.el.style('opacity', 0.2);
+                            });
+                        }
+                    }
+                },
+                drawLayersInContainer = function(layers, container, containerData) {
                     var widthSize = config.widthSize,
                         heightSize = config.heightSize,
                         layerG, layerNode, layerDims, layerText,
@@ -408,7 +433,14 @@
 
                     _.each(layers, function(layer) {
                         setLayerMouseListeners = function(el) {
-                            d.tooltip.setMouseListeners(el, currentLayerId, layer.text);
+                            el.on('mouseenter', function() {
+                                d.tooltip.onMouseEnterListenerFn(currentLayerId, layer.text);
+                                hideAllLayerContainerConnectionsExceptOfLayer(layer);
+                            });
+                            el.on('mouseleave', function() {
+                                d.tooltip.onMouseLeaveListenerFn();
+                                showAllLayerContainerConnections(layer);
+                            });
                         };
 
                         var currentLayerId = 'diagrams-layer-g-' + layerGId++;
@@ -461,9 +493,10 @@
 
                         layer.layerG = layerG;
                         layer.container = container;
+                        layer.containerData = containerData;
 
                         if (layer.items.length > 0) {
-                            drawLayersInContainer(layer.items, layerG);
+                            drawLayersInContainer(layer.items, layerG, layer);
                         }
                     });
                 },
@@ -492,7 +525,7 @@
         });
     };
 
-    d.layer.connectedWithNextId = 0;
+    d.layer.ids = 0;
 
     d.layer.Grid = function(fixedWidth) {
         this.position = {
@@ -600,7 +633,7 @@
         if (layer.hasOwnProperty('connectedWithNext') === true) {
             if (nextLayer.id) newId = nextLayer.id;
             else {
-                newId = 'to-next-' + String(++d.layer.connectedWithNextId);
+                newId = 'to-next-' + String(++d.layer.ids);
                 nextLayer.id = newId;
             }
 
@@ -798,14 +831,14 @@
             text: text
         };
 
-        if (_.isArray(opts)) {
-            items = opts;
-        } else {
+        if (_.isArray(opts)) items = opts;
+        else {
             if (_.isString(opts)) opts = d.layer.extendOpts(opts);
             if (_.isObject(opts)) layer = _.extend(layer, opts);
         }
 
         if (items) layer.items = items;
+        if (_.isUndefined(layer.id)) layer.id = 'layer-' + (++d.layer.ids) + '-auto'; // Have to limit the id by the two sides to enable .indexOf to work
 
         return layer;
     };
@@ -829,7 +862,7 @@
 
     d.layer.idOpt = function(id) {
         return {
-            id: id
+            id: 'layer-' + id + '-custom'
         };
     };
 
@@ -839,7 +872,7 @@
         _.each(arguments, function(arg) {
             if (typeof(arg) === 'string') {
                 _.each(arg.split(' '), function(opt) {
-                    if (opt.substr(0, 3) === 'id-') result = _.extend(result, d.layer.idOpt(Number(opt.substr(3, opt.length))));
+                    if (opt.substr(0, 3) === 'id-') result = _.extend(result, d.layer.idOpt(opt.substr(3, opt.length)));
                     else if (opt.substr(0, 3) === 'ct-') d.layer.connectWithOpt(Number(opt.substr(3, opt.length)), result);
                     else if (opt.substr(0, 4) === 'ctd-') d.layer.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');
                     else result = _.extend(result, diagrams.layer.staticOptsLetters[opt]);
@@ -859,7 +892,7 @@
 
         _.each(ids, function(id) {
             objs.push({
-                id: id,
+                id: 'layer-' + id + '-custom',
                 type: type
             });
         });
@@ -954,7 +987,7 @@
                                 y: rowHeight * ++bodyPosition,
                                 id: currentTextGId
                             });
-                            item.items = _.sortBy(item.items, 'text');
+                            // item.items = _.sortBy(item.items, 'text');
                             addBodyItems(item.items, newContainer, depth + 1);
                         } else if (item.type === 'link') {
                             textG = container.append('svg:a').attr("xlink:href", item.url)
@@ -1170,9 +1203,9 @@
                 }).style('stroke', dTextFn('color'));
                 node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
                     'class': function(d) {
-                      var finalClass = 'node';
-                      if (d.hidden === true) finalClass += ' node-hidden';
-                      return finalClass;
+                        var finalClass = 'node';
+                        if (d.hidden === true) finalClass += ' node-hidden';
+                        return finalClass;
                     },
                     id: dTextFn('id', 'node-')
                 });
