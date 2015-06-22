@@ -5,8 +5,8 @@ rect {
   stroke: #000000;
 }
 .conversion-button {
-  margin: 20px 0 20px 20px;
   font-size: 30px;
+  margin: 20px 0 20px 20px;
 }
 .layer-node path {
   cursor: pointer;
@@ -14,17 +14,14 @@ rect {
 .box-diagram {
   font-size: 25px;
 }
-.layers-diagram,
-.box-diagram {
-  rect,
-  text {
+.layers-diagram, .box-diagram {
+  rect, text {
     cursor: pointer;
   }
 }
 .layers-diagram {
   font-size: 13px;
-  rect,
-  text {
+  rect, text {
     cursor: pointer;
   }
 }
@@ -40,9 +37,7 @@ rect {
     text {
       text-anchor: middle;
     }
-    path.triangle,
-    path.square,
-    circle {
+    .triangle, .square, circle {
       stroke: #000000;
       &.bold {
         stroke-width: 4px;
@@ -61,7 +56,6 @@ rect {
     margin-top: 10px;
   }
 }
-
 #diagrams-tooltip {
   background: #FFFFFF;
   border: solid 2px #CCCCCC;

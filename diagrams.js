@@ -843,6 +843,13 @@
         return layer;
     };
 
+    d.layer.newLayerConnectedToNext = function() {
+        var args = arguments.length;
+
+        return (args === 1) ? d.layer.newLayer(arguments[0], 'cn') :
+            d.layer.newLayer(arguments[0], 'cn', arguments[1]);
+    };
+
     d.layer.staticOptsLetters = {
         co: {
             conditional: true
