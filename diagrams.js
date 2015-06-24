@@ -846,8 +846,11 @@
     d.layer.newLayerConnectedToNext = function() {
         var args = arguments.length;
 
-        return (args === 1) ? d.layer.newLayer(arguments[0], 'cn') :
-            d.layer.newLayer(arguments[0], 'cn', arguments[1]);
+        if (args === 1) return d.layer.newLayer(arguments[0], 'cn');
+        else if (args === 2) {
+            if (typeof(arguments[1]) === 'object') return d.layer.newLayer(arguments[0], 'cn', arguments[1]);
+            else if (typeof(arguments[1] === 'string')) return d.layer.newLayer(arguments[0], arguments[1] + ' cn');
+        } else if (args === 3) return d.layer.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
     };
 
     d.layer.staticOptsLetters = {
