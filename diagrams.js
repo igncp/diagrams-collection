@@ -431,7 +431,7 @@
                     layers = layers || conf;
                     container = container || svg;
 
-                    _.each(layers, function(layer) {
+                    _.each(layers, function(layer, layerIndex) {
                         setLayerMouseListeners = function(el) {
                             el.on('mouseenter', function() {
                                 d.tooltip.onMouseEnterListenerFn(currentLayerId, layer.text);
@@ -443,16 +443,23 @@
                             });
                         };
 
-                        var currentLayerId = 'diagrams-layer-g-' + layerGId++;
+                        var currentLayerId = 'diagrams-layer-g-' + layerGId++,
+                            numberG;
+
                         layerG = container.append('g').attr({
                             transform: 'translate(' + String(layer.x * widthSize) + ', ' + layer.y * heightSize + ')',
                             'class': 'layer-node',
                             id: currentLayerId
                         });
 
+                        layer.layerG = layerG;
+                        layer.container = container;
+                        layer.containerData = containerData;
+
                         layerDims = d.layer.getFinalLayerDimensions(layer);
+                        layerNode = layerG.append('g');
                         if (layer.conditional === true) {
-                            layerNode = layerG.append('path').attr({
+                            layerNode.append('path').attr({
                                 d: d.shapes.hexagon({
                                     height: layerDims.height,
                                     width: layerDims.width,
@@ -463,7 +470,7 @@
                                 stroke: '#f00'
                             });
                         } else {
-                            layerNode = layerG.append('rect').attr({
+                            layerNode.append('rect').attr({
                                 width: layerDims.width,
                                 transform: layerDims.transform,
                                 height: layerDims.height,
@@ -473,12 +480,12 @@
                             });
                         }
 
+
                         layerText = layerG.append('text').attr({
                             transform: layerDims.transform,
                             x: layer.depth,
-                            y: layer.height * heightSize - 3 * layer.depth - 10
+                            y: layer.height * heightSize - 3 * layer.depth - 20
                         }).text(layer.text);
-
 
                         setLayerMouseListeners(layerText);
                         setLayerMouseListeners(layerNode);
@@ -491,9 +498,23 @@
                             d.utils.fillBannerWithText(layer.text);
                         });
 
-                        layer.layerG = layerG;
-                        layer.container = container;
-                        layer.containerData = containerData;
+                        if (layerDims.numberTransform) {
+                            numberG = layerNode.append('g').attr({
+                                'class': 'number',
+                                transform: layerDims.numberTransform
+                            });
+                            numberG.append('circle').attr({
+                                r: 10,
+                                cx: 4,
+                                cy: -4,
+                                fill: colors[layer.depth - 1],
+                                'stroke-width': 2,
+                                stroke: '#000',
+                                filert: 'none'
+                            });
+                            numberG.append('text').text(layerIndex + 1)
+                                .attr('fill', '#000');
+                        }
 
                         if (layer.items.length > 0) {
                             drawLayersInContainer(layer.items, layerG, layer);
@@ -622,7 +643,8 @@
         widthSize: 350,
         heightSize: 50,
         depthWidthFactor: 4,
-        depthHeightFactor: 2
+        depthHeightFactor: 3,
+        showNumbersAll: false
     };
 
     d.layer.handleConnectedToNextCaseIfNecessary = function(layers, currentIndex) {
@@ -733,10 +755,13 @@
     };
 
     d.layer.generateLayersData = function(layers, currentDepth) {
-        var maxDepth, itemsDepth;
+        var config = d.layer.config,
+            maxDepth, itemsDepth;
+
         currentDepth = currentDepth || 1;
         maxDepth = currentDepth;
         _.each(layers, function(layer, layerIndex) {
+            if (layer.showNumbersAll === true) config.showNumbersAll = true;
             layer.depth = currentDepth;
             d.layer.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
             if (layer.items.length > 0) {
@@ -761,14 +786,19 @@
             height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2,
             width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2,
             transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + config.depthHeightFactor * layer.depth + ')',
-            fill = 'url(#color-' + String(layer.depth - 1) + ')';
+            fill = 'url(#color-' + String(layer.depth - 1) + ')',
+            dimensions = {
+                height: height,
+                width: width,
+                transform: transform,
+                fill: fill
+            };
 
-        return {
-            height: height,
-            width: width,
-            transform: transform,
-            fill: fill
-        };
+        if (config.showNumbersAll === true || (layer.containerData && layer.containerData.showNumbers === true)) {
+            dimensions.numberTransform = 'translate(' + String(width - 15 + config.depthWidthFactor * layer.depth) + ',' + String(config.depthHeightFactor * layer.depth + height + 8) + ')';
+        }
+
+        return dimensions;
     };
 
     d.layer.addConvertToBoxButton = function(origConf) {
@@ -859,6 +889,12 @@
         },
         cn: {
             connectedWithNext: true
+        },
+        sna: {
+            showNumbersAll: true
+        },
+        sn: {
+            showNumbers: true
         },
         cnd: {
             connectedWithNext: {
