@@ -1,6 +1,6 @@
 {
   "name": "diagrams-collections",
-  "main": "diagrams.js",
+  "main": "dist/diagrams.min.js",
   "version": "0.0.1",
   "homepage": "https://github.com/igncp/diagrams-collections",
   "authors": [
@@ -13,6 +13,7 @@
     "node_modules",
     "bower_components",
     "test",
+    "src",
     "tests"
   ]
 }
