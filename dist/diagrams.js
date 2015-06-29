@@ -801,7 +801,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             var counter = 0;
 
             this.position.x = 0;
-            while (counter < 100) {
+            while (counter < 1000) {
               this.position.y += 1;
               if (this.itemFitsAtCurrentPos(item)) break;
             }
@@ -836,7 +836,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           key: 'updatePosition',
           value: function updatePosition() {
             var counter = 0;
-            while (counter < 100) {
+            while (counter < 1000) {
               this.position.x += 1;
               if (this.position.x === this.width) {
                 this.position.x = -1;
@@ -901,7 +901,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         widthSize: 350,
         heightSize: 50,
         depthWidthFactor: 4,
-        depthHeightFactor: 3,
+        depthHeightFactor: 1,
         showNumbersAll: false
       },
 
@@ -990,7 +990,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         } else itemsOfLayer = itemsArray;
         addedItemToGrid(0);
         itemsOfLayerIndex = 0;
-        while (itemsOfLayer.length > 0 && whileCounter < 100) {
+        while (itemsOfLayer.length > 0 && whileCounter < 1000) {
           if (addedItemToGrid(itemsOfLayerIndex)) {
             itemsOfLayerIndex = 0;
           } else {
@@ -1055,7 +1055,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           transform: transform,
           fill: fill
         };
-
         if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
           dimensions.numberTransform = 'translate(' + String(width - 15 + config.depthWidthFactor * layer.depth) + ',' + String(config.depthHeightFactor * layer.depth + height + 8) + ')';
         }
@@ -1225,7 +1224,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         value: function create(conf) {
           var origConf = _.cloneDeep(conf),
               config = helpers.config,
-              colors = ['#ccc', '#FBC0C0', '#A5D2AC', '#A3ABC5', '#CDD7B2'],
+              colorScale = d3.scale.category10(),
+              colors = _.chain(_.range(0, 20)).map(colorScale).value(),
               addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
             _.each(layers, function (layer) {
               if (layer.hasOwnProperty('items') === false) {
@@ -1497,7 +1497,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               layerText = layerG.append('text').attr({
                 transform: layerDims.transform,
                 x: layer.depth,
-                y: layer.height * heightSize - 3 * layer.depth - 20
+                y: layer.height * heightSize - 3 * layer.depth - 10
               }).text(layer.text);
 
               setLayerMouseListeners(layerText);
