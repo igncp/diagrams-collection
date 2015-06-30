@@ -1056,7 +1056,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           fill: fill
         };
         if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
-          dimensions.numberTransform = 'translate(' + String(width - 15 + config.depthWidthFactor * layer.depth) + ',' + String(config.depthHeightFactor * layer.depth + height + 8) + ')';
+          dimensions.numberTransform = 'translate(' + String(width - 15 + config.depthWidthFactor * layer.depth) + ',' + String(config.depthHeightFactor * layer.depth + height + 0) + ')';
         }
 
         return dimensions;
