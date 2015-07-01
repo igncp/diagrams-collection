@@ -899,9 +899,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
       config: {
         widthSize: 350,
-        heightSize: 50,
+        heightSize: 60,
         depthWidthFactor: 4,
-        depthHeightFactor: 1,
+        depthHeightFactor: 2,
         showNumbersAll: false
       },
 
