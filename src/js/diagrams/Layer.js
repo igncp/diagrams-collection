@@ -103,7 +103,7 @@ var layerGId = 0,
         nextLayer = layers[currentIndex + 1],
         connectedTo, newId;
 
-      if (layer.hasOwnProperty('connectedWithNext') === true) {
+      if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
         if (nextLayer.id) newId = nextLayer.id;
         else {
           newId = 'to-next-' + String(++helpers.ids);
@@ -334,6 +334,29 @@ var layerGId = 0,
       } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
     },
 
+    newLayerConnectedToNextWithCode: function(codeLanguage) {
+      var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+      return function() {
+        var args = arguments;
+        args[0] = codeFn(args[0]);
+        return helpers.newLayerConnectedToNext.apply(this, args);
+      };
+    },
+
+    newLayerConnectedToNextWithParagraphAndCode: function(codeLanguage) {
+      var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+      return function() {
+        var args = [].splice.call(arguments, 0),
+          paragraphText = args[0],
+          code = args[1],
+          text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
+
+        args = args.splice(2);
+        args.unshift(text);
+        return helpers.newLayerConnectedToNext.apply(this, args);
+      };
+    },
+
     staticOptsLetters: {
       co: {
         conditional: true
@@ -372,7 +395,7 @@ var layerGId = 0,
             if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));
             else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);
             else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');
-            else result = _.extend(result, diagrams.layer.staticOptsLetters[opt]);
+            else result = _.extend(result, helpers.staticOptsLetters[opt]);
           });
         } else if (_.isObject(arg)) {
           result = _.extend(result, arg);
@@ -411,8 +434,7 @@ Layer = class Layer extends d.Diagram {
   create(conf) {
     var origConf = _.cloneDeep(conf),
       config = helpers.config,
-      colorScale = d3.scale.category10(),
-      colors = _.chain(_.range(0, 20)).map(colorScale).value(),
+      colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
       addItemsPropToBottomItems = function(layers) {
         _.each(layers, function(layer) {
           if (layer.hasOwnProperty('items') === false) {
@@ -486,6 +508,17 @@ Layer = class Layer extends d.Diagram {
               cb(side);
             });
           },
+          sameTypeOfSides = function(sideA, sideB) {
+            var result = false;
+            _.each([
+              [sideA, sideB],
+              [sideB, sideA]
+            ], function(sides) {
+              if (sides[0] === 'top' && sides[1] === 'bottom') result = true;
+              else if (sides[0] === 'left' && sides[1] === 'right') result = true;
+            });
+            return result;
+          },
           layerB = layerBObj.layer,
           layerAPos = getSidesPos(layerA),
           layerBPos = getSidesPos(layerB),
@@ -495,11 +528,13 @@ Layer = class Layer extends d.Diagram {
           eachSide(function(sideB) {
             if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
             if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
-              if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
-                changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
-                if (changed === true) {
-                  distance.sideA = sideA;
-                  distance.sideB = sideB;
+              if (sameTypeOfSides(sideA, sideB)) {
+                if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
+                  changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
+                  if (changed === true) {
+                    distance.sideA = sideA;
+                    distance.sideB = sideB;
+                  }
                 }
               }
             }
@@ -616,6 +651,14 @@ Layer = class Layer extends d.Diagram {
           }
         }
       },
+      formatLayerTextIfNecessary = function(text) {
+        text = text.replace(/<p>/g, '');
+        text = text.replace(/<\/p>/g, '. ');
+        text = d.utils.replaceCodeFragmentOfText(text, function() {
+          return '<CODE...>';
+        });
+        return text;
+      },
       drawLayersInContainer = function(layers, container, containerData) {
         var widthSize = config.widthSize,
           heightSize = config.heightSize,
@@ -675,11 +718,13 @@ Layer = class Layer extends d.Diagram {
           }
 
 
-          layerText = layerG.append('text').attr({
+          layerText = layerNode.append('text').attr({
             transform: layerDims.transform,
             x: layer.depth,
             y: layer.height * heightSize - 3 * layer.depth - 10
-          }).text(layer.text);
+          }).text(function() {
+            return formatLayerTextIfNecessary(layer.text);
+          });
 
           setLayerMouseListeners(layerText);
           setLayerMouseListeners(layerNode);

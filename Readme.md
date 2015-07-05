@@ -8,6 +8,13 @@ Add the link to diagrams to your html. You can see some examples [here](http://i
 
 The build system concatenates the src files, from top to bottom relatively to the directory depth.
 
+## Dependencies
+
+You must add manually the following libraries:
+- d3.js
+- lodash.js
+- highlight.js (if you need code highlighting)
+
 ## Author and License
 
 Ignacio Carbajo · MIT

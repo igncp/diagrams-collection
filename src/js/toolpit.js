@@ -1,4 +1,4 @@
-d.tooltip = function(display, elementAbove, text) {
+d.tooltip = function(display, elementAbove, content) {
   var tooltipId = 'diagrams-tooltip',
     tooltip = d3.select('#' + tooltipId),
     tooltipStyle = '',
@@ -7,22 +7,26 @@ d.tooltip = function(display, elementAbove, text) {
         html = document.documentElement;
       return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
     })(),
-    tooltipP, tooltipHeight, tooltipTop, body, otherElementDims;
+    highlightCodeIfAny = function() {
+      content = d.utils.formatTextFragment(content);
+    },
+    formatAndAddContent = function() {
+      highlightCodeIfAny();
+      tooltip.html(content);
+    },
+    tooltipHeight, tooltipTop, body, otherElementDims;
 
-  if (text !== false) {
+  if (content !== false) {
     if (tooltip[0][0] === null) {
       body = d3.select('body');
       tooltip = body.insert('div', 'svg').attr({
         id: tooltipId
       });
-      tooltip.append('p');
     }
-
-    tooltipP = tooltip.select('p');
 
     if (display === 'show') {
       tooltipStyle += 'display: inline-block; ';
-      tooltipP.html(text);
+      formatAndAddContent();
 
       if (typeof(elementAbove) === 'string') elementAbove = document.getElementById(elementAbove);
       else elementAbove = document.getElementById(elementAbove[0][0].id);

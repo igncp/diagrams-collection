@@ -26,7 +26,7 @@ d.utils.runIfReady = function(fn) {
   if (document.readyState === 'complete') fn();
   else window.onload = fn;
 };
-d.utils.fillBannerWithText = function(text) {
+d.utils.fillBannerWithText = function(content) {
   var bannerId = 'diagrams-banner',
     previousBanner = d3.select('#' + bannerId),
     body = d3.select('body');
@@ -34,5 +34,32 @@ d.utils.fillBannerWithText = function(text) {
   if (previousBanner) previousBanner.remove();
   body.insert('div', 'svg').attr({
     id: bannerId
-  }).append('p').text(text);
+  }).html(d.utils.formatTextFragment(content));
+};
+d.utils.replaceCodeFragmentOfText = function(text, predicate) {
+  var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
+    allMatches = text.match(codeRegex);
+
+  return text.replace(codeRegex, function(matchStr, language, codeBlock) {
+    return predicate(matchStr, language, codeBlock, allMatches);
+  });
+};
+d.utils.formatTextFragment = function(text) {
+  text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, code, allMatches) {
+    var lastMatch = (matchStr === _.last(allMatches));
+    return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
+  });
+  return text;
+};
+d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
+  commentsSymbol = commentsSymbol || '';
+  return function(codeBlock, where, withInlineStrs) {
+    if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
+    if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + "\n" + codeBlock;
+    return '``' + language + '``' + codeBlock + '``';
+  };
+};
+// This function is created to be able to reference it in the diagrams
+d.utils.wrapInParagraph = function(text) {
+  return '<p>' + text + '</p>';
 };

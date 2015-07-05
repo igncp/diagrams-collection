@@ -49,12 +49,10 @@ rect {
   }
 }
 #diagrams-banner {
-  p {
-    font-size: 25px;
-    margin-bottom: 0;
-    margin-left: 20px;
-    margin-top: 10px;
-  }
+  font-size: 25px;
+  margin-bottom: 0;
+  margin-left: 20px;
+  margin-top: 10px;
 }
 #diagrams-tooltip {
   background: #FFFFFF;
@@ -62,9 +60,15 @@ rect {
   box-shadow: 0 0 10px 1px #AAAAAA;
   font-size: 30px;
   left: 1%;
-  opacity: .8;
+  opacity: .9;
   padding: 20px;
   position: absolute;
   width: 95%;
   word-wrap: break-word;
+}
+pre {
+  font-size: 20px;
+  &.last-code-block {
+    background-color: #EAF3FA;
+  }
 }

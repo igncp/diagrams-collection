@@ -66,6 +66,7 @@
         "d3": false,
         "_": false,
         "diagrams": false,
-        "console": false
+        "console": false,
+        "hljs": false
     }
 }

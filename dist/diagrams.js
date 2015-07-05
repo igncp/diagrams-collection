@@ -162,7 +162,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       };
     };
   })();(function () {
-    d.tooltip = function (display, elementAbove, text) {
+    d.tooltip = function (display, elementAbove, content) {
       var tooltipId = 'diagrams-tooltip',
           tooltip = d3.select('#' + tooltipId),
           tooltipStyle = '',
@@ -171,26 +171,29 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             html = document.documentElement;
         return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
       })(),
-          tooltipP,
+          highlightCodeIfAny = function highlightCodeIfAny() {
+        content = d.utils.formatTextFragment(content);
+      },
+          formatAndAddContent = function formatAndAddContent() {
+        highlightCodeIfAny();
+        tooltip.html(content);
+      },
           tooltipHeight,
           tooltipTop,
           body,
           otherElementDims;
 
-      if (text !== false) {
+      if (content !== false) {
         if (tooltip[0][0] === null) {
           body = d3.select('body');
           tooltip = body.insert('div', 'svg').attr({
             id: tooltipId
           });
-          tooltip.append('p');
         }
-
-        tooltipP = tooltip.select('p');
 
         if (display === 'show') {
           tooltipStyle += 'display: inline-block; ';
-          tooltipP.html(text);
+          formatAndAddContent();
 
           if (typeof elementAbove === 'string') elementAbove = document.getElementById(elementAbove);else elementAbove = document.getElementById(elementAbove[0][0].id);
           otherElementDims = elementAbove.getBoundingClientRect();
@@ -254,7 +257,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.runIfReady = function (fn) {
       if (document.readyState === 'complete') fn();else window.onload = fn;
     };
-    d.utils.fillBannerWithText = function (text) {
+    d.utils.fillBannerWithText = function (content) {
       var bannerId = 'diagrams-banner',
           previousBanner = d3.select('#' + bannerId),
           body = d3.select('body');
@@ -262,7 +265,34 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       if (previousBanner) previousBanner.remove();
       body.insert('div', 'svg').attr({
         id: bannerId
-      }).append('p').text(text);
+      }).html(d.utils.formatTextFragment(content));
+    };
+    d.utils.replaceCodeFragmentOfText = function (text, predicate) {
+      var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
+          allMatches = text.match(codeRegex);
+
+      return text.replace(codeRegex, function (matchStr, language, codeBlock) {
+        return predicate(matchStr, language, codeBlock, allMatches);
+      });
+    };
+    d.utils.formatTextFragment = function (text) {
+      text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, code, allMatches) {
+        var lastMatch = matchStr === _.last(allMatches);
+        return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
+      });
+      return text;
+    };
+    d.utils.codeBlockOfLanguageFn = function (language, commentsSymbol) {
+      commentsSymbol = commentsSymbol || '';
+      return function (codeBlock, where, withInlineStrs) {
+        if (withInlineStrs === true) codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
+        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
+        return '``' + language + '``' + codeBlock + '``';
+      };
+    };
+    // This function is created to be able to reference it in the diagrams
+    d.utils.wrapInParagraph = function (text) {
+      return '<p>' + text + '</p>';
     };
   })();(function () {
     var helpers = {
@@ -911,7 +941,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             connectedTo,
             newId;
 
-        if (layer.hasOwnProperty('connectedWithNext') === true) {
+        if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
           if (nextLayer.id) newId = nextLayer.id;else {
             newId = 'to-next-' + String(++helpers.ids);
             nextLayer.id = newId;
@@ -1141,6 +1171,29 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
       },
 
+      newLayerConnectedToNextWithCode: function newLayerConnectedToNextWithCode(codeLanguage) {
+        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+        return function () {
+          var args = arguments;
+          args[0] = codeFn(args[0]);
+          return helpers.newLayerConnectedToNext.apply(this, args);
+        };
+      },
+
+      newLayerConnectedToNextWithParagraphAndCode: function newLayerConnectedToNextWithParagraphAndCode(codeLanguage) {
+        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+        return function () {
+          var args = [].splice.call(arguments, 0),
+              paragraphText = args[0],
+              code = args[1],
+              text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
+
+          args = args.splice(2);
+          args.unshift(text);
+          return helpers.newLayerConnectedToNext.apply(this, args);
+        };
+      },
+
       staticOptsLetters: {
         co: {
           conditional: true
@@ -1176,7 +1229,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _.each(arguments, function (arg) {
           if (typeof arg === 'string') {
             _.each(arg.split(' '), function (opt) {
-              if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, diagrams.layer.staticOptsLetters[opt]);
+              if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, helpers.staticOptsLetters[opt]);
             });
           } else if (_.isObject(arg)) {
             result = _.extend(result, arg);
@@ -1224,8 +1277,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         value: function create(conf) {
           var origConf = _.cloneDeep(conf),
               config = helpers.config,
-              colorScale = d3.scale.category10(),
-              colors = _.chain(_.range(0, 20)).map(colorScale).value(),
+              colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
               addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
             _.each(layers, function (layer) {
               if (layer.hasOwnProperty('items') === false) {
@@ -1299,6 +1351,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 cb(side);
               });
             },
+                sameTypeOfSides = function sameTypeOfSides(sideA, sideB) {
+              var result = false;
+              _.each([[sideA, sideB], [sideB, sideA]], function (sides) {
+                if (sides[0] === 'top' && sides[1] === 'bottom') result = true;else if (sides[0] === 'left' && sides[1] === 'right') result = true;
+              });
+              return result;
+            },
                 layerB = layerBObj.layer,
                 layerAPos = getSidesPos(layerA),
                 layerBPos = getSidesPos(layerB),
@@ -1308,11 +1367,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               eachSide(function (sideB) {
                 if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
                 if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
-                  if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
-                    changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
-                    if (changed === true) {
-                      distance.sideA = sideA;
-                      distance.sideB = sideB;
+                  if (sameTypeOfSides(sideA, sideB)) {
+                    if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
+                      changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
+                      if (changed === true) {
+                        distance.sideA = sideA;
+                        distance.sideB = sideB;
+                      }
                     }
                   }
                 }
@@ -1433,6 +1494,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               }
             }
           },
+              formatLayerTextIfNecessary = function formatLayerTextIfNecessary(text) {
+            text = text.replace(/<p>/g, '');
+            text = text.replace(/<\/p>/g, '. ');
+            text = d.utils.replaceCodeFragmentOfText(text, function () {
+              return '<CODE...>';
+            });
+            return text;
+          },
               drawLayersInContainer = function drawLayersInContainer(layers, container, containerData) {
             var widthSize = config.widthSize,
                 heightSize = config.heightSize,
@@ -1494,11 +1563,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 });
               }
 
-              layerText = layerG.append('text').attr({
+              layerText = layerNode.append('text').attr({
                 transform: layerDims.transform,
                 x: layer.depth,
                 y: layer.height * heightSize - 3 * layer.depth - 10
-              }).text(layer.text);
+              }).text(function () {
+                return formatLayerTextIfNecessary(layer.text);
+              });
 
               setLayerMouseListeners(layerText);
               setLayerMouseListeners(layerNode);
