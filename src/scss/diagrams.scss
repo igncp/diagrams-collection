@@ -1,3 +1,5 @@
+@import 'compass';
+
 body {
   margin: 0;
 }
@@ -31,6 +33,7 @@ rect {
     stroke-width: 1.5px;
   }
   .node {
+    cursor: pointer;
     &.node-hidden {
       visibility: hidden;
     }
@@ -49,10 +52,34 @@ rect {
   }
 }
 #diagrams-banner {
+  border: 1px solid #CCCCCC;
+  cursor: pointer;
   font-size: 25px;
   margin-bottom: 0;
+  margin-bottom: 15px;
   margin-left: 20px;
   margin-top: 10px;
+  padding: 20px;
+
+  @include border-radius(10px);
+  &:hover {
+    border-width: 2px;
+    .diagrams-banner-cross {
+      opacity: 1;
+    }
+  }
+  .diagrams-banner-cross {
+    background-color: #F5FCFF;
+    color: #777777;
+    opacity: 0;
+    padding: 0 5px;
+    position: absolute;
+    right: 40px;
+
+    @include border-radius(10px);
+    @include box-shadow(0 0 1px .5px #CCCCCC);
+    @include transition(.5s linear all);
+  }
 }
 #diagrams-tooltip {
   background: #FFFFFF;

@@ -260,12 +260,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.fillBannerWithText = function (content) {
       var bannerId = 'diagrams-banner',
           previousBanner = d3.select('#' + bannerId),
-          body = d3.select('body');
+          body = d3.select('body'),
+          bannerEl,
+          bannerHtml;
 
       if (previousBanner) previousBanner.remove();
-      body.insert('div', 'svg').attr({
+
+      bannerHtml = '<div class="diagrams-banner-cross">&#x2715;</div>';
+      bannerHtml += d.utils.formatTextFragment(content);
+
+      bannerEl = body.insert('div', 'svg').attr({
         id: bannerId
-      }).html(d.utils.formatTextFragment(content));
+      }).html(bannerHtml);
+      bannerEl.on('click', function () {
+        bannerEl.remove();
+      });
     };
     d.utils.replaceCodeFragmentOfText = function (text, predicate) {
       var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
@@ -293,6 +302,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     // This function is created to be able to reference it in the diagrams
     d.utils.wrapInParagraph = function (text) {
       return '<p>' + text + '</p>';
+    };
+    d.utils.fillBannerOnClick = function (el, text, onMouseDown) {
+      var event = onMouseDown ? 'mousedown' : 'click';
+      el.on(event, function () {
+        d.tooltip('hide');
+        d3.event.stopPropagation();
+        d.utils.fillBannerWithText(text);
+      });
     };
   })();(function () {
     var helpers = {
@@ -424,7 +441,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             depth = depth || 1;
 
             _.each(items, function (item) {
-              var currentTextGId, tooltipText;
+              var currentTextGId, itemText;
 
               currentTextGId = 'diagrams-box-text-' + textGId++;
               if (item.type === 'container') {
@@ -432,10 +449,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 containerText = '· ' + item.text;
                 if (item.items && item.items.length > 0) containerText += ':';
                 if (item.description) {
-                  tooltipText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
+                  itemText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
                   containerText += ' (...)';
                 } else {
-                  tooltipText = false;
+                  itemText = false;
                 }
                 textG = newContainer.append('text').text(containerText).attr({
                   x: depthWidth * depth,
@@ -452,7 +469,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   fill: '#3962B8'
                 });
 
-                tooltipText = item.text + ' (' + item.url + ')';
+                itemText = item.text + ' (' + item.url + ')';
               } else if (item.type === 'definition') {
                 textG = container.append('g').attr({
                   id: currentTextGId
@@ -473,7 +490,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   }).each(d.svg.textEllipsis(descriptionWidth));
                 }
 
-                tooltipText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
+                itemText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
               } else if (_.isString(item)) {
                 textG = container.append('text').text(item).attr({
                   id: currentTextGId,
@@ -481,9 +498,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   y: rowHeight * ++bodyPosition
                 });
 
-                tooltipText = item;
+                itemText = item;
               }
-              d.tooltip.setMouseListeners(textG, currentTextGId, tooltipText);
+              if (itemText) d.utils.fillBannerOnClick(textG, itemText);
+              d.tooltip.setMouseListeners(textG, currentTextGId, itemText);
             });
           },
               bodyRect;
@@ -605,7 +623,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
               svg = d.svg.generateSvg(),
               container = svg.append('g'),
-              height = bodyHeight - 50,
+              height = bodyHeight - 250,
               width = svg.attr('width'),
               tick = function tick() {
             link.select('path.link-path').attr('d', function (d) {
@@ -767,7 +785,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
 
           node.each(function (singleNode) {
-            var tooltipText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
+            var itemText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
                 singleNodeClasses = '';
             singleNodeEl = d3.select(this);
             if (singleNode.shape === 'circle') {
@@ -795,7 +813,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             shapeEl.call(drag);
             if (singleNode.bold === true) singleNodeClasses += ' bold';else singleNodeClasses += ' thin';
             shapeEl.attr('class', singleNodeClasses);
-            d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, tooltipText);
+
+            // Add this when there is a checkbox to disable it as it may be annoying
+            // if (itemText) d.utils.fillBannerOnClick(shapeEl, itemText, true);
+            d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
           });
           node.append('text').text(dTextFn('name'));
         }
@@ -1497,8 +1518,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               formatLayerTextIfNecessary = function formatLayerTextIfNecessary(text) {
             text = text.replace(/<p>/g, '');
             text = text.replace(/<\/p>/g, '. ');
-            text = d.utils.replaceCodeFragmentOfText(text, function () {
-              return '<CODE...>';
+            text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, codeBlock) {
+              if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else return '<CODE...>';
             });
             return text;
           },
@@ -1576,11 +1597,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
               layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
 
-              layerG.on('click', function () {
-                d.tooltip('hide');
-                d3.event.stopPropagation();
-                d.utils.fillBannerWithText(layer.text);
-              });
+              d.utils.fillBannerOnClick(layerG, layer.text);
 
               if (layerDims.numberTransform) {
                 numberG = layerNode.append('g').attr({

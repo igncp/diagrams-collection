@@ -29,12 +29,20 @@ d.utils.runIfReady = function(fn) {
 d.utils.fillBannerWithText = function(content) {
   var bannerId = 'diagrams-banner',
     previousBanner = d3.select('#' + bannerId),
-    body = d3.select('body');
+    body = d3.select('body'),
+    bannerEl, bannerHtml;
 
   if (previousBanner) previousBanner.remove();
-  body.insert('div', 'svg').attr({
+  
+  bannerHtml = '<div class="diagrams-banner-cross">&#x2715;</div>';
+  bannerHtml += d.utils.formatTextFragment(content);
+
+  bannerEl = body.insert('div', 'svg').attr({
     id: bannerId
-  }).html(d.utils.formatTextFragment(content));
+  }).html(bannerHtml);
+  bannerEl.on('click', function() {
+    bannerEl.remove();
+  });
 };
 d.utils.replaceCodeFragmentOfText = function(text, predicate) {
   var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
@@ -62,4 +70,12 @@ d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
 // This function is created to be able to reference it in the diagrams
 d.utils.wrapInParagraph = function(text) {
   return '<p>' + text + '</p>';
+};
+d.utils.fillBannerOnClick = function(el, text, onMouseDown) {
+  var event = onMouseDown ? 'mousedown' : 'click';
+  el.on(event, function() {
+    d.tooltip('hide');
+    d3.event.stopPropagation();
+    d.utils.fillBannerWithText(text);
+  });
 };

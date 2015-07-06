@@ -65,7 +65,7 @@ Graph = class Graph extends d.Diagram {
     var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
       svg = d.svg.generateSvg(),
       container = svg.append('g'),
-      height = bodyHeight - 50,
+      height = bodyHeight - 250,
       width = svg.attr('width'),
       tick = function() {
         link.select('path.link-path').attr("d", function(d) {
@@ -227,7 +227,7 @@ Graph = class Graph extends d.Diagram {
     });
 
     node.each(function(singleNode) {
-      var tooltipText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
+      var itemText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
         singleNodeClasses = '';
       singleNodeEl = d3.select(this);
       if (singleNode.shape === 'circle') {
@@ -256,7 +256,10 @@ Graph = class Graph extends d.Diagram {
       if (singleNode.bold === true) singleNodeClasses += ' bold';
       else singleNodeClasses += ' thin';
       shapeEl.attr('class', singleNodeClasses);
-      d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, tooltipText);
+
+      // Add this when there is a checkbox to disable it as it may be annoying
+      // if (itemText) d.utils.fillBannerOnClick(shapeEl, itemText, true);
+      d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
     });
     node.append("text").text(dTextFn('name'));
   }

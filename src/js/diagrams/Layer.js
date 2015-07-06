@@ -654,8 +654,9 @@ Layer = class Layer extends d.Diagram {
       formatLayerTextIfNecessary = function(text) {
         text = text.replace(/<p>/g, '');
         text = text.replace(/<\/p>/g, '. ');
-        text = d.utils.replaceCodeFragmentOfText(text, function() {
-          return '<CODE...>';
+        text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, codeBlock) {
+          if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
+          else return '<CODE...>';
         });
         return text;
       },
@@ -731,11 +732,7 @@ Layer = class Layer extends d.Diagram {
 
           layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
 
-          layerG.on('click', function() {
-            d.tooltip('hide');
-            d3.event.stopPropagation();
-            d.utils.fillBannerWithText(layer.text);
-          });
+          d.utils.fillBannerOnClick(layerG, layer.text);
 
           if (layerDims.numberTransform) {
             numberG = layerNode.append('g').attr({

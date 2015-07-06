@@ -118,7 +118,7 @@ Box = class Box extends d.Diagram {
         depth = depth || 1;
 
         _.each(items, function(item) {
-          var currentTextGId, tooltipText;
+          var currentTextGId, itemText;
 
           currentTextGId = 'diagrams-box-text-' + textGId++;
           if (item.type === 'container') {
@@ -126,10 +126,10 @@ Box = class Box extends d.Diagram {
             containerText = '· ' + item.text;
             if (item.items && item.items.length > 0) containerText += ':';
             if (item.description) {
-              tooltipText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
+              itemText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
               containerText += ' (...)';
             } else {
-              tooltipText = false;
+              itemText = false;
             }
             textG = newContainer.append('text').text(containerText).attr({
               x: depthWidth * depth,
@@ -147,7 +147,7 @@ Box = class Box extends d.Diagram {
                 fill: '#3962B8'
               });
 
-            tooltipText = item.text + ' (' + item.url + ')';
+            itemText = item.text + ' (' + item.url + ')';
           } else if (item.type === 'definition') {
             textG = container.append('g').attr({
               id: currentTextGId
@@ -168,7 +168,7 @@ Box = class Box extends d.Diagram {
               }).each(d.svg.textEllipsis(descriptionWidth));
             }
 
-            tooltipText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
+            itemText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
           } else if (_.isString(item)) {
             textG = container.append('text').text(item).attr({
               id: currentTextGId,
@@ -176,9 +176,10 @@ Box = class Box extends d.Diagram {
               y: rowHeight * ++bodyPosition
             });
 
-            tooltipText = item;
+            itemText = item;
           }
-          d.tooltip.setMouseListeners(textG, currentTextGId, tooltipText);
+          if (itemText) d.utils.fillBannerOnClick(textG, itemText);
+          d.tooltip.setMouseListeners(textG, currentTextGId, itemText);
         });
       },
       bodyRect;
