@@ -11,30 +11,30 @@ var layerGId = 0,
         this.width = fixedWidth;
         this.cells = [];
       }
-      addItemAtNewRow(item) {
+      addDependantAtNewRow(dependant) {
         var counter = 0;
 
         this.position.x = 0;
         while (counter < 1000) {
           this.position.y += 1;
-          if (this.itemFitsAtCurrentPos(item)) break;
+          if (this.dependantFitsAtCurrentPos(dependant)) break;
         }
-        this.addItemAtCurrentPos(item);
+        this.addDependantAtCurrentPos(dependant);
       }
-      addItemAtCurrentPos(item) {
-        this.addItemAtPos(item, this.position);
+      addDependantAtCurrentPos(dependant) {
+        this.addDependantAtPos(dependant, this.position);
       }
       createRowIfNecessary(posY) {
         if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
       }
-      addItemAtPos(item, pos) {
+      addDependantAtPos(dependant, pos) {
         var row;
-        item.x = pos.x;
-        item.y = pos.y;
-        for (var i = 0; i < item.height; i++) {
+        dependant.x = pos.x;
+        dependant.y = pos.y;
+        for (var i = 0; i < dependant.height; i++) {
           this.createRowIfNecessary(i + pos.y);
           row = this.cells[i + pos.y];
-          for (var j = 0; j < item.width; j++) {
+          for (var j = 0; j < dependant.width; j++) {
             row[j + pos.x] = true;
           }
         }
@@ -54,20 +54,20 @@ var layerGId = 0,
           counter++;
         }
       }
-      itemFitsAtPos(item, pos) {
+      dependantFitsAtPos(dependant, pos) {
         var row;
-        for (var i = 0; i < item.height; i++) {
+        for (var i = 0; i < dependant.height; i++) {
           row = this.cells[i + pos.y];
           if (_.isUndefined(row)) return true;
-          for (var j = 0; j < item.width; j++) {
+          for (var j = 0; j < dependant.width; j++) {
             if (row[j + pos.x] === true) return false;
             if ((j + pos.x + 1) > this.width) return false;
           }
         }
         return true;
       }
-      itemFitsAtCurrentPos(item) {
-        return this.itemFitsAtPos(item, this.position);
+      dependantFitsAtCurrentPos(dependant) {
+        return this.dependantFitsAtPos(dependant, this.position);
       }
       movePositionToNextRow() {
         this.position.y++;
@@ -122,11 +122,11 @@ var layerGId = 0,
       }
     },
 
-    itemsOfLayerShouldBeSorted: function(itemsArray) {
+    dependantsOfLayerShouldBeSorted: function(dependantsArray) {
       var ret = true;
-      _.each(itemsArray, function(item) {
-        if (item.hasOwnProperty('connectedTo')) ret = false;
-        if (item.hasOwnProperty('connectToNext')) ret = false;
+      _.each(dependantsArray, function(dependant) {
+        if (dependant.hasOwnProperty('connectedTo')) ret = false;
+        if (dependant.hasOwnProperty('connectToNext')) ret = false;
       });
       return ret;
     },
@@ -136,32 +136,32 @@ var layerGId = 0,
         totalHeight = 0,
         maxWidth = 0,
         maxHeight = 0,
-        itemsArray = [],
+        dependantsArray = [],
         whileCounter = 0,
-        itemsOfLayer, grid, itemsOfLayerIndex, width, gridSize, itemsShouldBeSorted,
-        addedItemToGrid = function(index) {
-          if (itemsOfLayer[index].inNewRow === true) {
-            grid.addItemAtNewRow(itemsOfLayer[index]);
-            itemsOfLayer.splice(index, 1);
+        dependantsOfLayer, grid, dependantsOfLayerIndex, width, gridSize, dependantsShouldBeSorted,
+        addedDependantToGrid = function(index) {
+          if (dependantsOfLayer[index].inNewRow === true) {
+            grid.addDependantAtNewRow(dependantsOfLayer[index]);
+            dependantsOfLayer.splice(index, 1);
             return true;
-          } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
-            grid.addItemAtCurrentPos(itemsOfLayer[index]);
-            itemsOfLayer.splice(index, 1);
+          } else if (grid.dependantFitsAtCurrentPos(dependantsOfLayer[index])) {
+            grid.addDependantAtCurrentPos(dependantsOfLayer[index]);
+            dependantsOfLayer.splice(index, 1);
             return true;
           } else return false;
         };
 
-      _.each(layer.items, function(item) {
-        totalWidth += item.width;
-        totalHeight += item.height;
-        maxHeight = (item.height > maxHeight) ? item.height : maxHeight;
-        maxWidth = (item.width > maxWidth) ? item.width : maxWidth;
-        itemsArray.push(item);
+      _.each(layer.dependants, function(dependant) {
+        totalWidth += dependant.width;
+        totalHeight += dependant.height;
+        maxHeight = (dependant.height > maxHeight) ? dependant.height : maxHeight;
+        maxWidth = (dependant.width > maxWidth) ? dependant.width : maxWidth;
+        dependantsArray.push(dependant);
       });
 
       if ((totalWidth / 2) >= maxWidth) {
         if (totalHeight > totalWidth) {
-          if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);
+          if (totalHeight / 2 < layer.dependants.length) width = Math.ceil(totalWidth / 2);
           else width = totalWidth;
         } else width = Math.ceil(totalWidth / 2);
       } else width = maxWidth;
@@ -170,24 +170,24 @@ var layerGId = 0,
 
       grid = new helpers.Grid(width);
 
-      itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
-      if (itemsShouldBeSorted) {
-        itemsOfLayer = itemsArray.sort(function(itemA, itemB) {
-          if (itemA.width === itemB.width) {
-            return itemA.height < itemB.height;
-          } else return itemA.width < itemB.width;
+      dependantsShouldBeSorted = helpers.dependantsOfLayerShouldBeSorted(dependantsArray);
+      if (dependantsShouldBeSorted) {
+        dependantsOfLayer = dependantsArray.sort(function(dependantA, dependantB) {
+          if (dependantA.width === dependantB.width) {
+            return dependantA.height < dependantB.height;
+          } else return dependantA.width < dependantB.width;
         });
-      } else itemsOfLayer = itemsArray;
-      addedItemToGrid(0);
-      itemsOfLayerIndex = 0;
-      while (itemsOfLayer.length > 0 && whileCounter < 1000) {
-        if (addedItemToGrid(itemsOfLayerIndex)) {
-          itemsOfLayerIndex = 0;
+      } else dependantsOfLayer = dependantsArray;
+      addedDependantToGrid(0);
+      dependantsOfLayerIndex = 0;
+      while (dependantsOfLayer.length > 0 && whileCounter < 1000) {
+        if (addedDependantToGrid(dependantsOfLayerIndex)) {
+          dependantsOfLayerIndex = 0;
         } else {
-          if (itemsShouldBeSorted) {
-            itemsOfLayerIndex++;
-            if (itemsOfLayerIndex === itemsOfLayer.length) {
-              itemsOfLayerIndex = 0;
+          if (dependantsShouldBeSorted) {
+            dependantsOfLayerIndex++;
+            if (dependantsOfLayerIndex === dependantsOfLayer.length) {
+              dependantsOfLayerIndex = 0;
               grid.movePositionToNextRow();
             }
           } else {
@@ -202,12 +202,12 @@ var layerGId = 0,
       layer.x = 0;
       layer.y = 0;
       layer.width = gridSize.width;
-      layer.height = (layer.items.length > 0) ? gridSize.height + 1 : gridSize.height;
+      layer.height = (layer.dependants.length > 0) ? gridSize.height + 1 : gridSize.height;
     },
 
     generateLayersData: function(layers, currentDepth) {
       var config = helpers.config,
-        maxDepth, itemsDepth;
+        maxDepth, dependantsDepth;
 
       currentDepth = currentDepth || 1;
       maxDepth = currentDepth;
@@ -215,16 +215,16 @@ var layerGId = 0,
         if (layer.showNumbersAll === true) config.showNumbersAll = true;
         layer.depth = currentDepth;
         helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
-        if (layer.items.length > 0) {
-          itemsDepth = helpers.generateLayersData(layer.items, (currentDepth + 1));
-          layer.maxLayerDepthBelow = itemsDepth - currentDepth;
+        if (layer.dependants.length > 0) {
+          dependantsDepth = helpers.generateLayersData(layer.dependants, (currentDepth + 1));
+          layer.maxLayerDepthBelow = dependantsDepth - currentDepth;
           helpers.calculateLayerWithChildrenDimensions(layer);
-          maxDepth = (maxDepth < itemsDepth) ? itemsDepth : maxDepth;
+          maxDepth = (maxDepth < dependantsDepth) ? dependantsDepth : maxDepth;
         } else {
           layer.maxLayerDepthBelow = 0;
           layer.width = 1;
           layer.height = 1;
-          maxDepth = (maxDepth < itemsDepth) ? itemsDepth : maxDepth;
+          maxDepth = (maxDepth < dependantsDepth) ? dependantsDepth : maxDepth;
         }
         layer.alreadyConnections = [];
       });
@@ -275,14 +275,14 @@ var layerGId = 0,
             item.text = texts[0];
             if (texts.length > 1) item.description = texts[1];
 
-            if (item.items && item.items.length > 0) {
+            if (item.dependants && item.dependants.length > 0) {
               item.type = 'container';
-              convertDataToBox(item.items);
+              convertDataToBox(item.dependants);
             } else {
               if (_.isString(item.description) === false) items[index] = item.text;
               else {
                 item.type = 'definition';
-                item.items = null;
+                item.dependants = null;
               }
             }
           });
@@ -300,7 +300,7 @@ var layerGId = 0,
       if (_.isArray(origConf)) origConf = origConf[0];
       boxData = {
         name: origConf.text,
-        body: origConf.items
+        body: origConf.dependants
       };
 
       convertDataToBox(boxData.body);
@@ -318,7 +318,7 @@ var layerGId = 0,
         if (_.isObject(opts)) layer = _.extend(layer, opts);
       }
 
-      if (items) layer.items = items;
+      if (items) layer.dependants = items;
       if (_.isUndefined(layer.id)) layer.id = 'layer-' + (++helpers.ids) + '-auto'; // Have to limit the id by the two sides to enable .indexOf to work
 
       return layer;
@@ -332,29 +332,6 @@ var layerGId = 0,
         if (typeof(arguments[1]) === 'object') return helpers.newLayer(arguments[0], 'cn', arguments[1]);
         else if (typeof(arguments[1] === 'string')) return helpers.newLayer(arguments[0], arguments[1] + ' cn');
       } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
-    },
-
-    newLayerConnectedToNextWithCode: function(codeLanguage) {
-      var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
-      return function() {
-        var args = arguments;
-        args[0] = codeFn(args[0]);
-        return helpers.newLayerConnectedToNext.apply(this, args);
-      };
-    },
-
-    newLayerConnectedToNextWithParagraphAndCode: function(codeLanguage) {
-      var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
-      return function() {
-        var args = [].splice.call(arguments, 0),
-          paragraphText = args[0],
-          code = args[1],
-          text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
-
-        args = args.splice(2);
-        args.unshift(text);
-        return helpers.newLayerConnectedToNext.apply(this, args);
-      };
     },
 
     staticOptsLetters: {
@@ -430,16 +407,45 @@ var layerGId = 0,
   },
   Layer;
 
+_.each([
+  'newLayer',
+  'newLayerConnectedToNext'
+], function(helpersMethod) {
+  helpers[helpersMethod + 'WithCode'] = function(codeLanguage) {
+    var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+    return function() {
+      var args = arguments;
+      args[0] = codeFn(args[0]);
+      return helpers[helpersMethod].apply(this, args);
+    };
+  };
+
+  helpers[helpersMethod + 'WithParagraphAndCode'] = function(codeLanguage) {
+    var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+    return function() {
+      var args = [].splice.call(arguments, 0),
+        paragraphText = args[0],
+        code = args[1],
+        text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
+
+      args = args.splice(2);
+      args.unshift(text);
+      return helpers[helpersMethod].apply(this, args);
+    };
+  };
+});
+
 Layer = class Layer extends d.Diagram {
   create(conf) {
-    var origConf = _.cloneDeep(conf),
+    var diagram = this,
+      origConf = _.cloneDeep(conf),
       config = helpers.config,
       colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
-      addItemsPropToBottomItems = function(layers) {
+      addDependantsPropToBottomDependants = function(layers) {
         _.each(layers, function(layer) {
-          if (layer.hasOwnProperty('items') === false) {
-            layer.items = [];
-          } else addItemsPropToBottomItems(layer.items);
+          if (layer.hasOwnProperty('dependants') === false) {
+            layer.dependants = [];
+          } else addDependantsPropToBottomDependants(layer.dependants);
         });
       },
       calculateTheMostOptimalConnection = function(layerA, layerBObj) {
@@ -519,27 +525,32 @@ Layer = class Layer extends d.Diagram {
             });
             return result;
           },
+          loopSidesToGetConnection = function(sameTypeOfSidesCondition) {
+            eachSide(function(sideA) {
+              eachSide(function(sideB) {
+                if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
+                if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
+                  if ((sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false) || sameTypeOfSides(sideA, sideB)) {
+                    if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
+                      changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
+                      if (changed === true) {
+                        distance.sideA = sideA;
+                        distance.sideB = sideB;
+                      }
+                    }
+                  }
+                }
+              });
+            });
+          },
           layerB = layerBObj.layer,
           layerAPos = getSidesPos(layerA),
           layerBPos = getSidesPos(layerB),
           changed;
 
-        eachSide(function(sideA) {
-          eachSide(function(sideB) {
-            if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
-            if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
-              if (sameTypeOfSides(sideA, sideB)) {
-                if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
-                  changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
-                  if (changed === true) {
-                    distance.sideA = sideA;
-                    distance.sideB = sideB;
-                  }
-                }
-              }
-            }
-          });
-        });
+
+        loopSidesToGetConnection(true);
+        if (changed !== true) loopSidesToGetConnection(false);
 
         layerA.alreadyConnections.push(distance.sideA);
         layerB.alreadyConnections.push(distance.sideB);
@@ -557,28 +568,30 @@ Layer = class Layer extends d.Diagram {
           linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'));
           connectionId = connection.layer.id + '-' + connectedToLayer.layer.id;
           connectionG = container.append('g').attr('id', connectionId);
-          connectionPath = connectionG.append('path')
-            .attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
-              stroke: '#000',
-              fill: 'none'
+          if (connectionCoords.from && connectionCoords.to) {
+            connectionPath = connectionG.append('path')
+              .attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
+                stroke: '#000',
+                fill: 'none'
+              });
+
+            if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
+
+            connectionG.append("circle").attr({
+              cx: connectionCoords.to.x,
+              cy: connectionCoords.to.y,
+              r: 5,
+              fill: colors[connection.layer.depth - 1]
+            }).style({
+              stroke: '#000'
             });
 
-          if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
-
-          connectionG.append("circle").attr({
-            cx: connectionCoords.to.x,
-            cy: connectionCoords.to.y,
-            r: 5,
-            fill: colors[connection.layer.depth - 1]
-          }).style({
-            stroke: '#000'
-          });
-
-          containerData.connections = containerData.connections || [];
-          containerData.connections.push({
-            el: connectionG,
-            id: connectionId
-          });
+            containerData.connections = containerData.connections || [];
+            containerData.connections.push({
+              el: connectionG,
+              id: connectionId
+            });
+          }
         });
       },
       drawConnectionsIfAny = function(layers) {
@@ -611,9 +624,9 @@ Layer = class Layer extends d.Diagram {
         }).value();
 
         _.chain(layers).filter(function(layer) {
-          return layer.items.length > 0;
+          return layer.dependants.length > 0;
         }).each(function(layer) {
-          drawConnectionsIfAny(layer.items);
+          drawConnectionsIfAny(layer.dependants);
         }).value();
       },
       updateSvgHeight = function() {
@@ -732,7 +745,9 @@ Layer = class Layer extends d.Diagram {
 
           layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
 
-          d.utils.fillBannerOnClick(layerG, layer.text);
+          diagram.handleItemClick(layerG, {
+            text: layer.text
+          });
 
           if (layerDims.numberTransform) {
             numberG = layerNode.append('g').attr({
@@ -752,8 +767,8 @@ Layer = class Layer extends d.Diagram {
               .attr('fill', '#000');
           }
 
-          if (layer.items.length > 0) {
-            drawLayersInContainer(layer.items, layerG, layer);
+          if (layer.dependants.length > 0) {
+            drawLayersInContainer(layer.dependants, layerG, layer);
           }
         });
       },
@@ -768,7 +783,7 @@ Layer = class Layer extends d.Diagram {
 
     if (_.isArray(conf) === false) conf = [conf];
     d.svg.addFilterColor('layer', svg, 3, 2);
-    addItemsPropToBottomItems(conf);
+    addDependantsPropToBottomDependants(conf);
     calcMaxUnityWidth();
     helpers.generateLayersData(conf);
     drawLayersInContainer();

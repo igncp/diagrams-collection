@@ -67,4 +67,4 @@ module.exports = (grunt)->
 
   grunt.registerTask 'js-devel', ['concat', 'babel']
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'deploy', ['compass', 'js-devel', 'uglify']
+  grunt.registerTask 'compile-prod', ['compass', 'js-devel', 'uglify']

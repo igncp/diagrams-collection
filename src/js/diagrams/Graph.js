@@ -173,6 +173,16 @@ Graph = class Graph extends d.Diagram {
       dragended = function() {
         d3.select(this).classed("dragging", false);
       },
+      setDependantsAndDependencies = function() {
+        _.each(parsedData.nodes, function(node) {
+          node.dependants = [];
+          node.dependencies = [];
+        });
+        _.each(parsedData.links, function(link) {
+          link.source.dependencies.push(link.target);
+          link.target.dependants.push(link.source);
+        });
+      },
       force, drag, link, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
     conf = conf || {};
@@ -258,10 +268,12 @@ Graph = class Graph extends d.Diagram {
       shapeEl.attr('class', singleNodeClasses);
 
       // Add this when there is a checkbox to disable it as it may be annoying
-      // if (itemText) d.utils.fillBannerOnClick(shapeEl, itemText, true);
+
       d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
     });
     node.append("text").text(dTextFn('name'));
+
+    setDependantsAndDependencies();
   }
 };
 

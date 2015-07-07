@@ -67,6 +67,7 @@
         "_": false,
         "diagrams": false,
         "console": false,
+        "Rx": false,
         "hljs": false
     }
 }

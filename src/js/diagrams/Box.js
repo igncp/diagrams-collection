@@ -25,16 +25,16 @@ var helpers = {
     },
 
     convertToLayer: function(origConf) {
-      var convertDataToLayers = function(items) {
-          _.each(items, function(item, index) {
-            if (_.isString(item)) {
-              item = items[index] = {
-                text: item
+      var convertDataToLayers = function(dependants) {
+          _.each(dependants, function(dependant, index) {
+            if (_.isString(dependant)) {
+              dependant = dependants[index] = {
+                text: dependant
               };
             }
-            if (item.description) item.text += ': ' + item.description;
-            if (item.items) convertDataToLayers(item.items);
-            else item.items = [];
+            if (dependant.description) dependant.text += ': ' + dependant.description;
+            if (dependant.dependants) convertDataToLayers(dependant.dependants);
+            else dependant.dependants = [];
           });
         },
         createLayers = function() {
@@ -49,24 +49,24 @@ var helpers = {
 
       layersData.push({
         text: origConf.name,
-        items: origConf.body
+        dependants: origConf.body
       });
-      convertDataToLayers(layersData[0].items);
+      convertDataToLayers(layersData[0].dependants);
       createLayers();
     },
 
-    generateContainer: function(text, description, items) {
+    generateContainer: function(text, description, dependants) {
       var container;
 
       if (_.isArray(description)) {
-        items = description;
+        dependants = description;
         description = null;
       }
 
       container = {
         type: 'container',
         text: text,
-        items: items,
+        dependants: dependants,
         description: description
       };
 
@@ -95,7 +95,8 @@ var helpers = {
 
 Box = class Box extends d.Diagram {
   create(conf) {
-    var origConf = _.cloneDeep(conf),
+    var diagram = this,
+      origConf = _.cloneDeep(conf),
       svg = d.svg.generateSvg(),
       width = svg.attr('width') - 40,
       nameHeight = 50,
@@ -110,76 +111,80 @@ Box = class Box extends d.Diagram {
       bodyPosition = 1,
       rowHeight = 30,
       depthWidth = 35,
-      addBodyItems = function(items, container, depth) {
+      addBodyDependants = function(dependants, container, depth) {
         var newContainer, text, textG, textWidth, descriptionWidth, containerText;
 
-        items = items || conf.body;
+        dependants = dependants || conf.body;
         container = container || bodyG;
         depth = depth || 1;
 
-        _.each(items, function(item) {
-          var currentTextGId, itemText;
+        _.each(dependants, function(dependant) {
+          var currentTextGId, dependantText;
 
           currentTextGId = 'diagrams-box-text-' + textGId++;
-          if (item.type === 'container') {
+          if (dependant.type === 'container') {
             newContainer = container.append('g');
-            containerText = '· ' + item.text;
-            if (item.items && item.items.length > 0) containerText += ':';
-            if (item.description) {
-              itemText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
+            containerText = '· ' + dependant.text;
+            if (dependant.dependants && dependant.dependants.length > 0) containerText += ':';
+            if (dependant.description) {
+              dependantText = d.tooltip.generateATextDescriptionStr(containerText, dependant.description);
               containerText += ' (...)';
             } else {
-              itemText = false;
+              dependantText = false;
             }
             textG = newContainer.append('text').text(containerText).attr({
               x: depthWidth * depth,
               y: rowHeight * ++bodyPosition,
               id: currentTextGId
             });
-            // item.items = _.sortBy(item.items, 'text');
-            addBodyItems(item.items, newContainer, depth + 1);
-          } else if (item.type === 'link') {
-            textG = container.append('svg:a').attr("xlink:href", item.url)
-              .append('text').text(item.text).attr({
+            // dependant.dependants = _.sortBy(dependant.dependants, 'text');
+            addBodyDependants(dependant.dependants, newContainer, depth + 1);
+          } else if (dependant.type === 'link') {
+            textG = container.append('svg:a').attr("xlink:href", dependant.url)
+              .append('text').text(dependant.text).attr({
                 id: currentTextGId,
                 x: depthWidth * depth,
                 y: rowHeight * ++bodyPosition,
                 fill: '#3962B8'
               });
 
-            itemText = item.text + ' (' + item.url + ')';
-          } else if (item.type === 'definition') {
+            dependantText = dependant.text + ' (' + dependant.url + ')';
+          } else if (dependant.type === 'definition') {
             textG = container.append('g').attr({
               id: currentTextGId
             });
-            text = textG.append('text').text(item.text).attr({
+            text = textG.append('text').text(dependant.text).attr({
               x: depthWidth * depth,
               y: rowHeight * ++bodyPosition
             }).style({
               'font-weight': 'bold'
             });
-            if (item.description) {
+            if (dependant.description) {
               textWidth = text[0][0].getBoundingClientRect().width;
               descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-              textG.append('text').text('- ' + item.description).attr({
+              textG.append('text').text('- ' + dependant.description).attr({
                 x: depthWidth * depth + textWidth + 5,
                 y: rowHeight * bodyPosition - 1
               }).each(d.svg.textEllipsis(descriptionWidth));
             }
 
-            itemText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
-          } else if (_.isString(item)) {
-            textG = container.append('text').text(item).attr({
+            dependantText = d.tooltip.generateATextDescriptionStr(dependant.text, dependant.description);
+          } else if (_.isString(dependant)) {
+            textG = container.append('text').text(dependant).attr({
               id: currentTextGId,
               x: depthWidth * depth,
               y: rowHeight * ++bodyPosition
             });
 
-            itemText = item;
+            dependantText = dependant;
           }
-          if (itemText) d.utils.fillBannerOnClick(textG, itemText);
-          d.tooltip.setMouseListeners(textG, currentTextGId, itemText);
+
+          diagram.handleItemClick(textG, {
+            text: dependantText
+          });
+
+          d.tooltip.setMouseListeners(textG, currentTextGId, dependantText);
         });
       },
       bodyRect;
@@ -209,11 +214,12 @@ Box = class Box extends d.Diagram {
     }).style({
       filter: 'url(#diagrams-drop-shadow-box)'
     });
-    addBodyItems();
+    addBodyDependants();
     d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
     d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
+    
     helpers.addConvertToLayersButton(origConf);
-  }  
+  }
 };
 
 new Box({

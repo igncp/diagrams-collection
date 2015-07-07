@@ -13,18 +13,107 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       d = diagrams;
 
   (function () {})();(function () {
-    d.Diagram = (function () {
+    var defaultDiagramConfiguration = {},
+        createName = function createName(name) {
+      return '$' + name;
+    };
+
+    var EventEmitter = (function () {
+      function EventEmitter() {
+        _classCallCheck(this, EventEmitter);
+      }
+
+      _createClass(EventEmitter, [{
+        key: 'emit',
+        value: function emit(name, data) {
+          var fnName = createName(name);
+          this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
+          this._subjects[fnName].onNext(data);
+        }
+      }, {
+        key: 'listen',
+        value: function listen(name, handler) {
+          var fnName = createName(name);
+          this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
+          return this._subjects[fnName].subscribe(handler);
+        }
+      }, {
+        key: 'dispose',
+        value: function dispose() {
+          var subjects = this._subjects;
+          for (var prop in subjects) {
+            if (({}).hasOwnProperty.call(subjects, prop)) {
+              subjects[prop].dispose();
+            }
+          }
+
+          this._subjects = {};
+        }
+      }]);
+
+      return EventEmitter;
+    })();
+
+    d.Diagram = (function (_EventEmitter) {
       function Diagram(opts) {
         _classCallCheck(this, Diagram);
 
+        _get(Object.getPrototypeOf(Diagram.prototype), 'constructor', this).call(this);
         var prototype = Object.getPrototypeOf(this);
 
+        this._subjects = {};
         this.name = opts.name;
+        this._configuration = this.configuration || {};
+
+        _.merge(this._configuration, defaultDiagramConfiguration);
         _.defaults(prototype, opts.helpers);
+
         this.register();
+        this.setDiagramListeners();
       }
 
+      _inherits(Diagram, _EventEmitter);
+
       _createClass(Diagram, [{
+        key: 'handleItemClick',
+        value: function handleItemClick(el, data) {
+          var diagram = this;
+          el.on('click', function () {
+            d3.event.stopPropagation();
+            diagram.emit('itemclick', data);
+          });
+        }
+      }, {
+        key: 'setDiagramListeners',
+        value: function setDiagramListeners() {
+          this.listen('itemclick', function (itemData) {
+            if (itemData && itemData.text) {
+              d.tooltip('hide');
+              d.utils.fillBannerWithText(itemData.text);
+            }
+          });
+        }
+      }, {
+        key: 'config',
+        value: function config(opts, optValue) {
+          var argsLength = arguments.length,
+              optsType = typeof opts,
+              optsKey;
+
+          if (argsLength === 1) {
+            if (_.isFunction(optsType)) optsKey = opts();else if (_.isString(opts)) optsKey = opts;else if (_.isObject(opts)) {
+              for (var key in opts) {
+                this.config(key, opts[key]);
+              }
+              return opts;
+            }
+            return this._configuration[optsKey];
+          } else if (argsLength === 2) {
+            this._configuration[opts] = optValue;
+            return optValue;
+          }
+        }
+      }, {
         key: 'register',
         value: function register() {
           var diagram = this;
@@ -40,7 +129,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }]);
 
       return Diagram;
-    })();
+    })(EventEmitter);
   })();(function () {
     d.shapes = {};
     d.shapes.hexagon = function (opts) {
@@ -340,15 +429,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       },
 
       convertToLayer: function convertToLayer(origConf) {
-        var convertDataToLayers = function convertDataToLayers(items) {
-          _.each(items, function (item, index) {
-            if (_.isString(item)) {
-              item = items[index] = {
-                text: item
+        var convertDataToLayers = function convertDataToLayers(dependants) {
+          _.each(dependants, function (dependant, index) {
+            if (_.isString(dependant)) {
+              dependant = dependants[index] = {
+                text: dependant
               };
             }
-            if (item.description) item.text += ': ' + item.description;
-            if (item.items) convertDataToLayers(item.items);else item.items = [];
+            if (dependant.description) dependant.text += ': ' + dependant.description;
+            if (dependant.dependants) convertDataToLayers(dependant.dependants);else dependant.dependants = [];
           });
         },
             createLayers = function createLayers() {
@@ -363,24 +452,24 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         layersData.push({
           text: origConf.name,
-          items: origConf.body
+          dependants: origConf.body
         });
-        convertDataToLayers(layersData[0].items);
+        convertDataToLayers(layersData[0].dependants);
         createLayers();
       },
 
-      generateContainer: function generateContainer(text, description, items) {
+      generateContainer: function generateContainer(text, description, dependants) {
         var container;
 
         if (_.isArray(description)) {
-          items = description;
+          dependants = description;
           description = null;
         }
 
         container = {
           type: 'container',
           text: text,
-          items: items,
+          dependants: dependants,
           description: description
         };
 
@@ -418,7 +507,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       _createClass(Box, [{
         key: 'create',
         value: function create(conf) {
-          var origConf = _.cloneDeep(conf),
+          var diagram = this,
+              origConf = _.cloneDeep(conf),
               svg = d.svg.generateSvg(),
               width = svg.attr('width') - 40,
               nameHeight = 50,
@@ -433,75 +523,79 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               bodyPosition = 1,
               rowHeight = 30,
               depthWidth = 35,
-              addBodyItems = function addBodyItems(items, container, depth) {
+              addBodyDependants = function addBodyDependants(dependants, container, depth) {
             var newContainer, text, textG, textWidth, descriptionWidth, containerText;
 
-            items = items || conf.body;
+            dependants = dependants || conf.body;
             container = container || bodyG;
             depth = depth || 1;
 
-            _.each(items, function (item) {
-              var currentTextGId, itemText;
+            _.each(dependants, function (dependant) {
+              var currentTextGId, dependantText;
 
               currentTextGId = 'diagrams-box-text-' + textGId++;
-              if (item.type === 'container') {
+              if (dependant.type === 'container') {
                 newContainer = container.append('g');
-                containerText = '· ' + item.text;
-                if (item.items && item.items.length > 0) containerText += ':';
-                if (item.description) {
-                  itemText = d.tooltip.generateATextDescriptionStr(containerText, item.description);
+                containerText = '· ' + dependant.text;
+                if (dependant.dependants && dependant.dependants.length > 0) containerText += ':';
+                if (dependant.description) {
+                  dependantText = d.tooltip.generateATextDescriptionStr(containerText, dependant.description);
                   containerText += ' (...)';
                 } else {
-                  itemText = false;
+                  dependantText = false;
                 }
                 textG = newContainer.append('text').text(containerText).attr({
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
                   id: currentTextGId
                 });
-                // item.items = _.sortBy(item.items, 'text');
-                addBodyItems(item.items, newContainer, depth + 1);
-              } else if (item.type === 'link') {
-                textG = container.append('svg:a').attr('xlink:href', item.url).append('text').text(item.text).attr({
+                // dependant.dependants = _.sortBy(dependant.dependants, 'text');
+                addBodyDependants(dependant.dependants, newContainer, depth + 1);
+              } else if (dependant.type === 'link') {
+                textG = container.append('svg:a').attr('xlink:href', dependant.url).append('text').text(dependant.text).attr({
                   id: currentTextGId,
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
                   fill: '#3962B8'
                 });
 
-                itemText = item.text + ' (' + item.url + ')';
-              } else if (item.type === 'definition') {
+                dependantText = dependant.text + ' (' + dependant.url + ')';
+              } else if (dependant.type === 'definition') {
                 textG = container.append('g').attr({
                   id: currentTextGId
                 });
-                text = textG.append('text').text(item.text).attr({
+                text = textG.append('text').text(dependant.text).attr({
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition
                 }).style({
                   'font-weight': 'bold'
                 });
-                if (item.description) {
+                if (dependant.description) {
                   textWidth = text[0][0].getBoundingClientRect().width;
                   descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-                  textG.append('text').text('- ' + item.description).attr({
+                  textG.append('text').text('- ' + dependant.description).attr({
                     x: depthWidth * depth + textWidth + 5,
                     y: rowHeight * bodyPosition - 1
                   }).each(d.svg.textEllipsis(descriptionWidth));
                 }
 
-                itemText = d.tooltip.generateATextDescriptionStr(item.text, item.description);
-              } else if (_.isString(item)) {
-                textG = container.append('text').text(item).attr({
+                dependantText = d.tooltip.generateATextDescriptionStr(dependant.text, dependant.description);
+              } else if (_.isString(dependant)) {
+                textG = container.append('text').text(dependant).attr({
                   id: currentTextGId,
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition
                 });
 
-                itemText = item;
+                dependantText = dependant;
               }
-              if (itemText) d.utils.fillBannerOnClick(textG, itemText);
-              d.tooltip.setMouseListeners(textG, currentTextGId, itemText);
+
+              diagram.handleItemClick(textG, {
+                text: dependantText
+              });
+
+              d.tooltip.setMouseListeners(textG, currentTextGId, dependantText);
             });
           },
               bodyRect;
@@ -531,9 +625,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }).style({
             filter: 'url(#diagrams-drop-shadow-box)'
           });
-          addBodyItems();
+          addBodyDependants();
           d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
           d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
+
           helpers.addConvertToLayersButton(origConf);
         }
       }]);
@@ -728,6 +823,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               dragended = function dragended() {
             d3.select(this).classed('dragging', false);
           },
+              setDependantsAndDependencies = function setDependantsAndDependencies() {
+            _.each(parsedData.nodes, function (node) {
+              node.dependants = [];
+              node.dependencies = [];
+            });
+            _.each(parsedData.links, function (link) {
+              link.source.dependencies.push(link.target);
+              link.target.dependants.push(link.source);
+            });
+          },
               force,
               drag,
               link,
@@ -815,10 +920,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             shapeEl.attr('class', singleNodeClasses);
 
             // Add this when there is a checkbox to disable it as it may be annoying
-            // if (itemText) d.utils.fillBannerOnClick(shapeEl, itemText, true);
+
             d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
           });
           node.append('text').text(dTextFn('name'));
+
+          setDependantsAndDependencies();
         }
       }]);
 
@@ -847,21 +954,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
 
         _createClass(Grid, [{
-          key: 'addItemAtNewRow',
-          value: function addItemAtNewRow(item) {
+          key: 'addDependantAtNewRow',
+          value: function addDependantAtNewRow(dependant) {
             var counter = 0;
 
             this.position.x = 0;
             while (counter < 1000) {
               this.position.y += 1;
-              if (this.itemFitsAtCurrentPos(item)) break;
+              if (this.dependantFitsAtCurrentPos(dependant)) break;
             }
-            this.addItemAtCurrentPos(item);
+            this.addDependantAtCurrentPos(dependant);
           }
         }, {
-          key: 'addItemAtCurrentPos',
-          value: function addItemAtCurrentPos(item) {
-            this.addItemAtPos(item, this.position);
+          key: 'addDependantAtCurrentPos',
+          value: function addDependantAtCurrentPos(dependant) {
+            this.addDependantAtPos(dependant, this.position);
           }
         }, {
           key: 'createRowIfNecessary',
@@ -869,15 +976,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
           }
         }, {
-          key: 'addItemAtPos',
-          value: function addItemAtPos(item, pos) {
+          key: 'addDependantAtPos',
+          value: function addDependantAtPos(dependant, pos) {
             var row;
-            item.x = pos.x;
-            item.y = pos.y;
-            for (var i = 0; i < item.height; i++) {
+            dependant.x = pos.x;
+            dependant.y = pos.y;
+            for (var i = 0; i < dependant.height; i++) {
               this.createRowIfNecessary(i + pos.y);
               row = this.cells[i + pos.y];
-              for (var j = 0; j < item.width; j++) {
+              for (var j = 0; j < dependant.width; j++) {
                 row[j + pos.x] = true;
               }
             }
@@ -900,13 +1007,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
           }
         }, {
-          key: 'itemFitsAtPos',
-          value: function itemFitsAtPos(item, pos) {
+          key: 'dependantFitsAtPos',
+          value: function dependantFitsAtPos(dependant, pos) {
             var row;
-            for (var i = 0; i < item.height; i++) {
+            for (var i = 0; i < dependant.height; i++) {
               row = this.cells[i + pos.y];
               if (_.isUndefined(row)) return true;
-              for (var j = 0; j < item.width; j++) {
+              for (var j = 0; j < dependant.width; j++) {
                 if (row[j + pos.x] === true) return false;
                 if (j + pos.x + 1 > this.width) return false;
               }
@@ -914,9 +1021,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             return true;
           }
         }, {
-          key: 'itemFitsAtCurrentPos',
-          value: function itemFitsAtCurrentPos(item) {
-            return this.itemFitsAtPos(item, this.position);
+          key: 'dependantFitsAtCurrentPos',
+          value: function dependantFitsAtCurrentPos(dependant) {
+            return this.dependantFitsAtPos(dependant, this.position);
           }
         }, {
           key: 'movePositionToNextRow',
@@ -979,11 +1086,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
       },
 
-      itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
+      dependantsOfLayerShouldBeSorted: function dependantsOfLayerShouldBeSorted(dependantsArray) {
         var ret = true;
-        _.each(itemsArray, function (item) {
-          if (item.hasOwnProperty('connectedTo')) ret = false;
-          if (item.hasOwnProperty('connectToNext')) ret = false;
+        _.each(dependantsArray, function (dependant) {
+          if (dependant.hasOwnProperty('connectedTo')) ret = false;
+          if (dependant.hasOwnProperty('connectToNext')) ret = false;
         });
         return ret;
       },
@@ -993,37 +1100,37 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             totalHeight = 0,
             maxWidth = 0,
             maxHeight = 0,
-            itemsArray = [],
+            dependantsArray = [],
             whileCounter = 0,
-            itemsOfLayer,
+            dependantsOfLayer,
             grid,
-            itemsOfLayerIndex,
+            dependantsOfLayerIndex,
             width,
             gridSize,
-            itemsShouldBeSorted,
-            addedItemToGrid = function addedItemToGrid(index) {
-          if (itemsOfLayer[index].inNewRow === true) {
-            grid.addItemAtNewRow(itemsOfLayer[index]);
-            itemsOfLayer.splice(index, 1);
+            dependantsShouldBeSorted,
+            addedDependantToGrid = function addedDependantToGrid(index) {
+          if (dependantsOfLayer[index].inNewRow === true) {
+            grid.addDependantAtNewRow(dependantsOfLayer[index]);
+            dependantsOfLayer.splice(index, 1);
             return true;
-          } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
-            grid.addItemAtCurrentPos(itemsOfLayer[index]);
-            itemsOfLayer.splice(index, 1);
+          } else if (grid.dependantFitsAtCurrentPos(dependantsOfLayer[index])) {
+            grid.addDependantAtCurrentPos(dependantsOfLayer[index]);
+            dependantsOfLayer.splice(index, 1);
             return true;
           } else return false;
         };
 
-        _.each(layer.items, function (item) {
-          totalWidth += item.width;
-          totalHeight += item.height;
-          maxHeight = item.height > maxHeight ? item.height : maxHeight;
-          maxWidth = item.width > maxWidth ? item.width : maxWidth;
-          itemsArray.push(item);
+        _.each(layer.dependants, function (dependant) {
+          totalWidth += dependant.width;
+          totalHeight += dependant.height;
+          maxHeight = dependant.height > maxHeight ? dependant.height : maxHeight;
+          maxWidth = dependant.width > maxWidth ? dependant.width : maxWidth;
+          dependantsArray.push(dependant);
         });
 
         if (totalWidth / 2 >= maxWidth) {
           if (totalHeight > totalWidth) {
-            if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
+            if (totalHeight / 2 < layer.dependants.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
           } else width = Math.ceil(totalWidth / 2);
         } else width = maxWidth;
 
@@ -1031,24 +1138,24 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         grid = new helpers.Grid(width);
 
-        itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
-        if (itemsShouldBeSorted) {
-          itemsOfLayer = itemsArray.sort(function (itemA, itemB) {
-            if (itemA.width === itemB.width) {
-              return itemA.height < itemB.height;
-            } else return itemA.width < itemB.width;
+        dependantsShouldBeSorted = helpers.dependantsOfLayerShouldBeSorted(dependantsArray);
+        if (dependantsShouldBeSorted) {
+          dependantsOfLayer = dependantsArray.sort(function (dependantA, dependantB) {
+            if (dependantA.width === dependantB.width) {
+              return dependantA.height < dependantB.height;
+            } else return dependantA.width < dependantB.width;
           });
-        } else itemsOfLayer = itemsArray;
-        addedItemToGrid(0);
-        itemsOfLayerIndex = 0;
-        while (itemsOfLayer.length > 0 && whileCounter < 1000) {
-          if (addedItemToGrid(itemsOfLayerIndex)) {
-            itemsOfLayerIndex = 0;
+        } else dependantsOfLayer = dependantsArray;
+        addedDependantToGrid(0);
+        dependantsOfLayerIndex = 0;
+        while (dependantsOfLayer.length > 0 && whileCounter < 1000) {
+          if (addedDependantToGrid(dependantsOfLayerIndex)) {
+            dependantsOfLayerIndex = 0;
           } else {
-            if (itemsShouldBeSorted) {
-              itemsOfLayerIndex++;
-              if (itemsOfLayerIndex === itemsOfLayer.length) {
-                itemsOfLayerIndex = 0;
+            if (dependantsShouldBeSorted) {
+              dependantsOfLayerIndex++;
+              if (dependantsOfLayerIndex === dependantsOfLayer.length) {
+                dependantsOfLayerIndex = 0;
                 grid.movePositionToNextRow();
               }
             } else {
@@ -1063,13 +1170,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         layer.x = 0;
         layer.y = 0;
         layer.width = gridSize.width;
-        layer.height = layer.items.length > 0 ? gridSize.height + 1 : gridSize.height;
+        layer.height = layer.dependants.length > 0 ? gridSize.height + 1 : gridSize.height;
       },
 
       generateLayersData: function generateLayersData(layers, currentDepth) {
         var config = helpers.config,
             maxDepth,
-            itemsDepth;
+            dependantsDepth;
 
         currentDepth = currentDepth || 1;
         maxDepth = currentDepth;
@@ -1077,16 +1184,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           if (layer.showNumbersAll === true) config.showNumbersAll = true;
           layer.depth = currentDepth;
           helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
-          if (layer.items.length > 0) {
-            itemsDepth = helpers.generateLayersData(layer.items, currentDepth + 1);
-            layer.maxLayerDepthBelow = itemsDepth - currentDepth;
+          if (layer.dependants.length > 0) {
+            dependantsDepth = helpers.generateLayersData(layer.dependants, currentDepth + 1);
+            layer.maxLayerDepthBelow = dependantsDepth - currentDepth;
             helpers.calculateLayerWithChildrenDimensions(layer);
-            maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+            maxDepth = maxDepth < dependantsDepth ? dependantsDepth : maxDepth;
           } else {
             layer.maxLayerDepthBelow = 0;
             layer.width = 1;
             layer.height = 1;
-            maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+            maxDepth = maxDepth < dependantsDepth ? dependantsDepth : maxDepth;
           }
           layer.alreadyConnections = [];
         });
@@ -1137,13 +1244,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             item.text = texts[0];
             if (texts.length > 1) item.description = texts[1];
 
-            if (item.items && item.items.length > 0) {
+            if (item.dependants && item.dependants.length > 0) {
               item.type = 'container';
-              convertDataToBox(item.items);
+              convertDataToBox(item.dependants);
             } else {
               if (_.isString(item.description) === false) items[index] = item.text;else {
                 item.type = 'definition';
-                item.items = null;
+                item.dependants = null;
               }
             }
           });
@@ -1161,7 +1268,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         if (_.isArray(origConf)) origConf = origConf[0];
         boxData = {
           name: origConf.text,
-          body: origConf.items
+          body: origConf.dependants
         };
 
         convertDataToBox(boxData.body);
@@ -1178,7 +1285,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           if (_.isObject(opts)) layer = _.extend(layer, opts);
         }
 
-        if (items) layer.items = items;
+        if (items) layer.dependants = items;
         if (_.isUndefined(layer.id)) layer.id = 'layer-' + ++helpers.ids + '-auto'; // Have to limit the id by the two sides to enable .indexOf to work
 
         return layer;
@@ -1190,29 +1297,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         if (args === 1) return helpers.newLayer(arguments[0], 'cn');else if (args === 2) {
           if (typeof arguments[1] === 'object') return helpers.newLayer(arguments[0], 'cn', arguments[1]);else if (typeof (arguments[1] === 'string')) return helpers.newLayer(arguments[0], arguments[1] + ' cn');
         } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
-      },
-
-      newLayerConnectedToNextWithCode: function newLayerConnectedToNextWithCode(codeLanguage) {
-        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
-        return function () {
-          var args = arguments;
-          args[0] = codeFn(args[0]);
-          return helpers.newLayerConnectedToNext.apply(this, args);
-        };
-      },
-
-      newLayerConnectedToNextWithParagraphAndCode: function newLayerConnectedToNextWithParagraphAndCode(codeLanguage) {
-        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
-        return function () {
-          var args = [].splice.call(arguments, 0),
-              paragraphText = args[0],
-              code = args[1],
-              text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
-
-          args = args.splice(2);
-          args.unshift(text);
-          return helpers.newLayerConnectedToNext.apply(this, args);
-        };
       },
 
       staticOptsLetters: {
@@ -1284,6 +1368,31 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     },
         Layer;
 
+    _.each(['newLayer', 'newLayerConnectedToNext'], function (helpersMethod) {
+      helpers[helpersMethod + 'WithCode'] = function (codeLanguage) {
+        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+        return function () {
+          var args = arguments;
+          args[0] = codeFn(args[0]);
+          return helpers[helpersMethod].apply(this, args);
+        };
+      };
+
+      helpers[helpersMethod + 'WithParagraphAndCode'] = function (codeLanguage) {
+        var codeFn = diagrams.utils.codeBlockOfLanguageFn(codeLanguage);
+        return function () {
+          var args = [].splice.call(arguments, 0),
+              paragraphText = args[0],
+              code = args[1],
+              text = d.utils.wrapInParagraph(paragraphText) + codeFn(code);
+
+          args = args.splice(2);
+          args.unshift(text);
+          return helpers[helpersMethod].apply(this, args);
+        };
+      };
+    });
+
     Layer = (function (_d$Diagram3) {
       function Layer() {
         _classCallCheck(this, Layer);
@@ -1296,14 +1405,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       _createClass(Layer, [{
         key: 'create',
         value: function create(conf) {
-          var origConf = _.cloneDeep(conf),
+          var diagram = this,
+              origConf = _.cloneDeep(conf),
               config = helpers.config,
               colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
-              addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
+              addDependantsPropToBottomDependants = function addDependantsPropToBottomDependants(layers) {
             _.each(layers, function (layer) {
-              if (layer.hasOwnProperty('items') === false) {
-                layer.items = [];
-              } else addItemsPropToBottomItems(layer.items);
+              if (layer.hasOwnProperty('dependants') === false) {
+                layer.dependants = [];
+              } else addDependantsPropToBottomDependants(layer.dependants);
             });
           },
               calculateTheMostOptimalConnection = function calculateTheMostOptimalConnection(layerA, layerBObj) {
@@ -1379,27 +1489,31 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               });
               return result;
             },
+                loopSidesToGetConnection = function loopSidesToGetConnection(sameTypeOfSidesCondition) {
+              eachSide(function (sideA) {
+                eachSide(function (sideB) {
+                  if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
+                  if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
+                    if (sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false || sameTypeOfSides(sideA, sideB)) {
+                      if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
+                        changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
+                        if (changed === true) {
+                          distance.sideA = sideA;
+                          distance.sideB = sideB;
+                        }
+                      }
+                    }
+                  }
+                });
+              });
+            },
                 layerB = layerBObj.layer,
                 layerAPos = getSidesPos(layerA),
                 layerBPos = getSidesPos(layerB),
                 changed;
 
-            eachSide(function (sideA) {
-              eachSide(function (sideB) {
-                if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
-                if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
-                  if (sameTypeOfSides(sideA, sideB)) {
-                    if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
-                      changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
-                      if (changed === true) {
-                        distance.sideA = sideA;
-                        distance.sideB = sideB;
-                      }
-                    }
-                  }
-                }
-              });
-            });
+            loopSidesToGetConnection(true);
+            if (changed !== true) loopSidesToGetConnection(false);
 
             layerA.alreadyConnections.push(distance.sideA);
             layerB.alreadyConnections.push(distance.sideB);
@@ -1420,27 +1534,29 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'));
               connectionId = connection.layer.id + '-' + connectedToLayer.layer.id;
               connectionG = container.append('g').attr('id', connectionId);
-              connectionPath = connectionG.append('path').attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
-                stroke: '#000',
-                fill: 'none'
-              });
+              if (connectionCoords.from && connectionCoords.to) {
+                connectionPath = connectionG.append('path').attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
+                  stroke: '#000',
+                  fill: 'none'
+                });
 
-              if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
+                if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
 
-              connectionG.append('circle').attr({
-                cx: connectionCoords.to.x,
-                cy: connectionCoords.to.y,
-                r: 5,
-                fill: colors[connection.layer.depth - 1]
-              }).style({
-                stroke: '#000'
-              });
+                connectionG.append('circle').attr({
+                  cx: connectionCoords.to.x,
+                  cy: connectionCoords.to.y,
+                  r: 5,
+                  fill: colors[connection.layer.depth - 1]
+                }).style({
+                  stroke: '#000'
+                });
 
-              containerData.connections = containerData.connections || [];
-              containerData.connections.push({
-                el: connectionG,
-                id: connectionId
-              });
+                containerData.connections = containerData.connections || [];
+                containerData.connections.push({
+                  el: connectionG,
+                  id: connectionId
+                });
+              }
             });
           },
               drawConnectionsIfAny = function drawConnectionsIfAny(layers) {
@@ -1475,9 +1591,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }).value();
 
             _.chain(layers).filter(function (layer) {
-              return layer.items.length > 0;
+              return layer.dependants.length > 0;
             }).each(function (layer) {
-              drawConnectionsIfAny(layer.items);
+              drawConnectionsIfAny(layer.dependants);
             }).value();
           },
               updateSvgHeight = function updateSvgHeight() {
@@ -1597,7 +1713,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
               layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
 
-              d.utils.fillBannerOnClick(layerG, layer.text);
+              diagram.handleItemClick(layerG, {
+                text: layer.text
+              });
 
               if (layerDims.numberTransform) {
                 numberG = layerNode.append('g').attr({
@@ -1616,8 +1734,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 numberG.append('text').text(layerIndex + 1).attr('fill', '#000');
               }
 
-              if (layer.items.length > 0) {
-                drawLayersInContainer(layer.items, layerG, layer);
+              if (layer.dependants.length > 0) {
+                drawLayersInContainer(layer.dependants, layerG, layer);
               }
             });
           },
@@ -1632,7 +1750,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
           if (_.isArray(conf) === false) conf = [conf];
           d.svg.addFilterColor('layer', svg, 3, 2);
-          addItemsPropToBottomItems(conf);
+          addDependantsPropToBottomDependants(conf);
           calcMaxUnityWidth();
           helpers.generateLayersData(conf);
           drawLayersInContainer();
