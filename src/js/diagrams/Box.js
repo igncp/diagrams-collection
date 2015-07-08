@@ -25,16 +25,16 @@ var helpers = {
     },
 
     convertToLayer: function(origConf) {
-      var convertDataToLayers = function(dependants) {
-          _.each(dependants, function(dependant, index) {
-            if (_.isString(dependant)) {
-              dependant = dependants[index] = {
-                text: dependant
+      var convertDataToLayers = function(items) {
+          _.each(items, function(item, index) {
+            if (_.isString(item)) {
+              item = items[index] = {
+                text: item
               };
             }
-            if (dependant.description) dependant.text += ': ' + dependant.description;
-            if (dependant.dependants) convertDataToLayers(dependant.dependants);
-            else dependant.dependants = [];
+            if (item.description) item.text += ': ' + item.description;
+            if (item.items) convertDataToLayers(item.items);
+            else item.items = [];
           });
         },
         createLayers = function() {
@@ -49,45 +49,42 @@ var helpers = {
 
       layersData.push({
         text: origConf.name,
-        dependants: origConf.body
+        items: origConf.body
       });
-      convertDataToLayers(layersData[0].dependants);
+      convertDataToLayers(layersData[0].items);
       createLayers();
     },
 
-    generateContainer: function(text, description, dependants) {
-      var container;
+    generateItem: function(text, description, options, items) {
+      var defaultOptions = {
+        isLink: false
+      };
+      options = options || {};
+      return {
+        text: text,
+        description: description || null,
+        options: _.defaults(options, defaultOptions),
+        items: items || []
+      };
+    },
 
+    generateContainer: function(text, description, items) {
       if (_.isArray(description)) {
-        dependants = description;
+        items = description;
         description = null;
       }
 
-      container = {
-        type: 'container',
-        text: text,
-        dependants: dependants,
-        description: description
-      };
-
-
-      return container;
+      return helpers.generateItem(text, description, null, items);
     },
 
     generateLink: function(text, url) {
-      return {
-        type: 'link',
-        text: text,
-        url: url
-      };
+      return helpers.generateItem(text, url, {
+        isLink: true
+      });
     },
 
     generateDefinition: function(text, description) {
-      return {
-        type: 'definition',
-        text: text,
-        description: description
-      };
+      return helpers.generateItem(text, description);
     }
   },
   textGId = 0,
@@ -111,80 +108,79 @@ Box = class Box extends d.Diagram {
       bodyPosition = 1,
       rowHeight = 30,
       depthWidth = 35,
-      addBodyDependants = function(dependants, container, depth) {
+      addBodyItems = function(items, container, depth) {
         var newContainer, text, textG, textWidth, descriptionWidth, containerText;
 
-        dependants = dependants || conf.body;
+        items = items || conf.body;
         container = container || bodyG;
         depth = depth || 1;
 
-        _.each(dependants, function(dependant) {
-          var currentTextGId, dependantText;
+        _.each(items, function(item, itemIndex) {
+          var currentTextGId;
 
           currentTextGId = 'diagrams-box-text-' + textGId++;
-          if (dependant.type === 'container') {
+          if (_.isString(item)) {
+            item = helpers.generateItem(item);
+            items[itemIndex] = item;
+          }
+          if (item.items.length > 0) {
             newContainer = container.append('g');
-            containerText = '· ' + dependant.text;
-            if (dependant.dependants && dependant.dependants.length > 0) containerText += ':';
-            if (dependant.description) {
-              dependantText = d.tooltip.generateATextDescriptionStr(containerText, dependant.description);
+            containerText = '· ' + item.text;
+            if (item.items && item.items.length > 0) containerText += ':';
+            if (item.description) {
+              item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
               containerText += ' (...)';
             } else {
-              dependantText = false;
+              item.fullText = false;
             }
             textG = newContainer.append('text').text(containerText).attr({
               x: depthWidth * depth,
               y: rowHeight * ++bodyPosition,
               id: currentTextGId
             });
-            // dependant.dependants = _.sortBy(dependant.dependants, 'text');
-            addBodyDependants(dependant.dependants, newContainer, depth + 1);
-          } else if (dependant.type === 'link') {
-            textG = container.append('svg:a').attr("xlink:href", dependant.url)
-              .append('text').text(dependant.text).attr({
-                id: currentTextGId,
-                x: depthWidth * depth,
-                y: rowHeight * ++bodyPosition,
-                fill: '#3962B8'
+            // item.items = _.sortBy(item.items, 'text');
+            addBodyItems(item.items, newContainer, depth + 1);
+          } else {
+            if (item.options.isLink === true) {
+              textG = container.append('svg:a').attr("xlink:href", item.description)
+                .append('text').text(item.text).attr({
+                  id: currentTextGId,
+                  x: depthWidth * depth,
+                  y: rowHeight * ++bodyPosition,
+                  fill: '#3962B8'
+                });
+
+              item.fullText = item.text + ' (' + item.description + ')';
+            } else {
+              textG = container.append('g').attr({
+                id: currentTextGId
               });
+              text = textG.append('text').text(item.text).attr({
+                x: depthWidth * depth,
+                y: rowHeight * ++bodyPosition
+              }).style({
+                'font-weight': 'bold'
+              });
+              if (item.description) {
+                textWidth = text[0][0].getBoundingClientRect().width;
+                descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-            dependantText = dependant.text + ' (' + dependant.url + ')';
-          } else if (dependant.type === 'definition') {
-            textG = container.append('g').attr({
-              id: currentTextGId
-            });
-            text = textG.append('text').text(dependant.text).attr({
-              x: depthWidth * depth,
-              y: rowHeight * ++bodyPosition
-            }).style({
-              'font-weight': 'bold'
-            });
-            if (dependant.description) {
-              textWidth = text[0][0].getBoundingClientRect().width;
-              descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
+                textG.append('text').text('- ' + item.description).attr({
+                  x: depthWidth * depth + textWidth + 5,
+                  y: rowHeight * bodyPosition - 1
+                }).each(d.svg.textEllipsis(descriptionWidth));
+              }
 
-              textG.append('text').text('- ' + dependant.description).attr({
-                x: depthWidth * depth + textWidth + 5,
-                y: rowHeight * bodyPosition - 1
-              }).each(d.svg.textEllipsis(descriptionWidth));
+              item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
             }
-
-            dependantText = d.tooltip.generateATextDescriptionStr(dependant.text, dependant.description);
-          } else if (_.isString(dependant)) {
-            textG = container.append('text').text(dependant).attr({
-              id: currentTextGId,
-              x: depthWidth * depth,
-              y: rowHeight * ++bodyPosition
-            });
-
-            dependantText = dependant;
           }
+          item.textG = textG;
 
           diagram.handleItemClick(textG, {
-            text: dependantText
+            text: item.fullText
           });
 
-          d.tooltip.setMouseListeners(textG, currentTextGId, dependantText);
+          diagram.addMouseListenersToEl(textG, item);
         });
       },
       bodyRect;
@@ -214,11 +210,24 @@ Box = class Box extends d.Diagram {
     }).style({
       filter: 'url(#diagrams-drop-shadow-box)'
     });
-    addBodyDependants();
+    addBodyItems();
     d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
     d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
-    
+
     helpers.addConvertToLayersButton(origConf);
+    diagram.setRelationships(conf.body);
+  }
+
+  setRelationships(items, container) {
+    var diagram = this;
+    _.each(items, function(item) {
+      diagram.generateEmptyRelationships(item);
+      if (container) {
+        diagram.addDependantRelationship(container, item.textG, item);
+        diagram.addDependencyRelationship(item, container.textG, container);
+      }
+      if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item);
+    });
   }
 };
 

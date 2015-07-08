@@ -9,13 +9,13 @@ gruntConfig = {}
 setConcatFilesInConfig = ->
   concatFilesPaths = (glob.sync dirJs + '/**/*.js').filter((filePath)->
     fileName = path.basename(filePath)
-    fileName.substr(0, 7) isnt 'concat-'
+    fileName.substr(0, 7) isnt 'concat-' and fileName  isnt 'utils'
   ).sort((a, b)->
     a.split('/').length > b.split('/').length
   ).reduce((memo, filePath)->
     memo.splice memo.length - 1, 0, filePath
     memo
-  , [dirJs + 'concat-banner.js', dirJs + 'concat-footer.js'])
+  , [dirJs + 'concat-banner.js', dirJs + 'utils.js', dirJs + 'concat-footer.js'])
 
   gruntConfig.concat.dist.src = concatFilesPaths
 

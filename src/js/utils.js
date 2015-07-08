@@ -1,3 +1,6 @@
+// This file is always concatenated at the beginning of the library.
+// Maybe it would be worth to separate public and private utils (relatively to the external clients)
+
 d.utils = {};
 d.utils.d3DefaultReturnFn = function(props, preffix, suffix) {
   props = props.split('.');
@@ -26,24 +29,6 @@ d.utils.runIfReady = function(fn) {
   if (document.readyState === 'complete') fn();
   else window.onload = fn;
 };
-d.utils.fillBannerWithText = function(content) {
-  var bannerId = 'diagrams-banner',
-    previousBanner = d3.select('#' + bannerId),
-    body = d3.select('body'),
-    bannerEl, bannerHtml;
-
-  if (previousBanner) previousBanner.remove();
-  
-  bannerHtml = '<div class="diagrams-banner-cross">&#x2715;</div>';
-  bannerHtml += d.utils.formatTextFragment(content);
-
-  bannerEl = body.insert('div', 'svg').attr({
-    id: bannerId
-  }).html(bannerHtml);
-  bannerEl.on('click', function() {
-    bannerEl.remove();
-  });
-};
 d.utils.replaceCodeFragmentOfText = function(text, predicate) {
   var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
     allMatches = text.match(codeRegex);
@@ -71,11 +56,45 @@ d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
 d.utils.wrapInParagraph = function(text) {
   return '<p>' + text + '</p>';
 };
-d.utils.fillBannerOnClick = function(el, text, onMouseDown) {
-  var event = onMouseDown ? 'mousedown' : 'click';
-  el.on(event, function() {
-    d.tooltip('hide');
-    d3.event.stopPropagation();
-    d.utils.fillBannerWithText(text);
-  });
+
+d.utils.composeWithEventEmitter = function(constructor) {
+  var _subjects = [],
+    createName = function(name) {
+      return '$' + name;
+    };
+
+  constructor.prototype.emit = function(name, data) {
+    var fnName = createName(name);
+    _subjects[fnName] || (_subjects[fnName] = new Rx.Subject());
+    _subjects[fnName].onNext(data);
+  };
+
+  constructor.prototype.listen = function(name, handler) {
+    var fnName = createName(name);
+    _subjects[fnName] || (_subjects[fnName] = new Rx.Subject());
+    return _subjects[fnName].subscribe(handler);
+  };
+
+  constructor.prototype.dispose = function() {
+    var subjects = _subjects;
+    for (var prop in subjects) {
+      if ({}.hasOwnProperty.call(subjects, prop)) {
+        subjects[prop].dispose();
+      }
+    }
+
+    _subjects = {};
+  };
+};
+
+d.utils.createAnEventEmitter = function() {
+  var constructor = function EventEmitter() {};
+
+  d.utils.composeWithEventEmitter(constructor);
+
+  return new constructor();
+};
+
+d.utils.generateATextDescriptionStr = function(text, description) {
+  return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
 };

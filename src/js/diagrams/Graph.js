@@ -62,7 +62,8 @@ var dPositionFn = d.utils.positionFn,
 
 Graph = class Graph extends d.Diagram {
   create(data, conf) {
-    var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
+    var diagram = this,
+      bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
       svg = d.svg.generateSvg(),
       container = svg.append('g'),
       height = bodyHeight - 250,
@@ -173,17 +174,26 @@ Graph = class Graph extends d.Diagram {
       dragended = function() {
         d3.select(this).classed("dragging", false);
       },
-      setDependantsAndDependencies = function() {
+      setRelationships = function() {
+        _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
         _.each(parsedData.nodes, function(node) {
-          node.dependants = [];
-          node.dependencies = [];
+          diagram.addSelfRelationship(node, node.shapeEl, node);
         });
         _.each(parsedData.links, function(link) {
-          link.source.dependencies.push(link.target);
-          link.target.dependants.push(link.source);
+          diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
+          diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
         });
       },
       force, drag, link, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
+
+    diagram.markRelatedFn = function(item) {
+      item.el.style('stroke-width', '10px');
+    };
+    diagram.unmarkAllItems = function() {
+      _.each(parsedData.nodes, function(node) {
+        node.shapeEl.style('stroke-width', '1px');
+      });
+    };
 
     conf = conf || {};
     parseData();
@@ -237,9 +247,10 @@ Graph = class Graph extends d.Diagram {
     });
 
     node.each(function(singleNode) {
-      var itemText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
-        singleNodeClasses = '';
+      var singleNodeClasses = '';
       singleNodeEl = d3.select(this);
+      singleNode.fullText = d.utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
+
       if (singleNode.shape === 'circle') {
         shapeEl = singleNodeEl.append("circle").attr({
           r: 12,
@@ -267,13 +278,12 @@ Graph = class Graph extends d.Diagram {
       else singleNodeClasses += ' thin';
       shapeEl.attr('class', singleNodeClasses);
 
-      // Add this when there is a checkbox to disable it as it may be annoying
-
-      d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
+      singleNode.shapeEl = shapeEl;
+      diagram.addMouseListenersToEl(shapeEl, singleNode);
     });
     node.append("text").text(dTextFn('name'));
 
-    setDependantsAndDependencies();
+    setRelationships();
   }
 };
 

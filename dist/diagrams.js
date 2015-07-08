@@ -13,55 +13,116 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       d = diagrams;
 
   (function () {})();(function () {
-    var defaultDiagramConfiguration = {},
-        createName = function createName(name) {
-      return '$' + name;
+    // This file is always concatenated at the beginning of the library.
+    // Maybe it would be worth to separate public and private utils (relatively to the external clients)
+
+    d.utils = {};
+    d.utils.d3DefaultReturnFn = function (props, preffix, suffix) {
+      props = props.split('.');
+      return function (d) {
+        var position = _.reduce(props, function (memo, property) {
+          return memo[property];
+        }, d);
+        return preffix || suffix ? preffix + position + suffix : position;
+      };
+    };
+    d.utils.applySimpleTransform = function (el) {
+      el.attr('transform', function (d) {
+        return 'translate(' + d.x + ',' + d.y + ')';
+      });
+    };
+    d.utils.positionFn = function (props, offset) {
+      offset = offset || 0;
+      return d.utils.d3DefaultReturnFn(props, 0, offset);
+    };
+    d.utils.textFn = function (props, preffix, suffix) {
+      preffix = preffix || '';
+      suffix = suffix || '';
+      return d.utils.d3DefaultReturnFn(props, preffix, suffix);
+    };
+    d.utils.runIfReady = function (fn) {
+      if (document.readyState === 'complete') fn();else window.onload = fn;
+    };
+    d.utils.replaceCodeFragmentOfText = function (text, predicate) {
+      var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
+          allMatches = text.match(codeRegex);
+
+      return text.replace(codeRegex, function (matchStr, language, codeBlock) {
+        return predicate(matchStr, language, codeBlock, allMatches);
+      });
+    };
+    d.utils.formatTextFragment = function (text) {
+      text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, code, allMatches) {
+        var lastMatch = matchStr === _.last(allMatches);
+        return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
+      });
+      return text;
+    };
+    d.utils.codeBlockOfLanguageFn = function (language, commentsSymbol) {
+      commentsSymbol = commentsSymbol || '';
+      return function (codeBlock, where, withInlineStrs) {
+        if (withInlineStrs === true) codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
+        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
+        return '``' + language + '``' + codeBlock + '``';
+      };
+    };
+    // This function is created to be able to reference it in the diagrams
+    d.utils.wrapInParagraph = function (text) {
+      return '<p>' + text + '</p>';
     };
 
-    var EventEmitter = (function () {
-      function EventEmitter() {
-        _classCallCheck(this, EventEmitter);
-      }
+    d.utils.composeWithEventEmitter = function (constructor) {
+      var _subjects = [],
+          createName = function createName(name) {
+        return '$' + name;
+      };
 
-      _createClass(EventEmitter, [{
-        key: 'emit',
-        value: function emit(name, data) {
-          var fnName = createName(name);
-          this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
-          this._subjects[fnName].onNext(data);
-        }
-      }, {
-        key: 'listen',
-        value: function listen(name, handler) {
-          var fnName = createName(name);
-          this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
-          return this._subjects[fnName].subscribe(handler);
-        }
-      }, {
-        key: 'dispose',
-        value: function dispose() {
-          var subjects = this._subjects;
-          for (var prop in subjects) {
-            if (({}).hasOwnProperty.call(subjects, prop)) {
-              subjects[prop].dispose();
-            }
+      constructor.prototype.emit = function (name, data) {
+        var fnName = createName(name);
+        _subjects[fnName] || (_subjects[fnName] = new Rx.Subject());
+        _subjects[fnName].onNext(data);
+      };
+
+      constructor.prototype.listen = function (name, handler) {
+        var fnName = createName(name);
+        _subjects[fnName] || (_subjects[fnName] = new Rx.Subject());
+        return _subjects[fnName].subscribe(handler);
+      };
+
+      constructor.prototype.dispose = function () {
+        var subjects = _subjects;
+        for (var prop in subjects) {
+          if (({}).hasOwnProperty.call(subjects, prop)) {
+            subjects[prop].dispose();
           }
-
-          this._subjects = {};
         }
-      }]);
 
-      return EventEmitter;
-    })();
+        _subjects = {};
+      };
+    };
 
-    d.Diagram = (function (_EventEmitter) {
+    d.utils.createAnEventEmitter = function () {
+      var constructor = function EventEmitter() {};
+
+      d.utils.composeWithEventEmitter(constructor);
+
+      return new constructor();
+    };
+
+    d.utils.generateATextDescriptionStr = function (text, description) {
+      return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
+    };
+  })();(function () {
+    var defaultDiagramConfiguration = {};
+
+    d.diagramsRegistry = [];
+
+    d.Diagram = (function () {
       function Diagram(opts) {
         _classCallCheck(this, Diagram);
 
-        _get(Object.getPrototypeOf(Diagram.prototype), 'constructor', this).call(this);
         var prototype = Object.getPrototypeOf(this);
 
-        this._subjects = {};
         this.name = opts.name;
         this._configuration = this.configuration || {};
 
@@ -69,10 +130,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         _.defaults(prototype, opts.helpers);
 
         this.register();
-        this.setDiagramListeners();
       }
-
-      _inherits(Diagram, _EventEmitter);
 
       _createClass(Diagram, [{
         key: 'handleItemClick',
@@ -84,14 +142,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
         }
       }, {
-        key: 'setDiagramListeners',
-        value: function setDiagramListeners() {
-          this.listen('itemclick', function (itemData) {
-            if (itemData && itemData.text) {
-              d.tooltip('hide');
-              d.utils.fillBannerWithText(itemData.text);
-            }
-          });
+        key: 'addMouseListenersToEl',
+        value: function addMouseListenersToEl(el, data) {
+          var diagram = this,
+              emitFn = function emitFn(d3Event, emitedEvent) {
+            emitedEvent = emitedEvent || d3Event;
+            el.on(d3Event, function () {
+              diagram.emit(emitedEvent, emitContent);
+            });
+          },
+              emitContent = {
+            el: el,
+            data: data
+          };
+
+          emitFn('mouseleave');
+          emitFn('mouseenter');
+          emitFn('click', 'itemclick');
         }
       }, {
         key: 'config',
@@ -114,6 +181,73 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }
         }
       }, {
+        key: 'generateEmptyRelationships',
+        value: function generateEmptyRelationships(item) {
+          item.relationships = {};
+          item.relationships.dependants = [];
+          item.relationships.dependencies = [];
+        }
+      }, {
+        key: 'addDependantRelationship',
+        value: function addDependantRelationship(item, el, data) {
+          item.relationships.dependants.push(this.generateRelationship(el, data));
+        }
+      }, {
+        key: 'addSelfRelationship',
+        value: function addSelfRelationship(item, el, data) {
+          item.relationships.self = this.generateRelationship(el, data);
+        }
+      }, {
+        key: 'addDependencyRelationship',
+        value: function addDependencyRelationship(item, el, data) {
+          item.relationships.dependencies.push(this.generateRelationship(el, data));
+        }
+      }, {
+        key: 'generateRelationship',
+        value: function generateRelationship(el, data) {
+          return {
+            el: el,
+            data: data
+          };
+        }
+      }, {
+        key: 'getAllRelatedItemsOfItem',
+        value: function getAllRelatedItemsOfItem(item, relationshipType) {
+          var relatedItems = [],
+              recursiveFn = function recursiveFn(relatedItemData, depth) {
+            _.each(relatedItemData.relationships[relationshipType], function (relatedItemChild) {
+              if (depth < 100) {
+                if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) {
+                  // Handle circular loops
+                  relatedItems.push(relatedItemChild);
+                  recursiveFn(relatedItemChild.data, depth + 1);
+                }
+              }
+            });
+          };
+
+          recursiveFn(item, 0);
+          return relatedItems;
+        }
+      }, {
+        key: 'markRelatedItems',
+        value: function markRelatedItems(item) {
+          var diagram = this,
+              dependantItems,
+              dependencyItems;
+
+          if (diagram.markRelatedFn) {
+            dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
+            dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');
+
+            _.each([dependantItems, dependencyItems], function (relatedItems) {
+              _.each(relatedItems, diagram.markRelatedFn);
+            });
+
+            diagram.markRelatedFn(item.relationships.self);
+          }
+        }
+      }, {
         key: 'register',
         value: function register() {
           var diagram = this;
@@ -121,6 +255,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             var args = arguments;
             d.utils.runIfReady(function () {
               diagram.create.apply(diagram, args);
+              d.diagramsRegistry.push(diagram);
+              d.events.emit('diagram-created', diagram);
             });
           };
 
@@ -129,7 +265,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }]);
 
       return Diagram;
-    })(EventEmitter);
+    })();
+
+    d.utils.composeWithEventEmitter(d.Diagram);
+  })();(function () {
+    d.events = d.utils.createAnEventEmitter();
   })();(function () {
     d.shapes = {};
     d.shapes.hexagon = function (opts) {
@@ -251,156 +391,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       };
     };
   })();(function () {
-    d.tooltip = function (display, elementAbove, content) {
-      var tooltipId = 'diagrams-tooltip',
-          tooltip = d3.select('#' + tooltipId),
-          tooltipStyle = '',
-          bodyHeight = (function () {
-        var body = document.body,
-            html = document.documentElement;
-        return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-      })(),
-          highlightCodeIfAny = function highlightCodeIfAny() {
-        content = d.utils.formatTextFragment(content);
-      },
-          formatAndAddContent = function formatAndAddContent() {
-        highlightCodeIfAny();
-        tooltip.html(content);
-      },
-          tooltipHeight,
-          tooltipTop,
-          body,
-          otherElementDims;
-
-      if (content !== false) {
-        if (tooltip[0][0] === null) {
-          body = d3.select('body');
-          tooltip = body.insert('div', 'svg').attr({
-            id: tooltipId
-          });
-        }
-
-        if (display === 'show') {
-          tooltipStyle += 'display: inline-block; ';
-          formatAndAddContent();
-
-          if (typeof elementAbove === 'string') elementAbove = document.getElementById(elementAbove);else elementAbove = document.getElementById(elementAbove[0][0].id);
-          otherElementDims = elementAbove.getBoundingClientRect();
-
-          tooltip.attr('style', tooltipStyle + '; opacity: 0');
-          tooltipHeight = tooltip.node().getBoundingClientRect().height;
-
-          tooltipTop = otherElementDims.top + otherElementDims.height + document.body.scrollTop + 20;
-          if (tooltipTop + tooltipHeight > bodyHeight) {
-            tooltipTop = otherElementDims.top + document.body.scrollTop - 20 - tooltipHeight;
-            if (tooltipTop < 0) {
-              tooltipTop = otherElementDims.top + otherElementDims.height + document.body.scrollTop - tooltipHeight;
-            }
-          }
-          tooltipStyle += 'top: ' + tooltipTop + 'px; ';
-        } else if (display === 'hide') tooltipStyle += 'display: none; ';
-
-        tooltip.attr('style', tooltipStyle);
-      }
-    };
-
-    d.tooltip.onMouseEnterListenerFn = _.partial(d.tooltip, 'show');
-    d.tooltip.onMouseLeaveListenerFn = _.partial(d.tooltip, 'hide');
-
-    d.tooltip.setMouseListeners = function (el, elId, text) {
-      el.on('mouseenter', function () {
-        d.tooltip.onMouseEnterListenerFn(elId, text);
-      });
-      el.on('mouseleave', function () {
-        d.tooltip.onMouseLeaveListenerFn();
-      });
-    };
-    d.tooltip.generateATextDescriptionStr = function (text, description) {
-      return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
-    };
-  })();(function () {
-    d.utils = {};
-    d.utils.d3DefaultReturnFn = function (props, preffix, suffix) {
-      props = props.split('.');
-      return function (d) {
-        var position = _.reduce(props, function (memo, property) {
-          return memo[property];
-        }, d);
-        return preffix || suffix ? preffix + position + suffix : position;
-      };
-    };
-    d.utils.applySimpleTransform = function (el) {
-      el.attr('transform', function (d) {
-        return 'translate(' + d.x + ',' + d.y + ')';
-      });
-    };
-    d.utils.positionFn = function (props, offset) {
-      offset = offset || 0;
-      return d.utils.d3DefaultReturnFn(props, 0, offset);
-    };
-    d.utils.textFn = function (props, preffix, suffix) {
-      preffix = preffix || '';
-      suffix = suffix || '';
-      return d.utils.d3DefaultReturnFn(props, preffix, suffix);
-    };
-    d.utils.runIfReady = function (fn) {
-      if (document.readyState === 'complete') fn();else window.onload = fn;
-    };
-    d.utils.fillBannerWithText = function (content) {
-      var bannerId = 'diagrams-banner',
-          previousBanner = d3.select('#' + bannerId),
-          body = d3.select('body'),
-          bannerEl,
-          bannerHtml;
-
-      if (previousBanner) previousBanner.remove();
-
-      bannerHtml = '<div class="diagrams-banner-cross">&#x2715;</div>';
-      bannerHtml += d.utils.formatTextFragment(content);
-
-      bannerEl = body.insert('div', 'svg').attr({
-        id: bannerId
-      }).html(bannerHtml);
-      bannerEl.on('click', function () {
-        bannerEl.remove();
-      });
-    };
-    d.utils.replaceCodeFragmentOfText = function (text, predicate) {
-      var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
-          allMatches = text.match(codeRegex);
-
-      return text.replace(codeRegex, function (matchStr, language, codeBlock) {
-        return predicate(matchStr, language, codeBlock, allMatches);
-      });
-    };
-    d.utils.formatTextFragment = function (text) {
-      text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, code, allMatches) {
-        var lastMatch = matchStr === _.last(allMatches);
-        return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
-      });
-      return text;
-    };
-    d.utils.codeBlockOfLanguageFn = function (language, commentsSymbol) {
-      commentsSymbol = commentsSymbol || '';
-      return function (codeBlock, where, withInlineStrs) {
-        if (withInlineStrs === true) codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
-        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
-        return '``' + language + '``' + codeBlock + '``';
-      };
-    };
-    // This function is created to be able to reference it in the diagrams
-    d.utils.wrapInParagraph = function (text) {
-      return '<p>' + text + '</p>';
-    };
-    d.utils.fillBannerOnClick = function (el, text, onMouseDown) {
-      var event = onMouseDown ? 'mousedown' : 'click';
-      el.on(event, function () {
-        d.tooltip('hide');
-        d3.event.stopPropagation();
-        d.utils.fillBannerWithText(text);
-      });
-    };
-  })();(function () {
     var helpers = {
       generateDefinitionWithSharedGet: function generateDefinitionWithSharedGet() {
         var text = arguments[0],
@@ -429,15 +419,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       },
 
       convertToLayer: function convertToLayer(origConf) {
-        var convertDataToLayers = function convertDataToLayers(dependants) {
-          _.each(dependants, function (dependant, index) {
-            if (_.isString(dependant)) {
-              dependant = dependants[index] = {
-                text: dependant
+        var convertDataToLayers = function convertDataToLayers(items) {
+          _.each(items, function (item, index) {
+            if (_.isString(item)) {
+              item = items[index] = {
+                text: item
               };
             }
-            if (dependant.description) dependant.text += ': ' + dependant.description;
-            if (dependant.dependants) convertDataToLayers(dependant.dependants);else dependant.dependants = [];
+            if (item.description) item.text += ': ' + item.description;
+            if (item.items) convertDataToLayers(item.items);else item.items = [];
           });
         },
             createLayers = function createLayers() {
@@ -452,44 +442,42 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         layersData.push({
           text: origConf.name,
-          dependants: origConf.body
+          items: origConf.body
         });
-        convertDataToLayers(layersData[0].dependants);
+        convertDataToLayers(layersData[0].items);
         createLayers();
       },
 
-      generateContainer: function generateContainer(text, description, dependants) {
-        var container;
+      generateItem: function generateItem(text, description, options, items) {
+        var defaultOptions = {
+          isLink: false
+        };
+        options = options || {};
+        return {
+          text: text,
+          description: description || null,
+          options: _.defaults(options, defaultOptions),
+          items: items || []
+        };
+      },
 
+      generateContainer: function generateContainer(text, description, items) {
         if (_.isArray(description)) {
-          dependants = description;
+          items = description;
           description = null;
         }
 
-        container = {
-          type: 'container',
-          text: text,
-          dependants: dependants,
-          description: description
-        };
-
-        return container;
+        return helpers.generateItem(text, description, null, items);
       },
 
       generateLink: function generateLink(text, url) {
-        return {
-          type: 'link',
-          text: text,
-          url: url
-        };
+        return helpers.generateItem(text, url, {
+          isLink: true
+        });
       },
 
       generateDefinition: function generateDefinition(text, description) {
-        return {
-          type: 'definition',
-          text: text,
-          description: description
-        };
+        return helpers.generateItem(text, description);
       }
     },
         textGId = 0,
@@ -523,79 +511,78 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               bodyPosition = 1,
               rowHeight = 30,
               depthWidth = 35,
-              addBodyDependants = function addBodyDependants(dependants, container, depth) {
+              addBodyItems = function addBodyItems(items, container, depth) {
             var newContainer, text, textG, textWidth, descriptionWidth, containerText;
 
-            dependants = dependants || conf.body;
+            items = items || conf.body;
             container = container || bodyG;
             depth = depth || 1;
 
-            _.each(dependants, function (dependant) {
-              var currentTextGId, dependantText;
+            _.each(items, function (item, itemIndex) {
+              var currentTextGId;
 
               currentTextGId = 'diagrams-box-text-' + textGId++;
-              if (dependant.type === 'container') {
+              if (_.isString(item)) {
+                item = helpers.generateItem(item);
+                items[itemIndex] = item;
+              }
+              if (item.items.length > 0) {
                 newContainer = container.append('g');
-                containerText = '· ' + dependant.text;
-                if (dependant.dependants && dependant.dependants.length > 0) containerText += ':';
-                if (dependant.description) {
-                  dependantText = d.tooltip.generateATextDescriptionStr(containerText, dependant.description);
+                containerText = '· ' + item.text;
+                if (item.items && item.items.length > 0) containerText += ':';
+                if (item.description) {
+                  item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
                   containerText += ' (...)';
                 } else {
-                  dependantText = false;
+                  item.fullText = false;
                 }
                 textG = newContainer.append('text').text(containerText).attr({
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
                   id: currentTextGId
                 });
-                // dependant.dependants = _.sortBy(dependant.dependants, 'text');
-                addBodyDependants(dependant.dependants, newContainer, depth + 1);
-              } else if (dependant.type === 'link') {
-                textG = container.append('svg:a').attr('xlink:href', dependant.url).append('text').text(dependant.text).attr({
-                  id: currentTextGId,
-                  x: depthWidth * depth,
-                  y: rowHeight * ++bodyPosition,
-                  fill: '#3962B8'
-                });
+                // item.items = _.sortBy(item.items, 'text');
+                addBodyItems(item.items, newContainer, depth + 1);
+              } else {
+                if (item.options.isLink === true) {
+                  textG = container.append('svg:a').attr('xlink:href', item.description).append('text').text(item.text).attr({
+                    id: currentTextGId,
+                    x: depthWidth * depth,
+                    y: rowHeight * ++bodyPosition,
+                    fill: '#3962B8'
+                  });
 
-                dependantText = dependant.text + ' (' + dependant.url + ')';
-              } else if (dependant.type === 'definition') {
-                textG = container.append('g').attr({
-                  id: currentTextGId
-                });
-                text = textG.append('text').text(dependant.text).attr({
-                  x: depthWidth * depth,
-                  y: rowHeight * ++bodyPosition
-                }).style({
-                  'font-weight': 'bold'
-                });
-                if (dependant.description) {
-                  textWidth = text[0][0].getBoundingClientRect().width;
-                  descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
+                  item.fullText = item.text + ' (' + item.description + ')';
+                } else {
+                  textG = container.append('g').attr({
+                    id: currentTextGId
+                  });
+                  text = textG.append('text').text(item.text).attr({
+                    x: depthWidth * depth,
+                    y: rowHeight * ++bodyPosition
+                  }).style({
+                    'font-weight': 'bold'
+                  });
+                  if (item.description) {
+                    textWidth = text[0][0].getBoundingClientRect().width;
+                    descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-                  textG.append('text').text('- ' + dependant.description).attr({
-                    x: depthWidth * depth + textWidth + 5,
-                    y: rowHeight * bodyPosition - 1
-                  }).each(d.svg.textEllipsis(descriptionWidth));
+                    textG.append('text').text('- ' + item.description).attr({
+                      x: depthWidth * depth + textWidth + 5,
+                      y: rowHeight * bodyPosition - 1
+                    }).each(d.svg.textEllipsis(descriptionWidth));
+                  }
+
+                  item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
                 }
-
-                dependantText = d.tooltip.generateATextDescriptionStr(dependant.text, dependant.description);
-              } else if (_.isString(dependant)) {
-                textG = container.append('text').text(dependant).attr({
-                  id: currentTextGId,
-                  x: depthWidth * depth,
-                  y: rowHeight * ++bodyPosition
-                });
-
-                dependantText = dependant;
               }
+              item.textG = textG;
 
               diagram.handleItemClick(textG, {
-                text: dependantText
+                text: item.fullText
               });
 
-              d.tooltip.setMouseListeners(textG, currentTextGId, dependantText);
+              diagram.addMouseListenersToEl(textG, item);
             });
           },
               bodyRect;
@@ -625,11 +612,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           }).style({
             filter: 'url(#diagrams-drop-shadow-box)'
           });
-          addBodyDependants();
+          addBodyItems();
           d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
           d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
 
           helpers.addConvertToLayersButton(origConf);
+          diagram.setRelationships(conf.body);
+        }
+      }, {
+        key: 'setRelationships',
+        value: function setRelationships(items, container) {
+          var diagram = this;
+          _.each(items, function (item) {
+            diagram.generateEmptyRelationships(item);
+            if (container) {
+              diagram.addDependantRelationship(container, item.textG, item);
+              diagram.addDependencyRelationship(item, container.textG, container);
+            }
+            if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item);
+          });
         }
       }]);
 
@@ -715,7 +716,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       _createClass(Graph, [{
         key: 'create',
         value: function create(data, conf) {
-          var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
+          var diagram = this,
+              bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
               svg = d.svg.generateSvg(),
               container = svg.append('g'),
               height = bodyHeight - 250,
@@ -823,14 +825,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               dragended = function dragended() {
             d3.select(this).classed('dragging', false);
           },
-              setDependantsAndDependencies = function setDependantsAndDependencies() {
+              setRelationships = function setRelationships() {
+            _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
             _.each(parsedData.nodes, function (node) {
-              node.dependants = [];
-              node.dependencies = [];
+              diagram.addSelfRelationship(node, node.shapeEl, node);
             });
             _.each(parsedData.links, function (link) {
-              link.source.dependencies.push(link.target);
-              link.target.dependants.push(link.source);
+              diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
+              diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
             });
           },
               force,
@@ -843,6 +845,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               shapeEl,
               markers,
               parsedData;
+
+          diagram.markRelatedFn = function (item) {
+            item.el.style('stroke-width', '10px');
+          };
+          diagram.unmarkAllItems = function () {
+            _.each(parsedData.nodes, function (node) {
+              node.shapeEl.style('stroke-width', '1px');
+            });
+          };
 
           conf = conf || {};
           parseData();
@@ -890,9 +901,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
 
           node.each(function (singleNode) {
-            var itemText = d.tooltip.generateATextDescriptionStr(singleNode.name, singleNode.description),
-                singleNodeClasses = '';
+            var singleNodeClasses = '';
             singleNodeEl = d3.select(this);
+            singleNode.fullText = d.utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
+
             if (singleNode.shape === 'circle') {
               shapeEl = singleNodeEl.append('circle').attr({
                 r: 12,
@@ -919,13 +931,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             if (singleNode.bold === true) singleNodeClasses += ' bold';else singleNodeClasses += ' thin';
             shapeEl.attr('class', singleNodeClasses);
 
-            // Add this when there is a checkbox to disable it as it may be annoying
-
-            d.tooltip.setMouseListeners(shapeEl, 'node-' + singleNode.id, itemText);
+            singleNode.shapeEl = shapeEl;
+            diagram.addMouseListenersToEl(shapeEl, singleNode);
           });
           node.append('text').text(dTextFn('name'));
 
-          setDependantsAndDependencies();
+          setRelationships();
         }
       }]);
 
@@ -954,21 +965,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
 
         _createClass(Grid, [{
-          key: 'addDependantAtNewRow',
-          value: function addDependantAtNewRow(dependant) {
+          key: 'addItemAtNewRow',
+          value: function addItemAtNewRow(item) {
             var counter = 0;
 
             this.position.x = 0;
             while (counter < 1000) {
               this.position.y += 1;
-              if (this.dependantFitsAtCurrentPos(dependant)) break;
+              if (this.itemFitsAtCurrentPos(item)) break;
             }
-            this.addDependantAtCurrentPos(dependant);
+            this.addItemAtCurrentPos(item);
           }
         }, {
-          key: 'addDependantAtCurrentPos',
-          value: function addDependantAtCurrentPos(dependant) {
-            this.addDependantAtPos(dependant, this.position);
+          key: 'addItemAtCurrentPos',
+          value: function addItemAtCurrentPos(item) {
+            this.addItemAtPos(item, this.position);
           }
         }, {
           key: 'createRowIfNecessary',
@@ -976,15 +987,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
           }
         }, {
-          key: 'addDependantAtPos',
-          value: function addDependantAtPos(dependant, pos) {
+          key: 'addItemAtPos',
+          value: function addItemAtPos(item, pos) {
             var row;
-            dependant.x = pos.x;
-            dependant.y = pos.y;
-            for (var i = 0; i < dependant.height; i++) {
+            item.x = pos.x;
+            item.y = pos.y;
+            for (var i = 0; i < item.height; i++) {
               this.createRowIfNecessary(i + pos.y);
               row = this.cells[i + pos.y];
-              for (var j = 0; j < dependant.width; j++) {
+              for (var j = 0; j < item.width; j++) {
                 row[j + pos.x] = true;
               }
             }
@@ -1007,13 +1018,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
           }
         }, {
-          key: 'dependantFitsAtPos',
-          value: function dependantFitsAtPos(dependant, pos) {
+          key: 'itemFitsAtPos',
+          value: function itemFitsAtPos(item, pos) {
             var row;
-            for (var i = 0; i < dependant.height; i++) {
+            for (var i = 0; i < item.height; i++) {
               row = this.cells[i + pos.y];
               if (_.isUndefined(row)) return true;
-              for (var j = 0; j < dependant.width; j++) {
+              for (var j = 0; j < item.width; j++) {
                 if (row[j + pos.x] === true) return false;
                 if (j + pos.x + 1 > this.width) return false;
               }
@@ -1021,9 +1032,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             return true;
           }
         }, {
-          key: 'dependantFitsAtCurrentPos',
-          value: function dependantFitsAtCurrentPos(dependant) {
-            return this.dependantFitsAtPos(dependant, this.position);
+          key: 'itemFitsAtCurrentPos',
+          value: function itemFitsAtCurrentPos(item) {
+            return this.itemFitsAtPos(item, this.position);
           }
         }, {
           key: 'movePositionToNextRow',
@@ -1086,11 +1097,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
       },
 
-      dependantsOfLayerShouldBeSorted: function dependantsOfLayerShouldBeSorted(dependantsArray) {
+      itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
         var ret = true;
-        _.each(dependantsArray, function (dependant) {
-          if (dependant.hasOwnProperty('connectedTo')) ret = false;
-          if (dependant.hasOwnProperty('connectToNext')) ret = false;
+        _.each(itemsArray, function (item) {
+          if (item.hasOwnProperty('connectedTo')) ret = false;
+          if (item.hasOwnProperty('connectToNext')) ret = false;
         });
         return ret;
       },
@@ -1100,37 +1111,37 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             totalHeight = 0,
             maxWidth = 0,
             maxHeight = 0,
-            dependantsArray = [],
+            itemsArray = [],
             whileCounter = 0,
-            dependantsOfLayer,
+            itemsOfLayer,
             grid,
-            dependantsOfLayerIndex,
+            itemsOfLayerIndex,
             width,
             gridSize,
-            dependantsShouldBeSorted,
-            addedDependantToGrid = function addedDependantToGrid(index) {
-          if (dependantsOfLayer[index].inNewRow === true) {
-            grid.addDependantAtNewRow(dependantsOfLayer[index]);
-            dependantsOfLayer.splice(index, 1);
+            itemsShouldBeSorted,
+            addedItemToGrid = function addedItemToGrid(index) {
+          if (itemsOfLayer[index].inNewRow === true) {
+            grid.addItemAtNewRow(itemsOfLayer[index]);
+            itemsOfLayer.splice(index, 1);
             return true;
-          } else if (grid.dependantFitsAtCurrentPos(dependantsOfLayer[index])) {
-            grid.addDependantAtCurrentPos(dependantsOfLayer[index]);
-            dependantsOfLayer.splice(index, 1);
+          } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
+            grid.addItemAtCurrentPos(itemsOfLayer[index]);
+            itemsOfLayer.splice(index, 1);
             return true;
           } else return false;
         };
 
-        _.each(layer.dependants, function (dependant) {
-          totalWidth += dependant.width;
-          totalHeight += dependant.height;
-          maxHeight = dependant.height > maxHeight ? dependant.height : maxHeight;
-          maxWidth = dependant.width > maxWidth ? dependant.width : maxWidth;
-          dependantsArray.push(dependant);
+        _.each(layer.items, function (item) {
+          totalWidth += item.width;
+          totalHeight += item.height;
+          maxHeight = item.height > maxHeight ? item.height : maxHeight;
+          maxWidth = item.width > maxWidth ? item.width : maxWidth;
+          itemsArray.push(item);
         });
 
         if (totalWidth / 2 >= maxWidth) {
           if (totalHeight > totalWidth) {
-            if (totalHeight / 2 < layer.dependants.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
+            if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
           } else width = Math.ceil(totalWidth / 2);
         } else width = maxWidth;
 
@@ -1138,24 +1149,24 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         grid = new helpers.Grid(width);
 
-        dependantsShouldBeSorted = helpers.dependantsOfLayerShouldBeSorted(dependantsArray);
-        if (dependantsShouldBeSorted) {
-          dependantsOfLayer = dependantsArray.sort(function (dependantA, dependantB) {
-            if (dependantA.width === dependantB.width) {
-              return dependantA.height < dependantB.height;
-            } else return dependantA.width < dependantB.width;
+        itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
+        if (itemsShouldBeSorted) {
+          itemsOfLayer = itemsArray.sort(function (itemA, itemB) {
+            if (itemA.width === itemB.width) {
+              return itemA.height < itemB.height;
+            } else return itemA.width < itemB.width;
           });
-        } else dependantsOfLayer = dependantsArray;
-        addedDependantToGrid(0);
-        dependantsOfLayerIndex = 0;
-        while (dependantsOfLayer.length > 0 && whileCounter < 1000) {
-          if (addedDependantToGrid(dependantsOfLayerIndex)) {
-            dependantsOfLayerIndex = 0;
+        } else itemsOfLayer = itemsArray;
+        addedItemToGrid(0);
+        itemsOfLayerIndex = 0;
+        while (itemsOfLayer.length > 0 && whileCounter < 1000) {
+          if (addedItemToGrid(itemsOfLayerIndex)) {
+            itemsOfLayerIndex = 0;
           } else {
-            if (dependantsShouldBeSorted) {
-              dependantsOfLayerIndex++;
-              if (dependantsOfLayerIndex === dependantsOfLayer.length) {
-                dependantsOfLayerIndex = 0;
+            if (itemsShouldBeSorted) {
+              itemsOfLayerIndex++;
+              if (itemsOfLayerIndex === itemsOfLayer.length) {
+                itemsOfLayerIndex = 0;
                 grid.movePositionToNextRow();
               }
             } else {
@@ -1170,13 +1181,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         layer.x = 0;
         layer.y = 0;
         layer.width = gridSize.width;
-        layer.height = layer.dependants.length > 0 ? gridSize.height + 1 : gridSize.height;
+        layer.height = layer.items.length > 0 ? gridSize.height + 1 : gridSize.height;
       },
 
       generateLayersData: function generateLayersData(layers, currentDepth) {
         var config = helpers.config,
             maxDepth,
-            dependantsDepth;
+            itemsDepth;
 
         currentDepth = currentDepth || 1;
         maxDepth = currentDepth;
@@ -1184,16 +1195,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           if (layer.showNumbersAll === true) config.showNumbersAll = true;
           layer.depth = currentDepth;
           helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
-          if (layer.dependants.length > 0) {
-            dependantsDepth = helpers.generateLayersData(layer.dependants, currentDepth + 1);
-            layer.maxLayerDepthBelow = dependantsDepth - currentDepth;
+          if (layer.items.length > 0) {
+            itemsDepth = helpers.generateLayersData(layer.items, currentDepth + 1);
+            layer.maxLayerDepthBelow = itemsDepth - currentDepth;
             helpers.calculateLayerWithChildrenDimensions(layer);
-            maxDepth = maxDepth < dependantsDepth ? dependantsDepth : maxDepth;
+            maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
           } else {
             layer.maxLayerDepthBelow = 0;
             layer.width = 1;
             layer.height = 1;
-            maxDepth = maxDepth < dependantsDepth ? dependantsDepth : maxDepth;
+            maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
           }
           layer.alreadyConnections = [];
         });
@@ -1244,13 +1255,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             item.text = texts[0];
             if (texts.length > 1) item.description = texts[1];
 
-            if (item.dependants && item.dependants.length > 0) {
+            if (item.items && item.items.length > 0) {
               item.type = 'container';
-              convertDataToBox(item.dependants);
+              convertDataToBox(item.items);
             } else {
               if (_.isString(item.description) === false) items[index] = item.text;else {
                 item.type = 'definition';
-                item.dependants = null;
+                item.items = [];
               }
             }
           });
@@ -1268,7 +1279,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         if (_.isArray(origConf)) origConf = origConf[0];
         boxData = {
           name: origConf.text,
-          body: origConf.dependants
+          body: origConf.items
         };
 
         convertDataToBox(boxData.body);
@@ -1285,7 +1296,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           if (_.isObject(opts)) layer = _.extend(layer, opts);
         }
 
-        if (items) layer.dependants = items;
+        if (items) layer.items = items;
         if (_.isUndefined(layer.id)) layer.id = 'layer-' + ++helpers.ids + '-auto'; // Have to limit the id by the two sides to enable .indexOf to work
 
         return layer;
@@ -1409,11 +1420,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               origConf = _.cloneDeep(conf),
               config = helpers.config,
               colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
-              addDependantsPropToBottomDependants = function addDependantsPropToBottomDependants(layers) {
+              addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
             _.each(layers, function (layer) {
-              if (layer.hasOwnProperty('dependants') === false) {
-                layer.dependants = [];
-              } else addDependantsPropToBottomDependants(layer.dependants);
+              if (layer.hasOwnProperty('items') === false) {
+                layer.items = [];
+              } else addItemsPropToBottomItems(layer.items);
             });
           },
               calculateTheMostOptimalConnection = function calculateTheMostOptimalConnection(layerA, layerBObj) {
@@ -1591,9 +1602,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }).value();
 
             _.chain(layers).filter(function (layer) {
-              return layer.dependants.length > 0;
+              return layer.items.length > 0;
             }).each(function (layer) {
-              drawConnectionsIfAny(layer.dependants);
+              drawConnectionsIfAny(layer.items);
             }).value();
           },
               updateSvgHeight = function updateSvgHeight() {
@@ -1645,23 +1656,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 layerG,
                 layerNode,
                 layerDims,
-                layerText,
-                setLayerMouseListeners;
+                layerText;
 
             layers = layers || conf;
             container = container || svg;
 
             _.each(layers, function (layer, layerIndex) {
-              setLayerMouseListeners = function (el) {
-                el.on('mouseenter', function () {
-                  d.tooltip.onMouseEnterListenerFn(currentLayerId, layer.text);
-                  hideAllLayerContainerConnectionsExceptOfLayer(layer);
-                });
-                el.on('mouseleave', function () {
-                  d.tooltip.onMouseLeaveListenerFn();
-                  showAllLayerContainerConnections(layer);
-                });
-              };
 
               var currentLayerId = 'diagrams-layer-g-' + layerGId++,
                   numberG;
@@ -1708,14 +1708,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 return formatLayerTextIfNecessary(layer.text);
               });
 
-              setLayerMouseListeners(layerText);
-              setLayerMouseListeners(layerNode);
+              layer.fullText = layer.text;
+              // Missing to add show all layers connections and hide
+              diagram.addMouseListenersToEl(layerNode, layer);
 
               layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
-
-              diagram.handleItemClick(layerG, {
-                text: layer.text
-              });
 
               if (layerDims.numberTransform) {
                 numberG = layerNode.append('g').attr({
@@ -1734,8 +1731,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 numberG.append('text').text(layerIndex + 1).attr('fill', '#000');
               }
 
-              if (layer.dependants.length > 0) {
-                drawLayersInContainer(layer.dependants, layerG, layer);
+              if (layer.items.length > 0) {
+                drawLayersInContainer(layer.items, layerG, layer);
               }
             });
           },
@@ -1743,20 +1740,58 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             margin: '20px 0 0 20px'
           });
 
+          diagram.markRelatedFn = function (item) {
+            item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
+            item.el.select('rect').style({
+              'fill': '#FFF'
+            });
+          };
+          diagram.unmarkAllItems = function () {
+            var recursiveFn = function recursiveFn(items) {
+              _.each(items, function (item) {
+                item.layerG.style({
+                  'stroke-width': '1px'
+                });
+                if (item.origFill) {
+                  item.layerG.select('rect').style('fill', item.origFill);
+                }
+                if (item.items) recursiveFn(item.items);
+              });
+            };
+            recursiveFn(conf);
+          };
+
           _.each(colors, function (color, index) {
             d.svg.addVerticalGradientFilter(svg, 'color-' + index, ['#fff', color]);
           });
+
           svg.attr('class', 'layers-diagram');
 
           if (_.isArray(conf) === false) conf = [conf];
           d.svg.addFilterColor('layer', svg, 3, 2);
-          addDependantsPropToBottomDependants(conf);
+
+          addItemsPropToBottomItems(conf);
           calcMaxUnityWidth();
           helpers.generateLayersData(conf);
           drawLayersInContainer();
           drawConnectionsIfAny();
           updateSvgHeight();
           helpers.addConvertToBoxButton(origConf);
+          diagram.generateRelationships(conf);
+        }
+      }, {
+        key: 'generateRelationships',
+        value: function generateRelationships(layers, containerLayer) {
+          var diagram = this;
+          _.each(layers, function (layer) {
+            diagram.generateEmptyRelationships(layer);
+            diagram.addSelfRelationship(layer, layer.layerG, layer);
+            if (containerLayer) {
+              diagram.addDependantRelationship(containerLayer, layer.layerG, layer);
+              diagram.addDependencyRelationship(layer, containerLayer.layerG, containerLayer);
+            }
+            if (layer.items && layer.items.length > 0) diagram.generateRelationships(layer.items, layer);
+          });
         }
       }]);
 

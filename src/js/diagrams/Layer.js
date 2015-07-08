@@ -11,30 +11,30 @@ var layerGId = 0,
         this.width = fixedWidth;
         this.cells = [];
       }
-      addDependantAtNewRow(dependant) {
+      addItemAtNewRow(item) {
         var counter = 0;
 
         this.position.x = 0;
         while (counter < 1000) {
           this.position.y += 1;
-          if (this.dependantFitsAtCurrentPos(dependant)) break;
+          if (this.itemFitsAtCurrentPos(item)) break;
         }
-        this.addDependantAtCurrentPos(dependant);
+        this.addItemAtCurrentPos(item);
       }
-      addDependantAtCurrentPos(dependant) {
-        this.addDependantAtPos(dependant, this.position);
+      addItemAtCurrentPos(item) {
+        this.addItemAtPos(item, this.position);
       }
       createRowIfNecessary(posY) {
         if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
       }
-      addDependantAtPos(dependant, pos) {
+      addItemAtPos(item, pos) {
         var row;
-        dependant.x = pos.x;
-        dependant.y = pos.y;
-        for (var i = 0; i < dependant.height; i++) {
+        item.x = pos.x;
+        item.y = pos.y;
+        for (var i = 0; i < item.height; i++) {
           this.createRowIfNecessary(i + pos.y);
           row = this.cells[i + pos.y];
-          for (var j = 0; j < dependant.width; j++) {
+          for (var j = 0; j < item.width; j++) {
             row[j + pos.x] = true;
           }
         }
@@ -54,20 +54,20 @@ var layerGId = 0,
           counter++;
         }
       }
-      dependantFitsAtPos(dependant, pos) {
+      itemFitsAtPos(item, pos) {
         var row;
-        for (var i = 0; i < dependant.height; i++) {
+        for (var i = 0; i < item.height; i++) {
           row = this.cells[i + pos.y];
           if (_.isUndefined(row)) return true;
-          for (var j = 0; j < dependant.width; j++) {
+          for (var j = 0; j < item.width; j++) {
             if (row[j + pos.x] === true) return false;
             if ((j + pos.x + 1) > this.width) return false;
           }
         }
         return true;
       }
-      dependantFitsAtCurrentPos(dependant) {
-        return this.dependantFitsAtPos(dependant, this.position);
+      itemFitsAtCurrentPos(item) {
+        return this.itemFitsAtPos(item, this.position);
       }
       movePositionToNextRow() {
         this.position.y++;
@@ -122,11 +122,11 @@ var layerGId = 0,
       }
     },
 
-    dependantsOfLayerShouldBeSorted: function(dependantsArray) {
+    itemsOfLayerShouldBeSorted: function(itemsArray) {
       var ret = true;
-      _.each(dependantsArray, function(dependant) {
-        if (dependant.hasOwnProperty('connectedTo')) ret = false;
-        if (dependant.hasOwnProperty('connectToNext')) ret = false;
+      _.each(itemsArray, function(item) {
+        if (item.hasOwnProperty('connectedTo')) ret = false;
+        if (item.hasOwnProperty('connectToNext')) ret = false;
       });
       return ret;
     },
@@ -136,32 +136,32 @@ var layerGId = 0,
         totalHeight = 0,
         maxWidth = 0,
         maxHeight = 0,
-        dependantsArray = [],
+        itemsArray = [],
         whileCounter = 0,
-        dependantsOfLayer, grid, dependantsOfLayerIndex, width, gridSize, dependantsShouldBeSorted,
-        addedDependantToGrid = function(index) {
-          if (dependantsOfLayer[index].inNewRow === true) {
-            grid.addDependantAtNewRow(dependantsOfLayer[index]);
-            dependantsOfLayer.splice(index, 1);
+        itemsOfLayer, grid, itemsOfLayerIndex, width, gridSize, itemsShouldBeSorted,
+        addedItemToGrid = function(index) {
+          if (itemsOfLayer[index].inNewRow === true) {
+            grid.addItemAtNewRow(itemsOfLayer[index]);
+            itemsOfLayer.splice(index, 1);
             return true;
-          } else if (grid.dependantFitsAtCurrentPos(dependantsOfLayer[index])) {
-            grid.addDependantAtCurrentPos(dependantsOfLayer[index]);
-            dependantsOfLayer.splice(index, 1);
+          } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
+            grid.addItemAtCurrentPos(itemsOfLayer[index]);
+            itemsOfLayer.splice(index, 1);
             return true;
           } else return false;
         };
 
-      _.each(layer.dependants, function(dependant) {
-        totalWidth += dependant.width;
-        totalHeight += dependant.height;
-        maxHeight = (dependant.height > maxHeight) ? dependant.height : maxHeight;
-        maxWidth = (dependant.width > maxWidth) ? dependant.width : maxWidth;
-        dependantsArray.push(dependant);
+      _.each(layer.items, function(item) {
+        totalWidth += item.width;
+        totalHeight += item.height;
+        maxHeight = (item.height > maxHeight) ? item.height : maxHeight;
+        maxWidth = (item.width > maxWidth) ? item.width : maxWidth;
+        itemsArray.push(item);
       });
 
       if ((totalWidth / 2) >= maxWidth) {
         if (totalHeight > totalWidth) {
-          if (totalHeight / 2 < layer.dependants.length) width = Math.ceil(totalWidth / 2);
+          if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);
           else width = totalWidth;
         } else width = Math.ceil(totalWidth / 2);
       } else width = maxWidth;
@@ -170,24 +170,24 @@ var layerGId = 0,
 
       grid = new helpers.Grid(width);
 
-      dependantsShouldBeSorted = helpers.dependantsOfLayerShouldBeSorted(dependantsArray);
-      if (dependantsShouldBeSorted) {
-        dependantsOfLayer = dependantsArray.sort(function(dependantA, dependantB) {
-          if (dependantA.width === dependantB.width) {
-            return dependantA.height < dependantB.height;
-          } else return dependantA.width < dependantB.width;
+      itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
+      if (itemsShouldBeSorted) {
+        itemsOfLayer = itemsArray.sort(function(itemA, itemB) {
+          if (itemA.width === itemB.width) {
+            return itemA.height < itemB.height;
+          } else return itemA.width < itemB.width;
         });
-      } else dependantsOfLayer = dependantsArray;
-      addedDependantToGrid(0);
-      dependantsOfLayerIndex = 0;
-      while (dependantsOfLayer.length > 0 && whileCounter < 1000) {
-        if (addedDependantToGrid(dependantsOfLayerIndex)) {
-          dependantsOfLayerIndex = 0;
+      } else itemsOfLayer = itemsArray;
+      addedItemToGrid(0);
+      itemsOfLayerIndex = 0;
+      while (itemsOfLayer.length > 0 && whileCounter < 1000) {
+        if (addedItemToGrid(itemsOfLayerIndex)) {
+          itemsOfLayerIndex = 0;
         } else {
-          if (dependantsShouldBeSorted) {
-            dependantsOfLayerIndex++;
-            if (dependantsOfLayerIndex === dependantsOfLayer.length) {
-              dependantsOfLayerIndex = 0;
+          if (itemsShouldBeSorted) {
+            itemsOfLayerIndex++;
+            if (itemsOfLayerIndex === itemsOfLayer.length) {
+              itemsOfLayerIndex = 0;
               grid.movePositionToNextRow();
             }
           } else {
@@ -202,12 +202,12 @@ var layerGId = 0,
       layer.x = 0;
       layer.y = 0;
       layer.width = gridSize.width;
-      layer.height = (layer.dependants.length > 0) ? gridSize.height + 1 : gridSize.height;
+      layer.height = (layer.items.length > 0) ? gridSize.height + 1 : gridSize.height;
     },
 
     generateLayersData: function(layers, currentDepth) {
       var config = helpers.config,
-        maxDepth, dependantsDepth;
+        maxDepth, itemsDepth;
 
       currentDepth = currentDepth || 1;
       maxDepth = currentDepth;
@@ -215,16 +215,16 @@ var layerGId = 0,
         if (layer.showNumbersAll === true) config.showNumbersAll = true;
         layer.depth = currentDepth;
         helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
-        if (layer.dependants.length > 0) {
-          dependantsDepth = helpers.generateLayersData(layer.dependants, (currentDepth + 1));
-          layer.maxLayerDepthBelow = dependantsDepth - currentDepth;
+        if (layer.items.length > 0) {
+          itemsDepth = helpers.generateLayersData(layer.items, (currentDepth + 1));
+          layer.maxLayerDepthBelow = itemsDepth - currentDepth;
           helpers.calculateLayerWithChildrenDimensions(layer);
-          maxDepth = (maxDepth < dependantsDepth) ? dependantsDepth : maxDepth;
+          maxDepth = (maxDepth < itemsDepth) ? itemsDepth : maxDepth;
         } else {
           layer.maxLayerDepthBelow = 0;
           layer.width = 1;
           layer.height = 1;
-          maxDepth = (maxDepth < dependantsDepth) ? dependantsDepth : maxDepth;
+          maxDepth = (maxDepth < itemsDepth) ? itemsDepth : maxDepth;
         }
         layer.alreadyConnections = [];
       });
@@ -275,14 +275,14 @@ var layerGId = 0,
             item.text = texts[0];
             if (texts.length > 1) item.description = texts[1];
 
-            if (item.dependants && item.dependants.length > 0) {
+            if (item.items && item.items.length > 0) {
               item.type = 'container';
-              convertDataToBox(item.dependants);
+              convertDataToBox(item.items);
             } else {
               if (_.isString(item.description) === false) items[index] = item.text;
               else {
                 item.type = 'definition';
-                item.dependants = null;
+                item.items = [];
               }
             }
           });
@@ -300,7 +300,7 @@ var layerGId = 0,
       if (_.isArray(origConf)) origConf = origConf[0];
       boxData = {
         name: origConf.text,
-        body: origConf.dependants
+        body: origConf.items
       };
 
       convertDataToBox(boxData.body);
@@ -318,7 +318,7 @@ var layerGId = 0,
         if (_.isObject(opts)) layer = _.extend(layer, opts);
       }
 
-      if (items) layer.dependants = items;
+      if (items) layer.items = items;
       if (_.isUndefined(layer.id)) layer.id = 'layer-' + (++helpers.ids) + '-auto'; // Have to limit the id by the two sides to enable .indexOf to work
 
       return layer;
@@ -441,11 +441,11 @@ Layer = class Layer extends d.Diagram {
       origConf = _.cloneDeep(conf),
       config = helpers.config,
       colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
-      addDependantsPropToBottomDependants = function(layers) {
+      addItemsPropToBottomItems = function(layers) {
         _.each(layers, function(layer) {
-          if (layer.hasOwnProperty('dependants') === false) {
-            layer.dependants = [];
-          } else addDependantsPropToBottomDependants(layer.dependants);
+          if (layer.hasOwnProperty('items') === false) {
+            layer.items = [];
+          } else addItemsPropToBottomItems(layer.items);
         });
       },
       calculateTheMostOptimalConnection = function(layerA, layerBObj) {
@@ -624,9 +624,9 @@ Layer = class Layer extends d.Diagram {
         }).value();
 
         _.chain(layers).filter(function(layer) {
-          return layer.dependants.length > 0;
+          return layer.items.length > 0;
         }).each(function(layer) {
-          drawConnectionsIfAny(layer.dependants);
+          drawConnectionsIfAny(layer.items);
         }).value();
       },
       updateSvgHeight = function() {
@@ -676,23 +676,13 @@ Layer = class Layer extends d.Diagram {
       drawLayersInContainer = function(layers, container, containerData) {
         var widthSize = config.widthSize,
           heightSize = config.heightSize,
-          layerG, layerNode, layerDims, layerText,
-          setLayerMouseListeners;
+          layerG, layerNode, layerDims, layerText;
 
         layers = layers || conf;
         container = container || svg;
 
         _.each(layers, function(layer, layerIndex) {
-          setLayerMouseListeners = function(el) {
-            el.on('mouseenter', function() {
-              d.tooltip.onMouseEnterListenerFn(currentLayerId, layer.text);
-              hideAllLayerContainerConnectionsExceptOfLayer(layer);
-            });
-            el.on('mouseleave', function() {
-              d.tooltip.onMouseLeaveListenerFn();
-              showAllLayerContainerConnections(layer);
-            });
-          };
+
 
           var currentLayerId = 'diagrams-layer-g-' + layerGId++,
             numberG;
@@ -740,14 +730,12 @@ Layer = class Layer extends d.Diagram {
             return formatLayerTextIfNecessary(layer.text);
           });
 
-          setLayerMouseListeners(layerText);
-          setLayerMouseListeners(layerNode);
+
+          layer.fullText = layer.text;
+          // Missing to add show all layers connections and hide
+          diagram.addMouseListenersToEl(layerNode, layer);
 
           layerText.each(d.svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
-
-          diagram.handleItemClick(layerG, {
-            text: layer.text
-          });
 
           if (layerDims.numberTransform) {
             numberG = layerNode.append('g').attr({
@@ -767,8 +755,8 @@ Layer = class Layer extends d.Diagram {
               .attr('fill', '#000');
           }
 
-          if (layer.dependants.length > 0) {
-            drawLayersInContainer(layer.dependants, layerG, layer);
+          if (layer.items.length > 0) {
+            drawLayersInContainer(layer.items, layerG, layer);
           }
         });
       },
@@ -776,20 +764,57 @@ Layer = class Layer extends d.Diagram {
         margin: '20px 0 0 20px'
       });
 
+    diagram.markRelatedFn = function(item) {
+      item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
+      item.el.select('rect').style({
+        'fill': '#FFF'
+      });
+    };
+    diagram.unmarkAllItems = function() {
+      var recursiveFn = function(items) {
+        _.each(items, function(item) {
+          item.layerG.style({
+            'stroke-width': '1px'
+          });
+          if (item.origFill) {
+            item.layerG.select('rect').style('fill', item.origFill);
+          }
+          if (item.items) recursiveFn(item.items);
+        });
+      };
+      recursiveFn(conf);
+    };
+
     _.each(colors, function(color, index) {
       d.svg.addVerticalGradientFilter(svg, 'color-' + index, ['#fff', color]);
     });
+
     svg.attr('class', 'layers-diagram');
 
     if (_.isArray(conf) === false) conf = [conf];
     d.svg.addFilterColor('layer', svg, 3, 2);
-    addDependantsPropToBottomDependants(conf);
+
+    addItemsPropToBottomItems(conf);
     calcMaxUnityWidth();
     helpers.generateLayersData(conf);
     drawLayersInContainer();
     drawConnectionsIfAny();
     updateSvgHeight();
     helpers.addConvertToBoxButton(origConf);
+    diagram.generateRelationships(conf);
+  }
+
+  generateRelationships(layers, containerLayer) {
+    var diagram = this;
+    _.each(layers, function(layer) {
+      diagram.generateEmptyRelationships(layer);
+      diagram.addSelfRelationship(layer, layer.layerG, layer);
+      if (containerLayer) {
+        diagram.addDependantRelationship(containerLayer, layer.layerG, layer);
+        diagram.addDependencyRelationship(layer, containerLayer.layerG, containerLayer);
+      }
+      if (layer.items && layer.items.length > 0) diagram.generateRelationships(layer.items, layer);
+    });
   }
 };
 

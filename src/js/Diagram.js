@@ -1,39 +1,11 @@
-var defaultDiagramConfiguration = {},
-  createName = function(name) {
-    return '$' + name;
-  };
+var defaultDiagramConfiguration = {};
 
-class EventEmitter {
-  emit(name, data) {
-    var fnName = createName(name);
-    this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
-    this._subjects[fnName].onNext(data);
-  }
+d.diagramsRegistry = [];
 
-  listen(name, handler) {
-    var fnName = createName(name);
-    this._subjects[fnName] || (this._subjects[fnName] = new Rx.Subject());
-    return this._subjects[fnName].subscribe(handler);
-  }
-
-  dispose() {
-    var subjects = this._subjects;
-    for (var prop in subjects) {
-      if ({}.hasOwnProperty.call(subjects, prop)) {
-        subjects[prop].dispose();
-      }
-    }
-
-    this._subjects = {};
-  }
-}
-
-d.Diagram = class Diagram extends EventEmitter {
+d.Diagram = class Diagram {
   constructor(opts) {
-    super();
     var prototype = Object.getPrototypeOf(this);
 
-    this._subjects = {};
     this.name = opts.name;
     this._configuration = this.configuration || {};
 
@@ -41,7 +13,6 @@ d.Diagram = class Diagram extends EventEmitter {
     _.defaults(prototype, opts.helpers);
 
     this.register();
-    this.setDiagramListeners();
   }
 
   handleItemClick(el, data) {
@@ -52,13 +23,22 @@ d.Diagram = class Diagram extends EventEmitter {
     });
   }
 
-  setDiagramListeners() {
-    this.listen('itemclick', function(itemData) {
-      if (itemData && itemData.text) {
-        d.tooltip('hide');
-        d.utils.fillBannerWithText(itemData.text);
-      }
-    });
+  addMouseListenersToEl(el, data) {
+    var diagram = this,
+      emitFn = function(d3Event, emitedEvent) {
+        emitedEvent = emitedEvent || d3Event;
+        el.on(d3Event, function() {
+          diagram.emit(emitedEvent, emitContent);
+        });
+      },
+      emitContent = {
+        el: el,
+        data: data
+      };
+
+    emitFn('mouseleave');
+    emitFn('mouseenter');
+    emitFn('click', 'itemclick');
   }
 
   config(opts, optValue) {
@@ -82,15 +62,78 @@ d.Diagram = class Diagram extends EventEmitter {
     }
   }
 
+  generateEmptyRelationships(item) {
+    item.relationships = {};
+    item.relationships.dependants = [];
+    item.relationships.dependencies = [];
+  }
+
+  addDependantRelationship(item, el, data) {
+    item.relationships.dependants.push(this.generateRelationship(el, data));
+  }
+
+  addSelfRelationship(item, el, data) {
+    item.relationships.self = this.generateRelationship(el, data);
+  }
+
+  addDependencyRelationship(item, el, data) {
+    item.relationships.dependencies.push(this.generateRelationship(el, data));
+  }
+
+  generateRelationship(el, data) {
+    return {
+      el: el,
+      data: data
+    };
+  }
+
+  getAllRelatedItemsOfItem(item, relationshipType) {
+    var relatedItems = [],
+      recursiveFn = function(relatedItemData, depth) {
+        _.each(relatedItemData.relationships[relationshipType], function(relatedItemChild) {
+          if (depth < 100) {
+            if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) { // Handle circular loops
+              relatedItems.push(relatedItemChild);
+              recursiveFn(relatedItemChild.data, depth + 1);
+            }
+          }
+        });
+      };
+
+    recursiveFn(item, 0);
+    return relatedItems;
+  }
+
+  markRelatedItems(item) {
+    var diagram = this,
+      dependantItems,
+      dependencyItems;
+    
+    if (diagram.markRelatedFn) {
+      dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
+      dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');
+
+      _.each([dependantItems, dependencyItems], function(relatedItems) {
+        _.each(relatedItems, diagram.markRelatedFn);
+      });
+
+      diagram.markRelatedFn(item.relationships.self);
+    }
+  }
+
   register() {
     var diagram = this;
     d[diagram.name] = function() {
       var args = arguments;
       d.utils.runIfReady(function() {
         diagram.create.apply(diagram, args);
+        d.diagramsRegistry.push(diagram);
+        d.events.emit('diagram-created', diagram);
       });
     };
 
     _.defaults(d[diagram.name], Object.getPrototypeOf(diagram));
   }
 };
+
+d.utils.composeWithEventEmitter(d.Diagram);
