@@ -46,7 +46,8 @@ d.Diagram = class Diagram {
       optsType = typeof(opts),
       optsKey;
 
-    if (argsLength === 1) {
+    if (argsLength === 0) return this._configuration;
+    else if (argsLength === 1) {
       if (_.isFunction(optsType)) optsKey = opts();
       else if (_.isString(opts)) optsKey = opts;
       else if (_.isObject(opts)) {
@@ -58,7 +59,38 @@ d.Diagram = class Diagram {
       return this._configuration[optsKey];
     } else if (argsLength === 2) {
       this._configuration[opts] = optValue;
+      this.setToLocalStorage(opts, optValue);
       return optValue;
+    }
+  }
+
+  configCheckingLocalStorage(key, defaultValue) {
+    var diagram = this,
+      finalValue = diagram.getFromLocalStorage(key, defaultValue);
+
+    diagram.config(key, finalValue);
+  }
+
+  generateLocalStorageKeyPreffix(originalKey) {
+    return 'diagramsjs-' + originalKey;
+  }
+
+  getFromLocalStorage(originalKey, defaultValue) {
+    var diagram = this,
+      finalValue = defaultValue;
+
+    if (localStorage && localStorage.getItem) {
+      finalValue = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
+      if (finalValue === 'false') finalValue = false;
+      else if (finalValue === 'true') finalValue = true;
+    }
+    return finalValue;
+  }
+
+  setToLocalStorage(originalKey, value) {
+    var diagram = this;
+    if (localStorage && localStorage.setItem) {
+      return localStorage.setItem(diagram.generateLocalStorageKeyPreffix(originalKey), value);
     }
   }
 
@@ -108,7 +140,7 @@ d.Diagram = class Diagram {
     var diagram = this,
       dependantItems,
       dependencyItems;
-    
+
     if (diagram.markRelatedFn) {
       dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
       dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');

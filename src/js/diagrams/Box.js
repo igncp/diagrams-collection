@@ -143,7 +143,7 @@ Box = class Box extends d.Diagram {
           } else {
             if (item.options.isLink === true) {
               textG = container.append('svg:a').attr("xlink:href", item.description)
-                .append('text').text(item.text).attr({
+                .append('text').text(d.utils.formatShortDescription(item.text)).attr({
                   id: currentTextGId,
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
@@ -155,7 +155,7 @@ Box = class Box extends d.Diagram {
               textG = container.append('g').attr({
                 id: currentTextGId
               });
-              text = textG.append('text').text(item.text).attr({
+              text = textG.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                 x: depthWidth * depth,
                 y: rowHeight * ++bodyPosition
               }).style({
@@ -165,7 +165,7 @@ Box = class Box extends d.Diagram {
                 textWidth = text[0][0].getBoundingClientRect().width;
                 descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-                textG.append('text').text('- ' + item.description).attr({
+                textG.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
                   x: depthWidth * depth + textWidth + 5,
                   y: rowHeight * bodyPosition - 1
                 }).each(d.svg.textEllipsis(descriptionWidth));

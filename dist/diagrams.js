@@ -112,6 +112,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.generateATextDescriptionStr = function (text, description) {
       return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
     };
+
+    d.utils.formatShortDescription = function (text) {
+      text = text.replace(/<p>/g, '');
+      text = text.replace(/<\/p>/g, '. ');
+      text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, codeBlock) {
+        if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else return ' <CODE...>';
+      });
+      return text;
+    };
   })();(function () {
     var defaultDiagramConfiguration = {};
 
@@ -167,7 +176,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               optsType = typeof opts,
               optsKey;
 
-          if (argsLength === 1) {
+          if (argsLength === 0) return this._configuration;else if (argsLength === 1) {
             if (_.isFunction(optsType)) optsKey = opts();else if (_.isString(opts)) optsKey = opts;else if (_.isObject(opts)) {
               for (var key in opts) {
                 this.config(key, opts[key]);
@@ -177,7 +186,41 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             return this._configuration[optsKey];
           } else if (argsLength === 2) {
             this._configuration[opts] = optValue;
+            this.setToLocalStorage(opts, optValue);
             return optValue;
+          }
+        }
+      }, {
+        key: 'configCheckingLocalStorage',
+        value: function configCheckingLocalStorage(key, defaultValue) {
+          var diagram = this,
+              finalValue = diagram.getFromLocalStorage(key, defaultValue);
+
+          diagram.config(key, finalValue);
+        }
+      }, {
+        key: 'generateLocalStorageKeyPreffix',
+        value: function generateLocalStorageKeyPreffix(originalKey) {
+          return 'diagramsjs-' + originalKey;
+        }
+      }, {
+        key: 'getFromLocalStorage',
+        value: function getFromLocalStorage(originalKey, defaultValue) {
+          var diagram = this,
+              finalValue = defaultValue;
+
+          if (localStorage && localStorage.getItem) {
+            finalValue = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
+            if (finalValue === 'false') finalValue = false;else if (finalValue === 'true') finalValue = true;
+          }
+          return finalValue;
+        }
+      }, {
+        key: 'setToLocalStorage',
+        value: function setToLocalStorage(originalKey, value) {
+          var diagram = this;
+          if (localStorage && localStorage.setItem) {
+            return localStorage.setItem(diagram.generateLocalStorageKeyPreffix(originalKey), value);
           }
         }
       }, {
@@ -545,7 +588,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 addBodyItems(item.items, newContainer, depth + 1);
               } else {
                 if (item.options.isLink === true) {
-                  textG = container.append('svg:a').attr('xlink:href', item.description).append('text').text(item.text).attr({
+                  textG = container.append('svg:a').attr('xlink:href', item.description).append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     id: currentTextGId,
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition,
@@ -557,7 +600,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   textG = container.append('g').attr({
                     id: currentTextGId
                   });
-                  text = textG.append('text').text(item.text).attr({
+                  text = textG.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition
                   }).style({
@@ -567,7 +610,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     textWidth = text[0][0].getBoundingClientRect().width;
                     descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-                    textG.append('text').text('- ' + item.description).attr({
+                    textG.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
                       x: depthWidth * depth + textWidth + 5,
                       y: rowHeight * bodyPosition - 1
                     }).each(d.svg.textEllipsis(descriptionWidth));
@@ -1705,7 +1748,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 x: layer.depth,
                 y: layer.height * heightSize - 3 * layer.depth - 10
               }).text(function () {
-                return formatLayerTextIfNecessary(layer.text);
+                return d.utils.formatShortDescription(layer.text);
               });
 
               layer.fullText = layer.text;

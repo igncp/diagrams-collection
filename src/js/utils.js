@@ -98,3 +98,13 @@ d.utils.createAnEventEmitter = function() {
 d.utils.generateATextDescriptionStr = function(text, description) {
   return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
 };
+
+d.utils.formatShortDescription = function(text) {
+  text = text.replace(/<p>/g, '');
+  text = text.replace(/<\/p>/g, '. ');
+  text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, codeBlock) {
+    if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
+    else return ' <CODE...>';
+  });
+  return text;
+};

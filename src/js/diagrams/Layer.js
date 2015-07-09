@@ -727,7 +727,7 @@ Layer = class Layer extends d.Diagram {
             x: layer.depth,
             y: layer.height * heightSize - 3 * layer.depth - 10
           }).text(function() {
-            return formatLayerTextIfNecessary(layer.text);
+            return d.utils.formatShortDescription(layer.text);
           });
 
 
