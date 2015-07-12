@@ -256,7 +256,7 @@ var layerGId = 0,
 
       body.insert('div', 'svg').append('input').attr({
         type: 'button',
-        'class': 'conversion-button',
+        'class': 'conversion-button diagrams-diagram-button',
         value: 'Convert to box diagram',
         onclick: 'diagrams.layer.convertToBoxWrapper()'
       });
@@ -288,11 +288,10 @@ var layerGId = 0,
           });
         },
         createBox = function() {
-          var svg = d3.select('svg'),
-            input = d3.select('input');
+          var svg = d3.select('svg');
 
           svg.remove();
-          input.remove();
+          d3.selectAll('input.diagrams-diagram-button').remove();
           d.box(boxData);
         },
         boxData;

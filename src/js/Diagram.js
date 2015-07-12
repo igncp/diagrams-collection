@@ -15,14 +15,6 @@ d.Diagram = class Diagram {
     this.register();
   }
 
-  handleItemClick(el, data) {
-    var diagram = this;
-    el.on('click', function() {
-      d3.event.stopPropagation();
-      diagram.emit('itemclick', data);
-    });
-  }
-
   addMouseListenersToEl(el, data) {
     var diagram = this,
       emitFn = function(d3Event, emitedEvent) {

@@ -115,6 +115,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     d.utils.formatShortDescription = function (text) {
       text = text.replace(/<p>/g, '');
+      text = text.replace(/<br>/g, ' ');
       text = text.replace(/<\/p>/g, '. ');
       text = d.utils.replaceCodeFragmentOfText(text, function (matchStr, language, codeBlock) {
         if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else return ' <CODE...>';
@@ -142,15 +143,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }
 
       _createClass(Diagram, [{
-        key: 'handleItemClick',
-        value: function handleItemClick(el, data) {
-          var diagram = this;
-          el.on('click', function () {
-            d3.event.stopPropagation();
-            diagram.emit('itemclick', data);
-          });
-        }
-      }, {
         key: 'addMouseListenersToEl',
         value: function addMouseListenersToEl(el, data) {
           var diagram = this,
@@ -341,15 +333,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
   })();(function () {
     d.shared = {
       get: function get(key) {
-        if (key === 'set' || key === 'get') throw new Error('Reserved keyword: ' + key);
+        d.shared.throwIfSharedMethodAlreadyExists(key);
         return d.shared[key];
       },
       set: function set(data) {
-        var keys = Object.keys(data);
-        if (_.contains(keys, 'get') || _.contains(keys, 'set')) throw new Error('Reserved keyword in data: ' + data);
+        d.shared.throwIfSharedMethodAlreadyExists(data);
         d.shared = _.defaults(d.shared, data);
+      },
+      getWithStartingBreakLine: function getWithStartingBreakLine() {
+        return '<br>' + d.shared.get.apply(d.shared, arguments);
+      },
+      throwIfSharedMethodAlreadyExists: function throwIfSharedMethodAlreadyExists(data) {
+        var keys;
+        if (_.isObject(data)) {
+          keys = Object.keys(data);
+          _.each(keys, d.shared.throwIfSharedMethodAlreadyExists);
+        } else if (_.isString(data)) {
+          if (d.shared[methodsVarName].indexOf(data) > 0) throw new Error('Reserved keyword: ' + data);
+        }
       }
     };
+
+    var methodsVarName = 'builtInMethods';
+    d.shared[methodsVarName] = Object.keys(d.shared);
+    d.shared[methodsVarName].push(methodsVarName);
   })();(function () {
     d.svg = {};
     d.svg.addVerticalGradientFilter = function (container, id, colors) {
@@ -446,19 +453,52 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         return Box.generateDefinition(text, d.shared.get(sharedKey));
       },
 
-      addConvertToLayersButton: function addConvertToLayersButton(origConf) {
-        var body = d3.select('body');
+      addButtons: function addButtons(origConf, currentConf) {
+        var body = d3.select('body'),
+            addDivToBody = function addDivToBody() {
+          div = body.insert('div', 'svg');
+        },
+            appendButtonToDiv = function appendButtonToDiv(cls, value, onclickWrapperFn, argumentToWrapperFn) {
+          var wrapperFnName = onclickWrapperFn + 'Wrapper';
+          div.append('input').attr({
+            type: 'button',
+            'class': cls + ' diagrams-diagram-button',
+            value: value,
+            onclick: 'diagrams.box.' + wrapperFnName + '()' // refactor this by decoupling dependency
+          });
+          diagrams.box[wrapperFnName] = function () {
+            helpers[onclickWrapperFn](argumentToWrapperFn);
+          };
+        },
+            div;
 
-        body.insert('div', 'svg').append('input').attr({
-          type: 'button',
-          'class': 'conversion-button',
-          value: 'Convert to layers diagram',
-          onclick: 'diagrams.box.convertToLayerWrapper()' // refactor this
-        });
+        addDivToBody();
+        appendButtonToDiv('diagrams-box-conversion-button', 'Convert to layers diagram', 'convertToLayer', origConf);
 
-        diagrams.box.convertToLayerWrapper = function () {
-          helpers.convertToLayer(origConf);
+        addDivToBody();
+        appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'collapseAll', currentConf);
+        appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'expandAll', currentConf);
+      },
+
+      expandOrCollapseAll: function expandOrCollapseAll(currentConf, collapseOrExpand) {
+        var recursiveFn = function recursiveFn(items) {
+          _.each(items, function (item) {
+            if (item.hasOwnProperty('collapsed')) helpers[collapseOrExpand + 'Item'](item);
+            if (item.items) recursiveFn(item.items);
+            if (item.collapsedItems) recursiveFn(item.collapsedItems);
+          });
         };
+
+        recursiveFn(currentConf.body);
+        helpers.addBodyItemsAndUpdateHeights();
+      },
+
+      collapseAll: function collapseAll(currentConf) {
+        helpers.expandOrCollapseAll(currentConf, 'collapse');
+      },
+
+      expandAll: function expandAll(currentConf) {
+        helpers.expandOrCollapseAll(currentConf, 'expand');
       },
 
       convertToLayer: function convertToLayer(origConf) {
@@ -474,11 +514,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
         },
             createLayers = function createLayers() {
-          var svg = d3.select('svg'),
-              input = d3.select('input');
+          var svg = d3.select('svg');
+
+          d3.selectAll('input.diagrams-diagram-button').remove();
 
           svg.remove();
-          input.remove();
           d.layer(layersData);
         },
             layersData = [];
@@ -489,6 +529,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         });
         convertDataToLayers(layersData[0].items);
         createLayers();
+      },
+
+      collapseItem: function collapseItem(item) {
+        if (item.items.length > 0) {
+          item.collapsedItems = item.items;
+          item.collapsed = true;
+          item.items = [];
+        }
+      },
+
+      expandItem: function expandItem(item) {
+        if (item.collapsedItems) {
+          item.items = item.collapsedItems;
+          delete item.collapsedItems;
+          item.collapsed = false;
+        }
       },
 
       generateItem: function generateItem(text, description, options, items) {
@@ -548,18 +604,53 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'class': 'box-diagram'
           }),
               nameG = boxG.append('g'),
-              bodyG = boxG.append('g').attr({
-            transform: 'translate(0, ' + nameHeight + ')'
-          }),
-              bodyPosition = 1,
               rowHeight = 30,
               depthWidth = 35,
+              collapseIfNecessary = function collapseIfNecessary(el, item) {
+            if (item.items.length > 0 || item.collapsedItems) {
+              var textEl = el.select('text'),
+                  yDim = textEl.attr('y'),
+                  xDim = textEl.attr('x'),
+                  triggerEl = el.append('g').attr({
+                'class': 'collapsible-trigger'
+              }),
+                  collapseListener = function collapseListener() {
+                helpers.collapseItem(item);
+                helpers.addBodyItemsAndUpdateHeights();
+              },
+                  expandListener = function expandListener() {
+                helpers.expandItem(item);
+                helpers.addBodyItemsAndUpdateHeights();
+              },
+                  triggerTextEl = triggerEl.append('text').attr({
+                y: yDim,
+                x: Number(xDim) - 20
+              }),
+                  setCollapseTextAndListener = function setCollapseTextAndListener() {
+                triggerTextEl.text('-');
+                triggerEl.on('click', collapseListener);
+              },
+                  setExpandTextAndListener = function setExpandTextAndListener() {
+                triggerTextEl.text('+');
+                triggerEl.on('click', expandListener);
+              };
+
+              if (_.isUndefined(item.collapsed)) {
+                item.collapsed = false;
+                setCollapseTextAndListener();
+              } else {
+                if (item.collapsed === true) setExpandTextAndListener();else if (item.collapsed === false) setCollapseTextAndListener();
+              }
+            }
+          },
               addBodyItems = function addBodyItems(items, container, depth) {
-            var newContainer, text, textG, textWidth, descriptionWidth, containerText;
+            var newContainer, textG, textWidth, descriptionWidth, containerText;
 
             items = items || conf.body;
             container = container || bodyG;
             depth = depth || 1;
+
+            if (items === conf.body) bodyPosition = 1;
 
             _.each(items, function (item, itemIndex) {
               var currentTextGId;
@@ -587,8 +678,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 // item.items = _.sortBy(item.items, 'text');
                 addBodyItems(item.items, newContainer, depth + 1);
               } else {
-                if (item.options.isLink === true) {
-                  textG = container.append('svg:a').attr('xlink:href', item.description).append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                if (item.options && item.options.isLink === true) {
+                  newContainer = container.append('svg:a').attr('xlink:href', item.description);
+                  textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     id: currentTextGId,
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition,
@@ -597,20 +689,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                   item.fullText = item.text + ' (' + item.description + ')';
                 } else {
-                  textG = container.append('g').attr({
+                  newContainer = container.append('g').attr({
                     id: currentTextGId
                   });
-                  text = textG.append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                  textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition
                   }).style({
                     'font-weight': 'bold'
                   });
                   if (item.description) {
-                    textWidth = text[0][0].getBoundingClientRect().width;
+                    textWidth = textG[0][0].getBoundingClientRect().width;
                     descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
-                    textG.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
+                    newContainer.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
                       x: depthWidth * depth + textWidth + 5,
                       y: rowHeight * bodyPosition - 1
                     }).each(d.svg.textEllipsis(descriptionWidth));
@@ -619,16 +711,36 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
                 }
               }
-              item.textG = textG;
-
-              diagram.handleItemClick(textG, {
-                text: item.fullText
-              });
+              collapseIfNecessary(newContainer, item);
+              item.textG = newContainer;
 
               diagram.addMouseListenersToEl(textG, item);
             });
           },
+              bodyG,
+              bodyPosition,
               bodyRect;
+
+          helpers.addBodyItemsAndUpdateHeights = function () {
+            var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+            svg.attr('height', 10);
+            if (bodyG) bodyG.remove();
+            bodyG = boxG.append('g').attr({
+              transform: 'translate(0, ' + nameHeight + ')'
+            });
+            bodyRect = bodyG.append('rect').attr({
+              width: width,
+              stroke: '#000',
+              fill: '#fff'
+            }).style({
+              filter: 'url(#diagrams-drop-shadow-box)'
+            });
+            addBodyItems();
+            d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
+            d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
+
+            window.scrollTo(0, currentScroll);
+          };
 
           d.svg.addFilterColor('box', svg, 3, 4);
 
@@ -648,18 +760,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'text-anchor': 'middle'
           });
 
-          bodyRect = bodyG.append('rect').attr({
-            width: width,
-            stroke: '#000',
-            fill: '#fff'
-          }).style({
-            filter: 'url(#diagrams-drop-shadow-box)'
-          });
-          addBodyItems();
-          d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
-          d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
-
-          helpers.addConvertToLayersButton(origConf);
+          helpers.addBodyItemsAndUpdateHeights();
+          helpers.addButtons(origConf, conf);
           diagram.setRelationships(conf.body);
         }
       }, {
@@ -1279,7 +1381,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         body.insert('div', 'svg').append('input').attr({
           type: 'button',
-          'class': 'conversion-button',
+          'class': 'conversion-button diagrams-diagram-button',
           value: 'Convert to box diagram',
           onclick: 'diagrams.layer.convertToBoxWrapper()'
         });
@@ -1310,11 +1412,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
         },
             createBox = function createBox() {
-          var svg = d3.select('svg'),
-              input = d3.select('input');
+          var svg = d3.select('svg');
 
           svg.remove();
-          input.remove();
+          d3.selectAll('input.diagrams-diagram-button').remove();
           d.box(boxData);
         },
             boxData;
