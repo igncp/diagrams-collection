@@ -170,15 +170,18 @@ Box = class Box extends d.Diagram {
               helpers.addBodyItemsAndUpdateHeights();
             },
             triggerTextEl = triggerEl.append('text').attr({
-              y: yDim,
+              y: Number(yDim) + 5,
               x: Number(xDim) - 20
             }),
             setCollapseTextAndListener = function() {
-              triggerTextEl.text('-');
+              triggerTextEl.text('-').attr('class', 'minus');
               triggerEl.on('click', collapseListener);
             },
             setExpandTextAndListener = function() {
-              triggerTextEl.text('+');
+              triggerTextEl.text('+').attr({
+                'class': 'plus',
+                y: yDim
+              });
               triggerEl.on('click', expandListener);
             };
 
@@ -210,7 +213,7 @@ Box = class Box extends d.Diagram {
           }
           if (item.items.length > 0) {
             newContainer = container.append('g');
-            containerText = '· ' + item.text;
+            containerText = item.text;
             if (item.items && item.items.length > 0) containerText += ':';
             if (item.description) {
               item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);

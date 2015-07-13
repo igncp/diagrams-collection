@@ -623,15 +623,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 helpers.addBodyItemsAndUpdateHeights();
               },
                   triggerTextEl = triggerEl.append('text').attr({
-                y: yDim,
+                y: Number(yDim) + 5,
                 x: Number(xDim) - 20
               }),
                   setCollapseTextAndListener = function setCollapseTextAndListener() {
-                triggerTextEl.text('-');
+                triggerTextEl.text('-').attr('class', 'minus');
                 triggerEl.on('click', collapseListener);
               },
                   setExpandTextAndListener = function setExpandTextAndListener() {
-                triggerTextEl.text('+');
+                triggerTextEl.text('+').attr({
+                  'class': 'plus',
+                  y: yDim
+                });
                 triggerEl.on('click', expandListener);
               };
 
@@ -662,7 +665,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               }
               if (item.items.length > 0) {
                 newContainer = container.append('g');
-                containerText = '· ' + item.text;
+                containerText = item.text;
                 if (item.items && item.items.length > 0) containerText += ':';
                 if (item.description) {
                   item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
