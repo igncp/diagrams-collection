@@ -593,7 +593,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
       _createClass(Box, [{
         key: 'create',
-        value: function create(conf) {
+        value: function create(conf, opts) {
           var diagram = this,
               origConf = _.cloneDeep(conf),
               svg = d.svg.generateSvg(),
@@ -724,6 +724,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               bodyPosition,
               bodyRect;
 
+          opts = opts || {};
+
           helpers.addBodyItemsAndUpdateHeights = function () {
             var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
             svg.attr('height', 10);
@@ -763,9 +765,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'text-anchor': 'middle'
           });
 
+          d3.select(document.body).style('opacity', 0);
           helpers.addBodyItemsAndUpdateHeights();
           helpers.addButtons(origConf, conf);
           diagram.setRelationships(conf.body);
+          if (opts.allCollapsed === true) helpers.collapseAll(conf);
+          d3.select(document.body).style('opacity', 1);
         }
       }, {
         key: 'setRelationships',
