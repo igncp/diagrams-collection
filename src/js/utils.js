@@ -38,10 +38,34 @@ d.utils.replaceCodeFragmentOfText = function(text, predicate) {
   });
 };
 d.utils.formatTextFragment = function(text) {
+  var tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'],
+    encodeOrDecodeTags = function(action, tag) {
+      var encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action),
+        beginningTagArr = ['<' + tag + '(.*?)>', '<' + tag + '$1>', tag + 'DIAGSA(.*?)DIAGSB' + tag + 'DIAGSC', tag + 'DIAGSA$1DIAGSB' + tag + 'DIAGSC'],
+        endingTagReal = '</' + tag + '>',
+        endingTagFake = tag + 'ENDREPLACEDDIAGRAMS',
+        endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake],
+        replaceText = function(from, to) {
+          text = text.replace(new RegExp(from, 'g'), to);
+        };
+
+      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction);
+      else {
+        _.each([beginningTagArr, endingTagArr], function(arr) {
+          if (action === 'encode') replaceText(arr[0], arr[3]);
+          else if (action === 'decode') replaceText(arr[2], arr[1]);
+        });
+      }
+    };
   text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, code, allMatches) {
     var lastMatch = (matchStr === _.last(allMatches));
     return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
   });
+
+  encodeOrDecodeTags('encode', tagsToEncode);
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  encodeOrDecodeTags('decode', tagsToEncode);
+
   return text;
 };
 d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
