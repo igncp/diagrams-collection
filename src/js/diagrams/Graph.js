@@ -56,12 +56,57 @@ var dPositionFn = d.utils.positionFn,
         if (arguments.length > 3) opts = arguments[3] + ' ' + opts;
         return helpers.generateNodeWithSharedGet(arguments[0], arguments[1], preffix, opts);
       };
+    },
+    dataFromGeneralToSpecific: function(generalData) {
+      var finalItems = [],
+        idToIndexMap = {},
+        targetItem;
+
+      _.each(generalData.items, function(item, index) {
+        finalItems.push({
+          name: item.name,
+          id: item.id,
+          description: item.description
+        });
+        idToIndexMap[item.id] = index;
+      });
+
+      _.each(generalData.connections, function(connection) {
+        targetItem = finalItems[idToIndexMap[connection.to]];
+        targetItem.calledBy = targetItem.calledBy || [];
+        targetItem.calledBy.push(connection.from);
+      });
+
+      return finalItems;
+    },
+    dataFromSpecificToGeneral: function(data) {
+      var finalItems = [],
+        connections = [];
+
+      _.each(data, function(node) {
+        finalItems.push({
+          id: node.id,
+          name: node.name,
+          description: node.description
+        });
+        _.each(node.calledBy, function(calledByNode) {
+          connections.push({
+            from: node.id,
+            to: calledByNode
+          });
+        });
+      });
+
+      return {
+        items: finalItems,
+        connections: connections
+      };
     }
   },
   Graph, helpers;
 
 Graph = class Graph extends d.Diagram {
-  create(data, conf) {
+  create(creationId, data, conf) {
     var diagram = this,
       bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
       svg = d.svg.generateSvg(),
@@ -102,7 +147,6 @@ Graph = class Graph extends d.Diagram {
           nodesWithLinkMap = {},
           colors = d3.scale.category10(),
           nodeId, color, options, sourceNode;
-
         parsedData = {
           links: [],
           nodes: []

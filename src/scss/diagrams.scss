@@ -7,18 +7,7 @@ rect {
   stroke: #000000;
 }
 .diagrams-diagram-button {
-  background: none;
-  border: 0;
-  box-shadow: none;
-  color: #337AB7; // bootstrap's blue link color
-  font-size: 30px;
-  font-weight: bold;
-  margin: 20px 0 0 20px;
-  outline: 0;
-  &:hover, &:focus {
-    border: 0;
-    color: #215480; // Similar but not the same as bootstrap
-  }
+  margin: 10px 15px 20px;
 }
 .layer-node path {
   cursor: pointer;
@@ -68,6 +57,7 @@ pre {
   }
 }
 .collapsible-trigger {
+  fill: rgb(49, 179, 35);
   text.plus {
     font-size: 30px;
   }

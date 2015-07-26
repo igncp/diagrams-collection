@@ -4,7 +4,7 @@ var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_ag
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
@@ -28,7 +28,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     };
     d.utils.applySimpleTransform = function (el) {
       el.attr('transform', function (d) {
-        return 'translate(' + d.x + ',' + d.y + ')';
+        return "translate(" + d.x + "," + d.y + ")";
       });
     };
     d.utils.positionFn = function (props, offset) {
@@ -75,7 +75,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       });
 
       encodeOrDecodeTags('encode', tagsToEncode);
-      text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       encodeOrDecodeTags('decode', tagsToEncode);
 
       return text;
@@ -83,8 +83,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.codeBlockOfLanguageFn = function (language, commentsSymbol) {
       commentsSymbol = commentsSymbol || '';
       return function (codeBlock, where, withInlineStrs) {
-        if (withInlineStrs === true) codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
-        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
+        if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
+        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + "\n" + codeBlock;
         return '``' + language + '``' + codeBlock + '``';
       };
     };
@@ -144,24 +144,163 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       });
       return text;
     };
+
+    d.utils.dataFromGeneralToSpecificForATreeStructureType = function (generalData) {
+      // FPN: Find Parent Node
+      var FPNRecursiveFailed = false,
+          itemsIdToItemsMap = {},
+          nodesData = {},
+          findParentNodeFn = function findParentNodeFn() {
+        var itemsChecked,
+            itemsIdToFromConnectionMap = {},
+            FPNRecursiveFn = function FPNRecursiveFn(item) {
+          var connection, parentItemId, parentItem;
+          if (itemsChecked.indexOf(item) > -1) {
+            FPNRecursiveFailed = true;
+            return;
+          } else itemsChecked.push(item);
+          if (_.isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
+            connection = itemsIdToFromConnectionMap[item.id];
+          } else {
+            connection = _.where(generalData.connections, {
+              from: item.id
+            });
+            itemsIdToFromConnectionMap[item.id] = connection;
+          }
+
+          if (connection.length === 0) {
+            if (parentNode) {
+              if (parentNode.id !== item.id) FPNRecursiveFailed = true;
+            } else parentNode = item;
+          } else if (connection.length === 1) {
+            parentItemId = connection[0].to;
+            if (_.isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
+              parentItem = itemsIdToItemsMap[parentItemId];
+            } else {
+              parentItem = _.where(generalData.items, {
+                id: parentItemId
+              })[0];
+              itemsIdToItemsMap[parentItemId] = parentItem;
+            }
+            FPNRecursiveFn(parentItem);
+          } else FPNRecursiveFailed = true;
+        };
+
+        _.each(generalData.items, function (item) {
+          if (FPNRecursiveFailed === false) {
+            itemsChecked = [];
+            itemsIdToItemsMap[item.id] = item;
+            FPNRecursiveFn(item);
+          }
+        });
+      },
+          buildNodesDataRecursiveFn = function buildNodesDataRecursiveFn(transformedData, item) {
+        var text, children;
+
+        transformedData.id = item.id;
+        text = item.name;
+        if (item.description) text += ': ' + item.description;
+        transformedData.text = text;
+
+        children = _.where(generalData.connections, {
+          to: item.id
+        });
+        if (children.length > 0) {
+          transformedData.items = [];
+          _.each(children, function (child) {
+            transformedData.items.push({});
+            buildNodesDataRecursiveFn(_.last(transformedData.items), itemsIdToItemsMap[child.from]);
+          });
+        }
+      },
+          parentNode;
+
+      findParentNodeFn();
+      if (FPNRecursiveFailed) {
+        alert('The data structure is not suitable for this diagram');
+        return [];
+      } else {
+        buildNodesDataRecursiveFn(nodesData, parentNode);
+        return nodesData;
+      }
+    };
   })();(function () {
-    var defaultDiagramConfiguration = {};
+    var defaultDiagramConfiguration = {},
+        createdDiagramsMaxId = 0;
 
     d.diagramsRegistry = [];
 
     d.Diagram = (function () {
+      _createClass(Diagram, null, [{
+        key: 'convertDiagram',
+        value: function convertDiagram(creationId, toDiagramType) {
+          var item = d.Diagram.getRegistryItemWithCreationId(creationId),
+              newArgs = item.data.slice(1),
+              generalData,
+              specificData;
+
+          generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
+          specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
+
+          d.events.emit('diagram-to-transform', item.diagram);
+
+          d3.select('svg').remove();
+          d3.selectAll('input.diagrams-diagram-button').remove();
+          d[toDiagramType].apply(item.diagram, [specificData]);
+        }
+      }, {
+        key: 'addDivBeforeSvg',
+        value: function addDivBeforeSvg() {
+          var body = d3.select('body'),
+              div = body.insert('div', 'svg');
+
+          div.appendButtonToDiv = function (cls, value, onClickFn) {
+            div.append('input').attr({
+              type: 'button',
+              'class': cls + ' diagrams-diagram-button btn btn-default',
+              value: value,
+              onclick: onClickFn
+            });
+          };
+
+          return div;
+        }
+      }, {
+        key: 'getRegistryItemWithCreationId',
+        value: function getRegistryItemWithCreationId(creationId) {
+          var items = _.where(d.diagramsRegistry, {
+            id: creationId
+          });
+
+          return items.length === 1 ? items[0] : null;
+        }
+      }, {
+        key: 'getDataWithCreationId',
+        value: function getDataWithCreationId(creationId) {
+          var item = d.Diagram.getRegistryItemWithCreationId(creationId);
+
+          return item ? item.data : null;
+        }
+      }]);
+
       function Diagram(opts) {
         _classCallCheck(this, Diagram);
 
-        var prototype = Object.getPrototypeOf(this);
+        var diagram = this,
+            prototype = Object.getPrototypeOf(diagram);
 
-        this.name = opts.name;
-        this._configuration = this.configuration || {};
+        diagram.name = opts.name;
+        diagram._configuration = diagram.configuration || {};
 
-        _.merge(this._configuration, defaultDiagramConfiguration);
+        _.each(Object.keys(opts.helpers), function (helperName) {
+          if (_.isFunction(opts.helpers[helperName])) {
+            opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);
+          }
+        });
+        _.merge(diagram._configuration, defaultDiagramConfiguration);
         _.defaults(prototype, opts.helpers);
 
-        this.register();
+        diagram.register();
       }
 
       _createClass(Diagram, [{
@@ -270,7 +409,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }, {
         key: 'getAllRelatedItemsOfItem',
         value: function getAllRelatedItemsOfItem(item, relationshipType) {
-          var relatedItems = [],
+          var diagram = this,
+              relatedItems = [],
               recursiveFn = function recursiveFn(relatedItemData, depth) {
             _.each(relatedItemData.relationships[relationshipType], function (relatedItemChild) {
               if (depth < 100) {
@@ -281,10 +421,19 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
               }
             });
-          };
+          },
+              returnObj;
 
-          recursiveFn(item, 0);
-          return relatedItems;
+          if (relationshipType) {
+            recursiveFn(item, 0);
+            return relatedItems;
+          } else {
+            returnObj = {};
+            _.each(['dependants', 'dependencies'], function (relationshipName) {
+              returnObj[relationshipName] = diagram.getAllRelatedItemsOfItem(item, relationshipName);
+            });
+            return returnObj;
+          }
         }
       }, {
         key: 'markRelatedItems',
@@ -308,16 +457,39 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         key: 'register',
         value: function register() {
           var diagram = this;
+          d.diagramTypes = d.diagramTypes || [];
+          d.diagramTypes.push(diagram.name);
           d[diagram.name] = function () {
-            var args = arguments;
+            var args = Array.prototype.slice.call(arguments);
             d.utils.runIfReady(function () {
+              createdDiagramsMaxId++;
+              d.diagramsRegistry.push({
+                diagram: diagram,
+                data: args,
+                id: createdDiagramsMaxId
+              });
+              diagram.addConversionButtons(createdDiagramsMaxId);
+              args.unshift(createdDiagramsMaxId);
               diagram.create.apply(diagram, args);
-              d.diagramsRegistry.push(diagram);
               d.events.emit('diagram-created', diagram);
             });
           };
 
           _.defaults(d[diagram.name], Object.getPrototypeOf(diagram));
+        }
+      }, {
+        key: 'addConversionButtons',
+        value: function addConversionButtons(id) {
+          var diagram = this,
+              div = d.Diagram.addDivBeforeSvg(),
+              onClickFn;
+
+          _.each(d.diagramTypes, function (diagramType) {
+            if (diagramType !== diagram.name) {
+              onClickFn = 'diagrams.Diagram.convertDiagram(' + id + ', \'' + diagramType + '\')';
+              div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
+            }
+          });
         }
       }]);
 
@@ -363,7 +535,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         d.shared = _.defaults(d.shared, data);
       },
       getWithStartingBreakLine: function getWithStartingBreakLine() {
-        return '<br>' + d.shared.get.apply(d.shared, arguments);
+        return "<br>" + d.shared.get.apply(d.shared, arguments);
       },
       throwIfSharedMethodAlreadyExists: function throwIfSharedMethodAlreadyExists(data) {
         var keys;
@@ -475,34 +647,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         return Box.generateDefinition(text, d.shared.get(sharedKey));
       },
 
-      addButtons: function addButtons(origConf, currentConf) {
-        var body = d3.select('body'),
-            addDivToBody = function addDivToBody() {
-          div = body.insert('div', 'svg');
-        },
-            appendButtonToDiv = function appendButtonToDiv(cls, value, onclickWrapperFn, argumentToWrapperFn) {
-          var wrapperFnName = onclickWrapperFn + 'Wrapper';
-          div.append('input').attr({
-            type: 'button',
-            'class': cls + ' diagrams-diagram-button',
-            value: value,
-            onclick: 'diagrams.box.' + wrapperFnName + '()' // refactor this by decoupling dependency
-          });
-          diagrams.box[wrapperFnName] = function () {
-            helpers[onclickWrapperFn](argumentToWrapperFn);
-          };
-        },
-            div;
+      addButtons: function addButtons(creationId) {
+        var div = d.Diagram.addDivBeforeSvg();
 
-        addDivToBody();
-        appendButtonToDiv('diagrams-box-conversion-button', 'Convert to layers diagram', 'convertToLayer', origConf);
-
-        addDivToBody();
-        appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'collapseAll', currentConf);
-        appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'expandAll', currentConf);
+        div.appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'diagrams.box.collapseAll(' + creationId + ')');
+        div.appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'diagrams.box.expandAll(' + creationId + ')');
       },
 
-      expandOrCollapseAll: function expandOrCollapseAll(currentConf, collapseOrExpand) {
+      expandOrCollapseAll: function expandOrCollapseAll(creationId, collapseOrExpand) {
         var recursiveFn = function recursiveFn(items) {
           _.each(items, function (item) {
             if (item.hasOwnProperty('collapsed')) helpers[collapseOrExpand + 'Item'](item);
@@ -511,16 +663,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           });
         };
 
-        recursiveFn(currentConf.body);
+        var conf = d.Diagram.getDataWithCreationId(creationId)[1];
+        recursiveFn(conf.body);
         helpers.addBodyItemsAndUpdateHeights();
       },
 
-      collapseAll: function collapseAll(currentConf) {
-        helpers.expandOrCollapseAll(currentConf, 'collapse');
+      collapseAll: function collapseAll(creationId) {
+        helpers.expandOrCollapseAll(creationId, 'collapse');
       },
 
-      expandAll: function expandAll(currentConf) {
-        helpers.expandOrCollapseAll(currentConf, 'expand');
+      expandAll: function expandAll(creationId) {
+        helpers.expandOrCollapseAll(creationId, 'expand');
+      },
+
+      convertToGraph: function convertToGraph(origConf) {
+        console.log("origConf", origConf);
       },
 
       convertToLayer: function convertToLayer(origConf) {
@@ -599,25 +756,78 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
       generateDefinition: function generateDefinition(text, description) {
         return helpers.generateItem(text, description);
+      },
+
+      dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
+        var maxId = -1,
+            finalItems = [],
+            connections = [],
+            recursiveFn = function recursiveFn(items, parentCreatedItem) {
+          _.each(items, function (item) {
+            var createdItem = {
+              name: item.text,
+              description: item.description,
+              graphsData: {
+                box: {
+                  options: item.options
+                }
+              },
+              id: ++maxId
+            };
+            finalItems.push(createdItem);
+            if (parentCreatedItem) {
+              connections.push({
+                from: createdItem.id,
+                to: parentCreatedItem.id
+              });
+            } else {
+              connections.push({
+                from: createdItem.id,
+                to: 0
+              });
+            }
+            if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+          });
+        };
+        finalItems.push({
+          name: conf.name,
+          id: ++maxId
+        });
+        recursiveFn(conf.body);
+
+        return {
+          items: finalItems,
+          connections: connections
+        };
+      },
+      dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+        var finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+
+        finalData.name = finalData.text;
+        finalData.body = finalData.items;
+
+        delete finalData.items;
+        delete finalData.text;
+
+        return finalData;
       }
     },
         textGId = 0,
         Box;
 
     Box = (function (_d$Diagram) {
+      _inherits(Box, _d$Diagram);
+
       function Box() {
         _classCallCheck(this, Box);
 
         _get(Object.getPrototypeOf(Box.prototype), 'constructor', this).apply(this, arguments);
       }
 
-      _inherits(Box, _d$Diagram);
-
       _createClass(Box, [{
         key: 'create',
-        value: function create(conf, opts) {
+        value: function create(creationId, conf, opts) {
           var diagram = this,
-              origConf = _.cloneDeep(conf),
               svg = d.svg.generateSvg(),
               width = svg.attr('width') - 40,
               nameHeight = 50,
@@ -685,16 +895,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 item = helpers.generateItem(item);
                 items[itemIndex] = item;
               }
+              item.items = item.items || [];
               if (item.items.length > 0) {
                 newContainer = container.append('g');
-                containerText = item.text;
+                containerText = d.utils.formatShortDescription(item.text);
                 if (item.items && item.items.length > 0) containerText += ':';
                 if (item.description) {
                   item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
                   containerText += ' (...)';
-                } else {
-                  item.fullText = false;
-                }
+                } else item.fullText = item.text;
+
                 textG = newContainer.append('text').text(containerText).attr({
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
@@ -704,7 +914,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 addBodyItems(item.items, newContainer, depth + 1);
               } else {
                 if (item.options && item.options.isLink === true) {
-                  newContainer = container.append('svg:a').attr('xlink:href', item.description);
+                  newContainer = container.append('svg:a').attr("xlink:href", item.description);
                   textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     id: currentTextGId,
                     x: depthWidth * depth,
@@ -748,8 +958,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
           opts = opts || {};
 
-          helpers.addBodyItemsAndUpdateHeights = function () {
-            var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+          helpers.addBodyItemsAndUpdateHeights = _.bind(function () {
+            var diagram = this,
+                currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
             svg.attr('height', 10);
             if (bodyG) bodyG.remove();
             bodyG = boxG.append('g').attr({
@@ -763,11 +974,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               filter: 'url(#diagrams-drop-shadow-box)'
             });
             addBodyItems();
+            diagram.setRelationships(conf.body);
             d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
             d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
 
             window.scrollTo(0, currentScroll);
-          };
+            diagram.emit('items-rendered');
+          }, this);
 
           d.svg.addFilterColor('box', svg, 3, 4);
 
@@ -789,9 +1002,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
           d3.select(document.body).style('opacity', 0);
           helpers.addBodyItemsAndUpdateHeights();
-          helpers.addButtons(origConf, conf);
-          diagram.setRelationships(conf.body);
-          if (opts.allCollapsed === true) helpers.collapseAll(conf);
+          if (opts.allCollapsed === true) helpers.collapseAll(creationId);
+          helpers.addButtons(creationId);
           d3.select(document.body).style('opacity', 1);
         }
       }, {
@@ -874,23 +1086,68 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           if (arguments.length > 3) opts = arguments[3] + ' ' + opts;
           return helpers.generateNodeWithSharedGet(arguments[0], arguments[1], preffix, opts);
         };
+      },
+      dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+        var finalItems = [],
+            idToIndexMap = {},
+            targetItem;
+
+        _.each(generalData.items, function (item, index) {
+          finalItems.push({
+            name: item.name,
+            id: item.id,
+            description: item.description
+          });
+          idToIndexMap[item.id] = index;
+        });
+
+        _.each(generalData.connections, function (connection) {
+          targetItem = finalItems[idToIndexMap[connection.to]];
+          targetItem.calledBy = targetItem.calledBy || [];
+          targetItem.calledBy.push(connection.from);
+        });
+
+        return finalItems;
+      },
+      dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
+        var finalItems = [],
+            connections = [];
+
+        _.each(data, function (node) {
+          finalItems.push({
+            id: node.id,
+            name: node.name,
+            description: node.description
+          });
+          _.each(node.calledBy, function (calledByNode) {
+            connections.push({
+              from: node.id,
+              to: calledByNode
+            });
+          });
+        });
+
+        return {
+          items: finalItems,
+          connections: connections
+        };
       }
     },
         Graph,
         helpers;
 
     Graph = (function (_d$Diagram2) {
+      _inherits(Graph, _d$Diagram2);
+
       function Graph() {
         _classCallCheck(this, Graph);
 
         _get(Object.getPrototypeOf(Graph.prototype), 'constructor', this).apply(this, arguments);
       }
 
-      _inherits(Graph, _d$Diagram2);
-
       _createClass(Graph, [{
         key: 'create',
-        value: function create(data, conf) {
+        value: function create(creationId, data, conf) {
           var diagram = this,
               bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
               svg = d.svg.generateSvg(),
@@ -898,23 +1155,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               height = bodyHeight - 250,
               width = svg.attr('width'),
               tick = function tick() {
-            link.select('path.link-path').attr('d', function (d) {
+            link.select('path.link-path').attr("d", function (d) {
               var dx = d.target.x - d.source.x,
                   dy = d.target.y - d.source.y,
                   dr = Math.sqrt(dx * dx + dy * dy);
-              return 'M' + d.source.x + ',' + d.source.y + 'A' + dr + ',' + dr + ' 0 0,1 ' + d.target.x + ',' + d.target.y;
+              return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
             });
 
             node.each(function (singleNode) {
               if (singleNode.shape === 'circle') {
-                node.select('circle').attr('cx', dPositionFn('x')).attr('cy', dPositionFn('y'));
+                node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
               } else {
                 if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
 
                 d.utils.applySimpleTransform(shapeEl);
               }
             });
-            node.select('text').attr('x', dPositionFn('x')).attr('y', dPositionFn('y', -20));
+            node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
           },
               parseData = function parseData() {
             var maxId = _.reduce(data, function (memo, node) {
@@ -928,7 +1185,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 color,
                 options,
                 sourceNode;
-
             parsedData = {
               links: [],
               nodes: []
@@ -987,18 +1243,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
           },
               zoomed = function zoomed() {
-            container.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')');
+            container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
           },
               dragstarted = function dragstarted() {
             d3.event.sourceEvent.stopPropagation();
-            d3.select(this).classed('dragging', true);
+            d3.select(this).classed("dragging", true);
             force.start();
           },
               dragged = function dragged(d) {
-            d3.select(this).attr('cx', d.x = d3.event.x).attr('cy', d.y = d3.event.y);
+            d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
           },
               dragended = function dragended() {
-            d3.select(this).classed('dragging', false);
+            d3.select(this).classed("dragging", false);
           },
               setRelationships = function setRelationships() {
             _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
@@ -1038,18 +1294,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'class': 'graph-diagram'
           });
 
-          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on('zoom', zoomed);
+          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
           svg.call(zoom);
 
-          force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on('tick', tick);
+          force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
 
           drag = d3.behavior.drag().origin(function (d) {
             return d;
-          }).on('dragstart', dragstarted).on('drag', dragged).on('dragend', dragended);
+          }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
 
           force.nodes(parsedData.nodes).links(parsedData.links).start();
 
-          container.append('svg:defs').selectAll('marker').data(markers).enter().append('svg:marker').attr({
+          container.append("svg:defs").selectAll("marker").data(markers).enter().append("svg:marker").attr({
             id: dTextFn('id', 'arrow-head-'),
             'class': 'arrow-head',
             fill: dTextFn('color'),
@@ -1059,14 +1315,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             markerWidth: 8,
             markerHeight: 8,
             orient: 'auto'
-          }).append('svg:path').attr('d', 'M0,-5L10,0L0,5');
+          }).append("svg:path").attr("d", "M0,-5L10,0L0,5");
 
-          link = container.selectAll('.link').data(parsedData.links).enter().append('g').attr('class', 'link');
-          link.append('svg:path').attr({
+          link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", "link");
+          link.append("svg:path").attr({
             'class': 'link-path',
-            'marker-end': dTextFn('targetId', 'url(#arrow-head-', ')')
+            "marker-end": dTextFn('targetId', 'url(#arrow-head-', ')')
           }).style('stroke', dTextFn('color'));
-          node = container.selectAll('.node').data(parsedData.nodes).enter().append('g').attr({
+          node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
             'class': function _class(d) {
               var finalClass = 'node';
               if (d.hidden === true) finalClass += ' node-hidden';
@@ -1081,13 +1337,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             singleNode.fullText = d.utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
 
             if (singleNode.shape === 'circle') {
-              shapeEl = singleNodeEl.append('circle').attr({
+              shapeEl = singleNodeEl.append("circle").attr({
                 r: 12,
                 fill: dTextFn('color')
               });
             } else {
               shape = d3.svg.symbol().size(750);
-              shapeEl = singleNodeEl.append('path');
+              shapeEl = singleNodeEl.append("path");
               if (singleNode.shape === 'triangle') {
                 shape = shape.type('triangle-up');
                 singleNodeClasses += ' triangle';
@@ -1109,7 +1365,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             singleNode.shapeEl = shapeEl;
             diagram.addMouseListenersToEl(shapeEl, singleNode);
           });
-          node.append('text').text(dTextFn('name'));
+          node.append("text").text(dTextFn('name'));
 
           setRelationships();
         }
@@ -1406,58 +1662,54 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         return dimensions;
       },
 
-      addConvertToBoxButton: function addConvertToBoxButton(origConf) {
-        var body = d3.select('body');
+      dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
+        var maxId = -1,
+            finalItems = [],
+            connections = [],
+            recursiveFn = function recursiveFn(items, parentCreatedItem) {
+          _.each(items, function (item) {
+            var firstOccurrence = /(\. |:)/.exec(item.fullText),
+                name,
+                description,
+                splittedText,
+                createdItem;
+            if (firstOccurrence) {
+              splittedText = item.fullText.split(firstOccurrence[0]);
+              name = splittedText[0];
+              description = splittedText.slice(1).join(firstOccurrence);
+            }
+            createdItem = {
+              name: name || item.fullText,
+              description: description || null,
+              graphsData: {
+                layer: {
+                  relationships: item.options,
+                  id: item.id
+                }
+              },
+              id: ++maxId
+            };
+            finalItems.push(createdItem);
+            if (parentCreatedItem) {
+              connections.push({
+                from: createdItem.id,
+                to: parentCreatedItem.id
+              });
+            }
 
-        body.insert('div', 'svg').append('input').attr({
-          type: 'button',
-          'class': 'conversion-button diagrams-diagram-button',
-          value: 'Convert to box diagram',
-          onclick: 'diagrams.layer.convertToBoxWrapper()'
-        });
+            if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+          });
+        };
 
-        // Refactor this
-        diagrams.layer.convertToBoxWrapper = function () {
-          helpers.convertToBox(origConf);
+        recursiveFn([conf]);
+        return {
+          items: finalItems,
+          connections: connections
         };
       },
 
-      convertToBox: function convertToBox(origConf) {
-        var convertDataToBox = function convertDataToBox(items) {
-          var texts;
-          _.each(items, function (item, index) {
-            texts = item.text.split(': ');
-            item.text = texts[0];
-            if (texts.length > 1) item.description = texts[1];
-
-            if (item.items && item.items.length > 0) {
-              item.type = 'container';
-              convertDataToBox(item.items);
-            } else {
-              if (_.isString(item.description) === false) items[index] = item.text;else {
-                item.type = 'definition';
-                item.items = [];
-              }
-            }
-          });
-        },
-            createBox = function createBox() {
-          var svg = d3.select('svg');
-
-          svg.remove();
-          d3.selectAll('input.diagrams-diagram-button').remove();
-          d.box(boxData);
-        },
-            boxData;
-
-        if (_.isArray(origConf)) origConf = origConf[0];
-        boxData = {
-          name: origConf.text,
-          body: origConf.items
-        };
-
-        convertDataToBox(boxData.body);
-        createBox();
+      dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+        return d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
       },
 
       newLayer: function newLayer(text, opts, items) {
@@ -1579,19 +1831,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 
     Layer = (function (_d$Diagram3) {
+      _inherits(Layer, _d$Diagram3);
+
       function Layer() {
         _classCallCheck(this, Layer);
 
         _get(Object.getPrototypeOf(Layer.prototype), 'constructor', this).apply(this, arguments);
       }
 
-      _inherits(Layer, _d$Diagram3);
-
       _createClass(Layer, [{
         key: 'create',
-        value: function create(conf) {
+        value: function create(creationId, conf) {
           var diagram = this,
-              origConf = _.cloneDeep(conf),
               config = helpers.config,
               colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
               addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
@@ -1727,7 +1978,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
 
-                connectionG.append('circle').attr({
+                connectionG.append("circle").attr({
                   cx: connectionCoords.to.x,
                   cy: connectionCoords.to.y,
                   r: 5,
@@ -1917,7 +2168,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           diagram.markRelatedFn = function (item) {
             item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
             item.el.select('rect').style({
-              'fill': '#FFF'
+              'fill': 'rgb(254, 255, 209)'
             });
           };
           diagram.unmarkAllItems = function () {
@@ -1950,7 +2201,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           drawLayersInContainer();
           drawConnectionsIfAny();
           updateSvgHeight();
-          helpers.addConvertToBoxButton(origConf);
           diagram.generateRelationships(conf);
         }
       }, {

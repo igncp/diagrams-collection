@@ -63,7 +63,7 @@ d.utils.formatTextFragment = function(text) {
   });
 
   encodeOrDecodeTags('encode', tagsToEncode);
-  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   encodeOrDecodeTags('decode', tagsToEncode);
 
   return text;
@@ -132,4 +132,84 @@ d.utils.formatShortDescription = function(text) {
     else return ' <CODE...>';
   });
   return text;
+};
+
+d.utils.dataFromGeneralToSpecificForATreeStructureType = function(generalData) {
+  // FPN: Find Parent Node
+  var FPNRecursiveFailed = false,
+    itemsIdToItemsMap = {},
+    nodesData = {},
+    findParentNodeFn = function() {
+      var itemsChecked,
+        itemsIdToFromConnectionMap = {},
+        FPNRecursiveFn = function(item) {
+          var connection, parentItemId, parentItem;
+          if (itemsChecked.indexOf(item) > -1) {
+            FPNRecursiveFailed = true;
+            return;
+          } else itemsChecked.push(item);
+          if (_.isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
+            connection = itemsIdToFromConnectionMap[item.id];
+          } else {
+            connection = _.where(generalData.connections, {
+              from: item.id
+            });
+            itemsIdToFromConnectionMap[item.id] = connection;
+          }
+
+          if (connection.length === 0) {
+            if (parentNode) {
+              if (parentNode.id !== item.id) FPNRecursiveFailed = true;
+            } else parentNode = item;
+          } else if (connection.length === 1) {
+            parentItemId = connection[0].to;
+            if (_.isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
+              parentItem = itemsIdToItemsMap[parentItemId];
+            } else {
+              parentItem = _.where(generalData.items, {
+                id: parentItemId
+              })[0];
+              itemsIdToItemsMap[parentItemId] = parentItem;
+            }
+            FPNRecursiveFn(parentItem);
+          } else FPNRecursiveFailed = true;
+        };
+
+      _.each(generalData.items, function(item) {
+        if (FPNRecursiveFailed === false) {
+          itemsChecked = [];
+          itemsIdToItemsMap[item.id] = item;
+          FPNRecursiveFn(item);
+        }
+      });
+    },
+    buildNodesDataRecursiveFn = function(transformedData, item) {
+      var text, children;
+
+      transformedData.id = item.id;
+      text = item.name;
+      if (item.description) text += ': ' + item.description;
+      transformedData.text = text;
+
+      children = _.where(generalData.connections, {
+        to: item.id
+      });
+      if (children.length > 0) {
+        transformedData.items = [];
+        _.each(children, function(child) {
+          transformedData.items.push({});
+          buildNodesDataRecursiveFn(_.last(transformedData.items), itemsIdToItemsMap[child.from]);
+        });
+      }
+    },
+    parentNode;
+
+  findParentNodeFn();
+  if (FPNRecursiveFailed) {
+    alert('The data structure is not suitable for this diagram')
+    return [];
+  } else {
+    buildNodesDataRecursiveFn(nodesData, parentNode);
+    return nodesData;
+  }
 };

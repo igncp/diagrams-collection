@@ -63,6 +63,7 @@
 
     "globals"       : {
         "d": false,
+        "alert": false,
         "d3": false,
         "_": false,
         "diagrams": false,

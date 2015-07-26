@@ -1,18 +1,70 @@
-var defaultDiagramConfiguration = {};
+var defaultDiagramConfiguration = {},
+  createdDiagramsMaxId = 0;
 
 d.diagramsRegistry = [];
 
 d.Diagram = class Diagram {
+  static convertDiagram(creationId, toDiagramType) {
+    var item = d.Diagram.getRegistryItemWithCreationId(creationId),
+      newArgs = item.data.slice(1),
+      generalData, specificData;
+
+    generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
+    specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
+
+    d.events.emit('diagram-to-transform', item.diagram);
+
+    d3.select('svg').remove();
+    d3.selectAll('input.diagrams-diagram-button').remove();
+    d[toDiagramType].apply(item.diagram, [specificData]);
+  }
+
+  static addDivBeforeSvg() {
+    var body = d3.select('body'),
+      div = body.insert('div', 'svg');
+
+    div.appendButtonToDiv = function(cls, value, onClickFn) {
+      div.append('input').attr({
+        type: 'button',
+        'class': cls + ' diagrams-diagram-button btn btn-default',
+        value: value,
+        onclick: onClickFn
+      });
+    };
+
+    return div;
+  }
+
+  static getRegistryItemWithCreationId(creationId) {
+    var items = _.where(d.diagramsRegistry, {
+      id: creationId
+    });
+
+    return (items.length === 1) ? items[0] : null;
+  }
+
+  static getDataWithCreationId(creationId) {
+    var item = d.Diagram.getRegistryItemWithCreationId(creationId);
+
+    return (item) ? item.data : null;
+  }
+
   constructor(opts) {
-    var prototype = Object.getPrototypeOf(this);
+    var diagram = this,
+      prototype = Object.getPrototypeOf(diagram);
 
-    this.name = opts.name;
-    this._configuration = this.configuration || {};
+    diagram.name = opts.name;
+    diagram._configuration = diagram.configuration || {};
 
-    _.merge(this._configuration, defaultDiagramConfiguration);
+    _.each(Object.keys(opts.helpers), function(helperName) {
+      if (_.isFunction(opts.helpers[helperName])) {
+        opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);
+      }
+    });
+    _.merge(diagram._configuration, defaultDiagramConfiguration);
     _.defaults(prototype, opts.helpers);
 
-    this.register();
+    diagram.register();
   }
 
   addMouseListenersToEl(el, data) {
@@ -112,7 +164,8 @@ d.Diagram = class Diagram {
   }
 
   getAllRelatedItemsOfItem(item, relationshipType) {
-    var relatedItems = [],
+    var diagram = this,
+      relatedItems = [],
       recursiveFn = function(relatedItemData, depth) {
         _.each(relatedItemData.relationships[relationshipType], function(relatedItemChild) {
           if (depth < 100) {
@@ -122,10 +175,19 @@ d.Diagram = class Diagram {
             }
           }
         });
-      };
+      },
+      returnObj;
 
-    recursiveFn(item, 0);
-    return relatedItems;
+    if (relationshipType) {
+      recursiveFn(item, 0);
+      return relatedItems;
+    } else {
+      returnObj = {};
+      _.each(['dependants', 'dependencies'], function(relationshipName) {
+        returnObj[relationshipName] = diagram.getAllRelatedItemsOfItem(item, relationshipName);
+      });
+      return returnObj;
+    }
   }
 
   markRelatedItems(item) {
@@ -147,16 +209,38 @@ d.Diagram = class Diagram {
 
   register() {
     var diagram = this;
+    d.diagramTypes = d.diagramTypes || [];
+    d.diagramTypes.push(diagram.name);
     d[diagram.name] = function() {
-      var args = arguments;
+      var args = Array.prototype.slice.call(arguments);
       d.utils.runIfReady(function() {
+        createdDiagramsMaxId++;
+        d.diagramsRegistry.push({
+          diagram: diagram,
+          data: args,
+          id: createdDiagramsMaxId
+        });
+        diagram.addConversionButtons(createdDiagramsMaxId);
+        args.unshift(createdDiagramsMaxId);
         diagram.create.apply(diagram, args);
-        d.diagramsRegistry.push(diagram);
         d.events.emit('diagram-created', diagram);
       });
     };
 
     _.defaults(d[diagram.name], Object.getPrototypeOf(diagram));
+  }
+
+  addConversionButtons(id) {
+    var diagram = this,
+      div = d.Diagram.addDivBeforeSvg(),
+      onClickFn;
+
+    _.each(d.diagramTypes, function(diagramType) {
+      if (diagramType !== diagram.name) {
+        onClickFn = 'diagrams.Diagram.convertDiagram(' + id + ', \'' + diagramType + '\')';
+        div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
+      }
+    });
   }
 };
 

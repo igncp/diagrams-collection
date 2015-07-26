@@ -251,59 +251,51 @@ var layerGId = 0,
       return dimensions;
     },
 
-    addConvertToBoxButton: function(origConf) {
-      var body = d3.select('body');
+    dataFromSpecificToGeneral: function(conf) {
+      var maxId = -1,
+        finalItems = [],
+        connections = [],
+        recursiveFn = function(items, parentCreatedItem) {
+          _.each(items, function(item) {
+            var firstOccurrence = /(\. |:)/.exec(item.fullText),
+              name, description, splittedText, createdItem;
+            if (firstOccurrence) {
+              splittedText = item.fullText.split(firstOccurrence[0]);
+              name = splittedText[0];
+              description = splittedText.slice(1).join(firstOccurrence);
+            }
+            createdItem = {
+              name: name || item.fullText,
+              description: description || null,
+              graphsData: {
+                layer: {
+                  relationships: item.options,
+                  id: item.id
+                }
+              },
+              id: ++maxId
+            };
+            finalItems.push(createdItem);
+            if (parentCreatedItem) {
+              connections.push({
+                from: createdItem.id,
+                to: parentCreatedItem.id
+              });
+            }
 
-      body.insert('div', 'svg').append('input').attr({
-        type: 'button',
-        'class': 'conversion-button diagrams-diagram-button',
-        value: 'Convert to box diagram',
-        onclick: 'diagrams.layer.convertToBoxWrapper()'
-      });
+            if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+          });
+        };
 
-      // Refactor this
-      diagrams.layer.convertToBoxWrapper = function() {
-        helpers.convertToBox(origConf);
+      recursiveFn([conf]);
+      return {
+        items: finalItems,
+        connections: connections
       };
     },
 
-    convertToBox: function(origConf) {
-      var convertDataToBox = function(items) {
-          var texts;
-          _.each(items, function(item, index) {
-            texts = item.text.split(': ');
-            item.text = texts[0];
-            if (texts.length > 1) item.description = texts[1];
-
-            if (item.items && item.items.length > 0) {
-              item.type = 'container';
-              convertDataToBox(item.items);
-            } else {
-              if (_.isString(item.description) === false) items[index] = item.text;
-              else {
-                item.type = 'definition';
-                item.items = [];
-              }
-            }
-          });
-        },
-        createBox = function() {
-          var svg = d3.select('svg');
-
-          svg.remove();
-          d3.selectAll('input.diagrams-diagram-button').remove();
-          d.box(boxData);
-        },
-        boxData;
-
-      if (_.isArray(origConf)) origConf = origConf[0];
-      boxData = {
-        name: origConf.text,
-        body: origConf.items
-      };
-
-      convertDataToBox(boxData.body);
-      createBox();
+    dataFromGeneralToSpecific: function(generalData) {
+      return d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
     },
 
     newLayer: function(text, opts, items) {
@@ -435,9 +427,8 @@ _.each([
 });
 
 Layer = class Layer extends d.Diagram {
-  create(conf) {
+  create(creationId, conf) {
     var diagram = this,
-      origConf = _.cloneDeep(conf),
       config = helpers.config,
       colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'],
       addItemsPropToBottomItems = function(layers) {
@@ -766,7 +757,7 @@ Layer = class Layer extends d.Diagram {
     diagram.markRelatedFn = function(item) {
       item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
       item.el.select('rect').style({
-        'fill': '#FFF'
+        'fill': 'rgb(254, 255, 209)'
       });
     };
     diagram.unmarkAllItems = function() {
@@ -799,7 +790,6 @@ Layer = class Layer extends d.Diagram {
     drawLayersInContainer();
     drawConnectionsIfAny();
     updateSvgHeight();
-    helpers.addConvertToBoxButton(origConf);
     diagram.generateRelationships(conf);
   }
 

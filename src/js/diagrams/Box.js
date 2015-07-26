@@ -9,34 +9,14 @@ var helpers = {
       return Box.generateDefinition(text, d.shared.get(sharedKey));
     },
 
-    addButtons: function(origConf, currentConf) {
-      var body = d3.select('body'),
-        addDivToBody = function() {
-          div = body.insert('div', 'svg');
-        },
-        appendButtonToDiv = function(cls, value, onclickWrapperFn, argumentToWrapperFn) {
-          var wrapperFnName = onclickWrapperFn + 'Wrapper';
-          div.append('input').attr({
-            type: 'button',
-            'class': cls + ' diagrams-diagram-button',
-            value: value,
-            onclick: 'diagrams.box.' + wrapperFnName + '()' // refactor this by decoupling dependency
-          });
-          diagrams.box[wrapperFnName] = function() {
-            helpers[onclickWrapperFn](argumentToWrapperFn);
-          };
-        },
-        div;
+    addButtons: function(creationId) {
+      var div = d.Diagram.addDivBeforeSvg();
 
-      addDivToBody();
-      appendButtonToDiv('diagrams-box-conversion-button', 'Convert to layers diagram', 'convertToLayer', origConf);
-
-      addDivToBody();
-      appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'collapseAll', currentConf);
-      appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'expandAll', currentConf);
+      div.appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'diagrams.box.collapseAll(' + creationId + ')');
+      div.appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'diagrams.box.expandAll(' + creationId + ')');
     },
 
-    expandOrCollapseAll: function(currentConf, collapseOrExpand) {
+    expandOrCollapseAll: function(creationId, collapseOrExpand) {
       var recursiveFn = function(items) {
         _.each(items, function(item) {
           if (item.hasOwnProperty('collapsed')) helpers[collapseOrExpand + 'Item'](item);
@@ -45,16 +25,21 @@ var helpers = {
         });
       };
 
-      recursiveFn(currentConf.body);
+      var conf = d.Diagram.getDataWithCreationId(creationId)[1];
+      recursiveFn(conf.body);
       helpers.addBodyItemsAndUpdateHeights();
     },
 
-    collapseAll: function(currentConf) {
-      helpers.expandOrCollapseAll(currentConf, 'collapse');
+    collapseAll: function(creationId) {
+      helpers.expandOrCollapseAll(creationId, 'collapse');
     },
 
-    expandAll: function(currentConf) {
-      helpers.expandOrCollapseAll(currentConf, 'expand');
+    expandAll: function(creationId) {
+      helpers.expandOrCollapseAll(creationId, 'expand');
+    },
+
+    convertToGraph: function(origConf) {
+      console.log("origConf", origConf);
     },
 
     convertToLayer: function(origConf) {
@@ -134,15 +119,68 @@ var helpers = {
 
     generateDefinition: function(text, description) {
       return helpers.generateItem(text, description);
+    },
+
+    dataFromSpecificToGeneral: function(conf) {
+      var maxId = -1,
+        finalItems = [],
+        connections = [],
+        recursiveFn = function(items, parentCreatedItem) {
+          _.each(items, function(item) {
+            var createdItem = {
+              name: item.text,
+              description: item.description,
+              graphsData: {
+                box: {
+                  options: item.options
+                }
+              },
+              id: ++maxId
+            };
+            finalItems.push(createdItem);
+            if (parentCreatedItem) {
+              connections.push({
+                from: createdItem.id,
+                to: parentCreatedItem.id
+              });
+            } else {
+              connections.push({
+                from: createdItem.id,
+                to: 0
+              });
+            }
+            if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+          });
+        };
+      finalItems.push({
+        name: conf.name,
+        id: ++maxId
+      });
+      recursiveFn(conf.body);
+
+      return {
+        items: finalItems,
+        connections: connections
+      };
+    },
+    dataFromGeneralToSpecific: function(generalData) {
+      var finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+
+      finalData.name = finalData.text;
+      finalData.body = finalData.items;
+
+      delete finalData.items;
+      delete finalData.text;
+
+      return finalData;
     }
   },
   textGId = 0,
   Box;
 
 Box = class Box extends d.Diagram {
-  create(conf, opts) {
+  create(creationId, conf, opts) {
     var diagram = this,
-      origConf = _.cloneDeep(conf),
       svg = d.svg.generateSvg(),
       width = svg.attr('width') - 40,
       nameHeight = 50,
@@ -211,16 +249,16 @@ Box = class Box extends d.Diagram {
             item = helpers.generateItem(item);
             items[itemIndex] = item;
           }
+          item.items = item.items || [];
           if (item.items.length > 0) {
             newContainer = container.append('g');
-            containerText = item.text;
+            containerText = d.utils.formatShortDescription(item.text);
             if (item.items && item.items.length > 0) containerText += ':';
             if (item.description) {
               item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
               containerText += ' (...)';
-            } else {
-              item.fullText = false;
-            }
+            } else item.fullText = item.text;
+
             textG = newContainer.append('text').text(containerText).attr({
               x: depthWidth * depth,
               y: rowHeight * ++bodyPosition,
@@ -272,8 +310,9 @@ Box = class Box extends d.Diagram {
 
     opts = opts || {};
 
-    helpers.addBodyItemsAndUpdateHeights = function() {
-      var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+    helpers.addBodyItemsAndUpdateHeights = _.bind(function() {
+      var diagram = this,
+        currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
       svg.attr('height', 10);
       if (bodyG) bodyG.remove();
       bodyG = boxG.append('g').attr({
@@ -287,11 +326,13 @@ Box = class Box extends d.Diagram {
         filter: 'url(#diagrams-drop-shadow-box)'
       });
       addBodyItems();
+      diagram.setRelationships(conf.body);
       d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
       d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
 
       window.scrollTo(0, currentScroll);
-    };
+      diagram.emit('items-rendered');
+    }, this);
 
     d.svg.addFilterColor('box', svg, 3, 4);
 
@@ -313,9 +354,8 @@ Box = class Box extends d.Diagram {
 
     d3.select(document.body).style('opacity', 0);
     helpers.addBodyItemsAndUpdateHeights();
-    helpers.addButtons(origConf, conf);
-    diagram.setRelationships(conf.body);
-    if (opts.allCollapsed === true) helpers.collapseAll(conf);
+    if (opts.allCollapsed === true) helpers.collapseAll(creationId);
+    helpers.addButtons(creationId);
     d3.select(document.body).style('opacity', 1);
   }
 
