@@ -1,4 +1,6 @@
-var dPositionFn = d.utils.positionFn,
+// The links number map is between two nodesalso starts with the lower id
+var linksNumberMap = {},
+  dPositionFn = d.utils.positionFn,
   dTextFn = d.utils.textFn,
   helpers = {
     generateNodeOptions: function(options) {
@@ -17,23 +19,55 @@ var dPositionFn = d.utils.positionFn,
         return obj;
       }
     },
+    getDefaultConnection: function() {
+      var defaultConnection = {
+        direction: 'out',
+        symbol: 'arrow',
+        line: 'plain'
+      };
+
+      return _.cloneDeep(defaultConnection);
+    },
+    mergeWithDefaultConnection: function(connection) {
+      return _.defaults(connection, helpers.getDefaultConnection());
+    },
     generateNode: function() {
       var node = {
           name: arguments[0]
         },
-        linksInfo;
+        addDefaultConnectionFromNumber = function(nodeId) {
+          node.connections.push(helpers.mergeWithDefaultConnection({
+            nodesIds: [nodeId]
+          }));
+        },
+        connections;
 
-      linksInfo = _.isString(arguments[1]) ? arguments[1] : String(arguments[1]);
-      linksInfo = linksInfo.split(' ').map(Number);
-      if (linksInfo.length > 0) node.id = linksInfo[0];
-      if (linksInfo.length > 1) {
-        node.calledBy = [];
-        _.each(linksInfo, function(nodeId, index) {
-          if (index > 0) node.calledBy.push(nodeId);
-        });
+      if (arguments.length > 1) {
+        connections = arguments[1];
+        node.connections = [];
+        if (_.isString(arguments[1])) {
+          connections = connections.split(' ').map(Number);
+          if (connections.length > 0) node.id = connections[0];
+          if (connections.length > 1) {
+            _.each(connections, function(nodeId, index) {
+              if (index > 0) addDefaultConnectionFromNumber(nodeId);
+            });
+          }
+        } else if (_.isArray(connections)) {
+          node.id = connections[0];
+          connections = connections.slice(1);
+          _.each(connections, function(connection) {
+            if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);
+            else if (_.isObject(connection)) {
+              helpers.mergeWithDefaultConnection(connection);
+              node.connections.push(connection);
+            }
+          });
+        } else if (_.isNumber(connections)) node.id = connections;
+
+        if (arguments.length > 2) node.description = arguments[2];
+        if (arguments.length > 3) node.options = helpers.generateNodeOptions(arguments[3]);
       }
-      if (arguments.length > 2) node.description = arguments[2];
-      if (arguments.length > 3) node.options = helpers.generateNodeOptions(arguments[3]);
 
       return node;
     },
@@ -73,8 +107,11 @@ var dPositionFn = d.utils.positionFn,
 
       _.each(generalData.connections, function(connection) {
         targetItem = finalItems[idToIndexMap[connection.to]];
-        targetItem.calledBy = targetItem.calledBy || [];
-        targetItem.calledBy.push(connection.from);
+        targetItem.connections = targetItem.connections || [];
+        targetItem.connections.push({
+          direction: 'in',
+          nodesIds: [connection.from]
+        });
       });
 
       return finalItems;
@@ -89,10 +126,12 @@ var dPositionFn = d.utils.positionFn,
           name: node.name,
           description: node.description
         });
-        _.each(node.calledBy, function(calledByNode) {
-          connections.push({
-            from: node.id,
-            to: calledByNode
+        _.each(node.connections, function(connection) {
+          _.each(connection.nodesIds, function(otherNodeId) {
+            connections.push({
+              from: node.id,
+              to: otherNodeId
+            });
           });
         });
       });
@@ -101,6 +140,29 @@ var dPositionFn = d.utils.positionFn,
         items: finalItems,
         connections: connections
       };
+    },
+    doWithMinIdAndMaxIdOfLinkNodes: function(link, cb) {
+      var getIndex = function(item) {
+          return (_.isNumber(item)) ? item : item.index;
+        },
+        ids = [getIndex(link.source), getIndex(link.target)],
+        minIndex = _.min(ids),
+        maxIndex = _.max(ids);
+
+      return cb(minIndex, maxIndex);
+    },
+    updateLinksNumberMapWithLink: function(link) {
+      helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function(minIndex, maxIndex) {
+        if (_.isUndefined(linksNumberMap[minIndex])) linksNumberMap[minIndex] = {};
+
+        if (_.isUndefined(linksNumberMap[minIndex][maxIndex])) linksNumberMap[minIndex][maxIndex] = 1;
+        else linksNumberMap[minIndex][maxIndex] += 1;
+      });
+    },
+    getLinksNumberMapItemWithLink: function(link) {
+      return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function(minIndex, maxIndex) {
+        return linksNumberMap[minIndex][maxIndex];
+      });
     }
   },
   Graph, helpers;
@@ -114,17 +176,23 @@ Graph = class Graph extends d.Diagram {
       height = bodyHeight - 250,
       width = svg.attr('width'),
       tick = function() {
-        link.select('path.link-path').attr("d", function(d) {
-          var dx = d.target.x - d.source.x,
-            dy = d.target.y - d.source.y,
-            dr = Math.sqrt(dx * dx + dy * dy);
-          return "M" +
-            d.source.x + "," +
-            d.source.y + "A" +
-            dr + "," + dr + " 0 0,1 " +
-            d.target.x + "," +
-            d.target.y;
-        });
+        var setPathToLink = function(pathClass) {
+          link.select('path.' + pathClass).attr("d", function(d) {
+            var linksNumber = helpers.getLinksNumberMapItemWithLink(d),
+              linkIndex = d.data.linkIndex,
+              dx = d.target.x - d.source.x,
+              dy = d.target.y - d.source.y,
+              dr = Math.sqrt(dx * dx + dy * dy) * 3.5 * ((linkIndex + 1) / (linksNumber * 3));
+            return "M" +
+              d.source.x + "," +
+              d.source.y + "A" +
+              dr + "," + dr + " 0 0,1 " +
+              d.target.x + "," +
+              d.target.y;
+          });
+        };
+
+        _.each(['link-path', 'link-path-title'], setPathToLink);
 
         node.each(function(singleNode) {
           if (singleNode.shape === 'circle') {
@@ -146,7 +214,7 @@ Graph = class Graph extends d.Diagram {
           idsMap = {},
           nodesWithLinkMap = {},
           colors = d3.scale.category10(),
-          nodeId, color, options, sourceNode;
+          nodeId, color, options, otherNode, linkObj;
         parsedData = {
           links: [],
           nodes: []
@@ -160,7 +228,7 @@ Graph = class Graph extends d.Diagram {
           parsedData.nodes.push({
             name: node.name,
             id: nodeId,
-            calledBy: node.calledBy || [],
+            connections: node.connections || [],
             description: node.description || null,
             color: color,
             shape: options.shape || 'circle',
@@ -169,7 +237,7 @@ Graph = class Graph extends d.Diagram {
           idsMap[nodeId] = {
             index: nodeIndex
           };
-          if (_.isArray(node.calledBy) && node.calledBy.length > 0) {
+          if (_.isArray(node.connections) && node.connections.length > 0) {
             idsMap[nodeId].color = color;
             markers.push({
               id: nodeId,
@@ -179,21 +247,33 @@ Graph = class Graph extends d.Diagram {
         });
 
         _.each(parsedData.nodes, function(node, nodeIndex) {
-          if (node.calledBy.length > 0) {
-            _.each(node.calledBy, function(calledById) {
-              sourceNode = idsMap[calledById];
-              if (sourceNode) {
-                if (conf.hideNodesWithoutLinks) {
-                  nodesWithLinkMap[idsMap[calledById].index] = true;
-                  nodesWithLinkMap[nodeIndex] = true;
+          if (node.connections.length > 0) {
+            _.each(node.connections, function(connection) {
+              _.each(connection.nodesIds, function(otherNodeId) {
+                otherNode = idsMap[otherNodeId];
+
+                if (otherNode) {
+                  if (conf.hideNodesWithoutLinks) {
+                    nodesWithLinkMap[otherNode.index] = true;
+                    nodesWithLinkMap[nodeIndex] = true;
+                  }
+
+                  linkObj = {};
+                  if (connection.direction === 'out') {
+                    linkObj.source = nodeIndex;
+                    linkObj.target = otherNode.index;
+                  } else {
+                    linkObj.source = otherNode.index;
+                    linkObj.target = nodeIndex;
+                  }
+                  linkObj.data = connection;
+                  linkObj.color = idsMap[node.id].color;
+                  helpers.updateLinksNumberMapWithLink(linkObj);
+                  linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
+                  if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
+                  parsedData.links.push(linkObj);
                 }
-                parsedData.links.push({
-                  source: idsMap[calledById].index,
-                  target: nodeIndex,
-                  color: idsMap[node.id].color,
-                  targetId: node.id
-                });
-              }
+              });
             });
           }
         });
@@ -228,7 +308,7 @@ Graph = class Graph extends d.Diagram {
           diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
         });
       },
-      force, drag, link, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
+      force, drag, link, linkTitle, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
     diagram.markRelatedFn = function(item) {
       item.el.style('stroke-width', '10px');
@@ -279,8 +359,26 @@ Graph = class Graph extends d.Diagram {
     link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", "link");
     link.append("svg:path").attr({
       'class': 'link-path',
-      "marker-end": dTextFn('targetId', 'url(#arrow-head-', ')')
-    }).style('stroke', dTextFn('color'));
+      "marker-end": function(d) {
+        var markerItem = (d.data.direction === 'out') ? 'source' : 'target';
+        return 'url(#arrow-head-' + d[markerItem].id + ')';
+      }
+    }).style({
+      'stroke': dTextFn('color'),
+      'stroke-dasharray': function(d) {
+        if (d.data.line === 'plain') return null;
+        else if (d.data.line === 'dotted') return '5,5';
+      }
+    });
+
+    linkTitle = link.append('g');
+    linkTitle.filter(function(d) {
+      return _.isUndefined(d.data.text) === false;
+    }).append('svg:path').attr('class', 'link-path-title');
+    linkTitle.each(function(d) {
+      diagram.addMouseListenersToEl(d3.select(this), d.data);
+    });
+
     node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
       'class': function(d) {
         var finalClass = 'node';

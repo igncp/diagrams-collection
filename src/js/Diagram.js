@@ -195,7 +195,7 @@ d.Diagram = class Diagram {
       dependantItems,
       dependencyItems;
 
-    if (diagram.markRelatedFn) {
+    if (diagram.markRelatedFn && item.relationships) {
       dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
       dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');
 
