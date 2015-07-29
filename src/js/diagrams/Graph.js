@@ -3,6 +3,31 @@ var linksNumberMap = {},
   dPositionFn = d.utils.positionFn,
   dTextFn = d.utils.textFn,
   helpers = {
+    generateConnectionWithText: function(nodesIds, text) {
+      if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
+        return _.map(nodesIds, function(args) {
+          return helpers.generateConnectionWithText.apply({}, args);
+        });
+      }
+      if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);
+      else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
+      return diagrams.graph.mergeWithDefaultConnection({
+        nodesIds: nodesIds,
+        text: text
+      });
+    },
+    connectionFnFactory: function(baseFn, changedProp, changedVal) {
+      return function() {
+        var connection = baseFn.apply(this, arguments),
+          setVal = function(singleConnection) {
+            singleConnection[changedProp] = changedVal;
+            return connection;
+          };
+
+        if (_.isArray(connection)) return _.map(connection, setVal);
+        else return setVal(connection);
+      };
+    },
     generateNodeOptions: function(options) {
       var obj = {},
         shape;
@@ -40,6 +65,13 @@ var linksNumberMap = {},
             nodesIds: [nodeId]
           }));
         },
+        addConnection = function(connection) {
+          if (_.isArray(connection)) _.each(connection, addConnection);
+          else if (_.isObject(connection)) {
+            helpers.mergeWithDefaultConnection(connection);
+            node.connections.push(connection);
+          }
+        },
         connections;
 
       if (arguments.length > 1) {
@@ -50,7 +82,7 @@ var linksNumberMap = {},
           if (connections.length > 0) node.id = connections[0];
           if (connections.length > 1) {
             _.each(connections, function(nodeId, index) {
-              if (index > 0) addDefaultConnectionFromNumber(nodeId);
+              if (index > 0) addConnection(nodeId);
             });
           }
         } else if (_.isArray(connections)) {
@@ -58,10 +90,7 @@ var linksNumberMap = {},
           connections = connections.slice(1);
           _.each(connections, function(connection) {
             if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);
-            else if (_.isObject(connection)) {
-              helpers.mergeWithDefaultConnection(connection);
-              node.connections.push(connection);
-            }
+            else addConnection(connection);
           });
         } else if (_.isNumber(connections)) node.id = connections;
 

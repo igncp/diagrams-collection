@@ -1032,6 +1032,29 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         dPositionFn = d.utils.positionFn,
         dTextFn = d.utils.textFn,
         helpers = {
+      generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
+        if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
+          return _.map(nodesIds, function (args) {
+            return helpers.generateConnectionWithText.apply({}, args);
+          });
+        }
+        if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
+        return diagrams.graph.mergeWithDefaultConnection({
+          nodesIds: nodesIds,
+          text: text
+        });
+      },
+      connectionFnFactory: function connectionFnFactory(baseFn, changedProp, changedVal) {
+        return function () {
+          var connection = baseFn.apply(this, arguments),
+              setVal = function setVal(singleConnection) {
+            singleConnection[changedProp] = changedVal;
+            return connection;
+          };
+
+          if (_.isArray(connection)) return _.map(connection, setVal);else return setVal(connection);
+        };
+      },
       generateNodeOptions: function generateNodeOptions(options) {
         var obj = {},
             shape;
@@ -1066,6 +1089,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             nodesIds: [nodeId]
           }));
         },
+            addConnection = function addConnection(connection) {
+          if (_.isArray(connection)) _.each(connection, addConnection);else if (_.isObject(connection)) {
+            helpers.mergeWithDefaultConnection(connection);
+            node.connections.push(connection);
+          }
+        },
             connections;
 
         if (arguments.length > 1) {
@@ -1076,17 +1105,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             if (connections.length > 0) node.id = connections[0];
             if (connections.length > 1) {
               _.each(connections, function (nodeId, index) {
-                if (index > 0) addDefaultConnectionFromNumber(nodeId);
+                if (index > 0) addConnection(nodeId);
               });
             }
           } else if (_.isArray(connections)) {
             node.id = connections[0];
             connections = connections.slice(1);
             _.each(connections, function (connection) {
-              if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);else if (_.isObject(connection)) {
-                helpers.mergeWithDefaultConnection(connection);
-                node.connections.push(connection);
-              }
+              if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);else addConnection(connection);
             });
           } else if (_.isNumber(connections)) node.id = connections;
 
