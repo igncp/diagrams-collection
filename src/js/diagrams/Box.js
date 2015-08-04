@@ -191,6 +191,7 @@ Box = class Box extends d.Diagram {
       nameG = boxG.append('g'),
       rowHeight = 30,
       depthWidth = 35,
+      urlParams = d.utils.getUrlParams(),
       collapseIfNecessary = function(el, item) {
         if (item.items.length > 0 || item.collapsedItems) {
           var textEl = el.select('text'),
@@ -306,6 +307,28 @@ Box = class Box extends d.Diagram {
           diagram.addMouseListenersToEl(textG, item);
         });
       },
+      scrollToTarget = function(target) {
+        var targetFound = null,
+          recursiveFindTarget = function(items) {
+            _.each(items, function(item) {
+              if (_.isNull(targetFound)) {
+                if (_.isString(item.text) && item.text.indexOf(target) > -1) targetFound = item;
+                else if (item.items) recursiveFindTarget(item.items);
+              }
+            });
+          },
+          currentScroll, scrollElTop;
+
+        recursiveFindTarget(conf.body);
+        if (targetFound) {
+          currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+          scrollElTop = targetFound.textG[0][0].getBoundingClientRect().top;
+          _.defer(function() {
+            window.scrollTo(0, scrollElTop + currentScroll);
+          });
+        }
+        console.log("targetFound", targetFound);
+      },
       bodyG, bodyPosition, bodyRect;
 
     opts = opts || {};
@@ -357,6 +380,8 @@ Box = class Box extends d.Diagram {
     if (opts.allCollapsed === true) helpers.collapseAll(creationId);
     helpers.addButtons(creationId);
     d3.select(document.body).style('opacity', 1);
+
+    if (urlParams.target) scrollToTarget(urlParams.target);
   }
 
   setRelationships(items, container) {

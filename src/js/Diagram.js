@@ -14,9 +14,13 @@ d.Diagram = class Diagram {
 
     d.events.emit('diagram-to-transform', item.diagram);
 
+    d.Diagram.removePreviousDiagrams();
+    d[toDiagramType].apply(item.diagram, [specificData]);
+  }
+
+  static removePreviousDiagrams() {
     d3.select('svg').remove();
     d3.selectAll('input.diagrams-diagram-button').remove();
-    d[toDiagramType].apply(item.diagram, [specificData]);
   }
 
   static addDivBeforeSvg() {
@@ -54,7 +58,7 @@ d.Diagram = class Diagram {
       prototype = Object.getPrototypeOf(diagram);
 
     diagram.name = opts.name;
-    diagram._configuration = diagram.configuration || {};
+    diagram._configuration = opts.configuration || {};
 
     _.each(Object.keys(opts.helpers), function(helperName) {
       if (_.isFunction(opts.helpers[helperName])) {
@@ -62,17 +66,20 @@ d.Diagram = class Diagram {
       }
     });
     _.merge(diagram._configuration, defaultDiagramConfiguration);
+    _.each(Object.keys(diagram._configuration), function(confKey) {
+      diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
+    });
     _.defaults(prototype, opts.helpers);
-
     diagram.register();
   }
 
-  addMouseListenersToEl(el, data) {
+  addMouseListenersToEl(el, data, callbacks) {
     var diagram = this,
       emitFn = function(d3Event, emitedEvent) {
         emitedEvent = emitedEvent || d3Event;
         el.on(d3Event, function() {
           diagram.emit(emitedEvent, emitContent);
+          if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
         });
       },
       emitContent = {
@@ -104,6 +111,10 @@ d.Diagram = class Diagram {
     } else if (argsLength === 2) {
       this._configuration[opts] = optValue;
       this.setToLocalStorage(opts, optValue);
+      this.emit('configuration-changed', {
+        key: opts,
+        value: optValue
+      });
       return optValue;
     }
   }

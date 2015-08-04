@@ -1,5 +1,6 @@
 // The links number map is between two nodesalso starts with the lower id
 var linksNumberMap = {},
+  SHY_CONNECTIONS = 'Show connections selectively',
   dPositionFn = d.utils.positionFn,
   dTextFn = d.utils.textFn,
   helpers = {
@@ -18,7 +19,7 @@ var linksNumberMap = {},
     },
     connectionFnFactory: function(baseFn, changedProp, changedVal) {
       return function() {
-        var connection = baseFn.apply(this, arguments),
+        var connection = baseFn.apply({}, arguments),
           setVal = function(singleConnection) {
             singleConnection[changedProp] = changedVal;
             return connection;
@@ -40,6 +41,7 @@ var linksNumberMap = {},
             else if (shape === 's') obj.shape = 'square';
             else obj.shape = 'circle';
           } else if (opt === 'b') obj.bold = true;
+          else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
         });
         return obj;
       }
@@ -56,6 +58,20 @@ var linksNumberMap = {},
     mergeWithDefaultConnection: function(connection) {
       return _.defaults(connection, helpers.getDefaultConnection());
     },
+    generateNodeWithTargetLink: function(file, target) {
+      return function() {
+        var args = Array.prototype.slice.call(arguments);
+        if (_.isUndefined(args[3])) args[3] = '';
+        else args[3] += ' ';
+        args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
+        return helpers.generateNode.apply({}, args);
+      };
+    },
+    generateNodeWithTextAsTargetLink: function(file) {
+      return function() {
+        return diagrams.graph.generateNodeWithTargetLink(file, arguments[0]).apply({}, arguments);
+      };
+    },
     generateNode: function() {
       var node = {
           name: arguments[0]
@@ -67,6 +83,9 @@ var linksNumberMap = {},
         },
         addConnection = function(connection) {
           if (_.isArray(connection)) _.each(connection, addConnection);
+          else if (_.isNumber(connection)) addConnection({
+            nodesIds: [connection]
+          });
           else if (_.isObject(connection)) {
             helpers.mergeWithDefaultConnection(connection);
             node.connections.push(connection);
@@ -77,7 +96,7 @@ var linksNumberMap = {},
       if (arguments.length > 1) {
         connections = arguments[1];
         node.connections = [];
-        if (_.isString(arguments[1])) {
+        if (_.isString(connections)) {
           connections = connections.split(' ').map(Number);
           if (connections.length > 0) node.id = connections[0];
           if (connections.length > 1) {
@@ -147,7 +166,8 @@ var linksNumberMap = {},
     },
     dataFromSpecificToGeneral: function(data) {
       var finalItems = [],
-        connections = [];
+        connections = [],
+        newConnection;
 
       _.each(data, function(node) {
         finalItems.push({
@@ -157,10 +177,16 @@ var linksNumberMap = {},
         });
         _.each(node.connections, function(connection) {
           _.each(connection.nodesIds, function(otherNodeId) {
-            connections.push({
-              from: node.id,
-              to: otherNodeId
-            });
+            newConnection = {};
+            if (connection.direction === 'out') {
+              newConnection.from = node.id;
+              newConnection.to = otherNodeId;
+            } else if (connection.direction === 'in') {
+              newConnection.from = otherNodeId;
+              newConnection.to = node.id;
+            }
+
+            connections.push(newConnection);
           });
         });
       });
@@ -221,7 +247,7 @@ Graph = class Graph extends d.Diagram {
           });
         };
 
-        _.each(['link-path', 'link-path-title'], setPathToLink);
+        _.each(['link-path', 'link-path-outer'], setPathToLink);
 
         node.each(function(singleNode) {
           if (singleNode.shape === 'circle') {
@@ -261,6 +287,7 @@ Graph = class Graph extends d.Diagram {
             description: node.description || null,
             color: color,
             shape: options.shape || 'circle',
+            linkToUrl: options.linkToUrl || null,
             bold: options.bold || false
           });
           idsMap[nodeId] = {
@@ -337,7 +364,79 @@ Graph = class Graph extends d.Diagram {
           diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
         });
       },
-      force, drag, link, linkTitle, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
+      getAllLinks = function() {
+        return container.selectAll(".link");
+      },
+      getLinksWithIsHiding = function() {
+        return getAllLinks().filter(function(d) {
+          return d.data.hasOwnProperty('shyIsHiding');
+        });
+      },
+      setDisplayOfShyConnections = function(display, node) {
+        var isShowing = display === 'show',
+          isHiding = display === 'hide',
+          nodeData = node.data,
+          linksWithIsHiding = getLinksWithIsHiding(),
+          nodeLinks = getAllLinks().filter(function(d) {
+            return d.source.id === nodeData.id || d.target.id === nodeData.id;
+          }),
+          setDisplay = function(links, show) {
+            links.classed('shy-link-hidden', !show);
+            links.classed('shy-link-showed', show);
+          },
+          hideLinks = function(links) {
+            setDisplay(links, false);
+            links.each(function(d) {
+              delete d.data.shyIsHiding;
+            });
+          },
+          futureConditionalHide = function() {
+            setTimeout(function() {
+              allAreHiding = true;
+              shyIsHidingIsSame = true;
+              nodeLinks.each(function(d) {
+                allAreHiding = allAreHiding && d.data.shyIsHiding;
+                if (d.data.shyIsHidingChanged) {
+                  shyIsHidingIsSame = false;
+                  delete d.data.shyIsHidingChanged;
+                }
+              });
+              if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);
+              else futureConditionalHide();
+            }, 1000);
+          },
+          allAreHiding, shyIsHidingIsSame;
+
+        if (linksWithIsHiding[0].length === 0) {
+          if (isShowing) setDisplay(nodeLinks, true);
+          else if (isHiding) {
+            nodeLinks.each(function(d) {
+              d.data.shyIsHiding = true;
+            });
+            futureConditionalHide();
+          }
+        } else {
+          if (isShowing) {
+            linksWithIsHiding.each(function(d, index) {
+              if (index === 0) d.data.shyIsHiding = false;
+            });
+          } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
+        }
+      },
+      setLinkIsHidingIfNecessary = function(isHiding, link) {
+        var linksWithIsHiding;
+        if (diagram.config(SHY_CONNECTIONS)) {
+          if (isHiding === false) link.data.shyIsHiding = isHiding;
+          else if (isHiding === true) {
+            linksWithIsHiding = getLinksWithIsHiding();
+            linksWithIsHiding.each(function(d) {
+              d.data.shyIsHiding = true;
+            });
+          }
+          link.data.shyIsHidingChanged = true;
+        }
+      },
+      force, drag, link, linkOuter, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
     diagram.markRelatedFn = function(item) {
       item.el.style('stroke-width', '10px');
@@ -385,7 +484,12 @@ Graph = class Graph extends d.Diagram {
       .append("svg:path")
       .attr("d", "M0,-5L10,0L0,5");
 
-    link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", "link");
+    link = container.selectAll(".link").data(parsedData.links).enter().append('g')
+      .attr("class", function() {
+        var finalClass = 'link';
+        if (diagram.config(SHY_CONNECTIONS)) finalClass += ' shy-link shy-link-hidden';
+        return finalClass;
+      });
     link.append("svg:path").attr({
       'class': 'link-path',
       "marker-end": function(d) {
@@ -400,12 +504,17 @@ Graph = class Graph extends d.Diagram {
       }
     });
 
-    linkTitle = link.append('g');
-    linkTitle.filter(function(d) {
-      return _.isUndefined(d.data.text) === false;
-    }).append('svg:path').attr('class', 'link-path-title');
-    linkTitle.each(function(d) {
-      diagram.addMouseListenersToEl(d3.select(this), d.data);
+    linkOuter = link.append('g');
+    linkOuter.append('svg:path').attr('class', 'link-path-outer');
+    linkOuter.each(function(d) {
+      diagram.addMouseListenersToEl(d3.select(this), d.data, {
+        mouseenter: function(link) {
+          setLinkIsHidingIfNecessary(false, link);
+        },
+        mouseleave: function(link) {
+          setLinkIsHidingIfNecessary(true, link);
+        }
+      });
     });
 
     node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
@@ -450,15 +559,35 @@ Graph = class Graph extends d.Diagram {
       shapeEl.attr('class', singleNodeClasses);
 
       singleNode.shapeEl = shapeEl;
-      diagram.addMouseListenersToEl(shapeEl, singleNode);
+      diagram.addMouseListenersToEl(shapeEl, singleNode, {
+        mouseenter: function(data) {
+          if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', data);
+        },
+        mouseleave: function(data) {
+          if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', data);
+        },
+        click: function(node) {
+          if (node.data.linkToUrl) window.open(node.data.linkToUrl);
+        }
+      });
     });
+
     node.append("text").text(dTextFn('name'));
 
     setRelationships();
+    diagram.listen('configuration-changed', function(conf) {
+      if (conf.key === SHY_CONNECTIONS) {
+        d.Diagram.removePreviousDiagrams();
+        diagram.create(creationId, data, conf);
+      }
+    });
   }
 };
 
 new Graph({
   name: 'graph',
-  helpers: helpers
+  helpers: helpers,
+  configuration: {
+    [SHY_CONNECTIONS]: true
+  }
 });

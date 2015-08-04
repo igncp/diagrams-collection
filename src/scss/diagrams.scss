@@ -27,16 +27,26 @@ rect {
   }
 }
 .graph-diagram {
-  .link .link-path {
-    fill: none;
-    stroke-width: 1.5px;
-  }
-  .link .link-path-title {
-    cursor: pointer;
+  .link {
+    &.shy-link {
+      &.shy-link-hidden {
+        display: none;
+      }
+      &.shy-link-showed {
+        display: block;
+      }
+    }
+    .link-path {
+      fill: none;
+      stroke-width: 1.5px;
+    }
+    .link-path-outer {
+      cursor: pointer;
 
-    stroke: rgba(0,0,0,0);
-    stroke-width: 40px;
-    fill: none;
+      stroke: rgba(0,0,0,0);
+      stroke-width: 40px;
+      fill: none;
+    }
   }
   .node {
     cursor: pointer;
