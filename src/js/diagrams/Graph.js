@@ -1,6 +1,12 @@
 // The links number map is between two nodesalso starts with the lower id
 var linksNumberMap = {},
   SHY_CONNECTIONS = 'Show connections selectively',
+  GRAPH_ZOOM = 'dia graph zoom',
+  graphZoomConfig = {
+    'private': true,
+    'type': Number,
+    value: 1
+  },
   dPositionFn = d.utils.positionFn,
   dTextFn = d.utils.textFn,
   helpers = {
@@ -340,8 +346,11 @@ Graph = class Graph extends d.Diagram {
           });
         }
       },
-      zoomed = function() {
-        container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+      zoomed = function(translate, scale) {
+        scale = scale || 1;
+        container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
+        graphZoomConfig.value = scale;
+        diagram.config(GRAPH_ZOOM, graphZoomConfig);
       },
       dragstarted = function() {
         d3.event.sourceEvent.stopPropagation();
@@ -456,8 +465,13 @@ Graph = class Graph extends d.Diagram {
     });
 
 
-    zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
+    zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function() {
+      zoomed(d3.event.translate, d3.event.scale);
+    });
     svg.call(zoom);
+    
+    zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
+    zoomed(zoom.translate(), zoom.scale());
 
     force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
 
@@ -581,6 +595,7 @@ Graph = class Graph extends d.Diagram {
         diagram.create(creationId, data, conf);
       }
     });
+
   }
 };
 
@@ -588,6 +603,6 @@ new Graph({
   name: 'graph',
   helpers: helpers,
   configuration: {
-    [SHY_CONNECTIONS]: true
+    [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig
   }
 });

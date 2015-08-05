@@ -367,7 +367,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             return this._configuration[optsKey];
           } else if (argsLength === 2) {
             this._configuration[opts] = optValue;
-            this.setToLocalStorage(opts, optValue);
+            if (_.isObject(optValue)) this.setToLocalStorage(opts, optValue.value);else this.setToLocalStorage(opts, optValue);
+
             this.emit('configuration-changed', {
               key: opts,
               value: optValue
@@ -390,14 +391,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
       }, {
         key: 'getFromLocalStorage',
-        value: function getFromLocalStorage(originalKey, defaultValue) {
+        value: function getFromLocalStorage(originalKey, defaultItem) {
           var diagram = this,
-              finalValue = defaultValue;
+              getAndConvertStrBoolean = function getAndConvertStrBoolean(defaultValue) {
+            var rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
+            if (rv === 'false') rv = false;else if (rv === 'true') rv = true;
+            return rv;
+          },
+              finalValue = defaultItem;
 
           if (localStorage && localStorage.getItem) {
-            finalValue = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
-            if (finalValue === 'false') finalValue = false;else if (finalValue === 'true') finalValue = true;
+            if (_.isObject(finalValue)) {
+              finalValue.value = getAndConvertStrBoolean(finalValue.value);
+              if (finalValue.type) finalValue.value = finalValue.type(finalValue.value);
+            } else finalValue = getAndConvertStrBoolean(finalValue);
           }
+
           return finalValue;
         }
       }, {
@@ -1086,9 +1095,17 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       helpers: helpers
     });
   })();(function () {
+    var _configuration;
+
     // The links number map is between two nodesalso starts with the lower id
     var linksNumberMap = {},
         SHY_CONNECTIONS = 'Show connections selectively',
+        GRAPH_ZOOM = 'dia graph zoom',
+        graphZoomConfig = {
+      'private': true,
+      'type': Number,
+      value: 1
+    },
         dPositionFn = d.utils.positionFn,
         dTextFn = d.utils.textFn,
         helpers = {
@@ -1428,8 +1445,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               });
             }
           },
-              zoomed = function zoomed() {
-            container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+              zoomed = function zoomed(translate, scale) {
+            scale = scale || 1;
+            container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
+            graphZoomConfig.value = scale;
+            diagram.config(GRAPH_ZOOM, graphZoomConfig);
           },
               dragstarted = function dragstarted() {
             d3.event.sourceEvent.stopPropagation();
@@ -1551,8 +1571,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'class': 'graph-diagram'
           });
 
-          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
+          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
+            zoomed(d3.event.translate, d3.event.scale);
+          });
           svg.call(zoom);
+
+          zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
+          zoomed(zoom.translate(), zoom.scale());
 
           force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
 
@@ -1677,7 +1702,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     new Graph({
       name: 'graph',
       helpers: helpers,
-      configuration: _defineProperty({}, SHY_CONNECTIONS, true)
+      configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _configuration)
     });
   })();(function () {
     var layerGId = 0,

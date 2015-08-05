@@ -110,7 +110,9 @@ d.Diagram = class Diagram {
       return this._configuration[optsKey];
     } else if (argsLength === 2) {
       this._configuration[opts] = optValue;
-      this.setToLocalStorage(opts, optValue);
+      if (_.isObject(optValue)) this.setToLocalStorage(opts, optValue.value);
+      else this.setToLocalStorage(opts, optValue);
+
       this.emit('configuration-changed', {
         key: opts,
         value: optValue
@@ -130,15 +132,23 @@ d.Diagram = class Diagram {
     return 'diagramsjs-' + originalKey;
   }
 
-  getFromLocalStorage(originalKey, defaultValue) {
+  getFromLocalStorage(originalKey, defaultItem) {
     var diagram = this,
-      finalValue = defaultValue;
+      getAndConvertStrBoolean = function(defaultValue) {
+        var rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
+        if (rv === 'false') rv = false;
+        else if (rv === 'true') rv = true;
+        return rv;
+      },
+      finalValue = defaultItem;
 
     if (localStorage && localStorage.getItem) {
-      finalValue = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
-      if (finalValue === 'false') finalValue = false;
-      else if (finalValue === 'true') finalValue = true;
+      if (_.isObject(finalValue)) {
+        finalValue.value = getAndConvertStrBoolean(finalValue.value);
+        if (finalValue.type) finalValue.value = finalValue.type(finalValue.value);
+      } else finalValue = getAndConvertStrBoolean(finalValue);
     }
+
     return finalValue;
   }
 
