@@ -10,7 +10,7 @@ The build system concatenates the src files, from top to bottom relatively to th
 
 ## Dependencies
 
-You must add manually the following libraries:
+The library has the following dependencies, which are installed automatically if installed with Bower:
 - d3.js
 - lodash.js
 - rx.js
