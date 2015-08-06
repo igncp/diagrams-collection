@@ -478,16 +478,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
       }, {
         key: 'markRelatedItems',
-        value: function markRelatedItems(item) {
+        value: function markRelatedItems(item, opts) {
           var diagram = this,
-              dependantItems,
-              dependencyItems;
+              relatedItemsGroup,
+              pushToRelatedItemsGroup = function pushToRelatedItemsGroup(args) {
+            relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem.apply(diagram, [item].concat(args)));
+          };
 
+          opts = opts || {};
           if (diagram.markRelatedFn && item.relationships) {
-            dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
-            dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');
+            relatedItemsGroup = [];
 
-            _.each([dependantItems, dependencyItems], function (relatedItems) {
+            if (opts.filter) pushToRelatedItemsGroup([opts.filter]);else _.each([['dependants'], ['dependencies']], pushToRelatedItemsGroup);
+
+            _.each(relatedItemsGroup, function (relatedItems) {
               _.each(relatedItems, diagram.markRelatedFn);
             });
 
@@ -1428,7 +1432,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         linkObj.target = nodeIndex;
                       }
                       linkObj.data = connection;
-                      linkObj.color = idsMap[node.id].color;
+                      linkObj.color = parsedData.nodes[linkObj.source].color;
                       helpers.updateLinksNumberMapWithLink(linkObj);
                       linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
                       if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
@@ -1510,7 +1514,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   }
                 });
                 if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);else futureConditionalHide();
-              }, 1000);
+              }, 500);
             },
                 allAreHiding,
                 shyIsHidingIsSame;
@@ -1555,7 +1559,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               parsedData;
 
           diagram.markRelatedFn = function (item) {
-            item.el.style('stroke-width', '10px');
+            item.el.style('stroke-width', '20px');
           };
           diagram.unmarkAllItems = function () {
             _.each(parsedData.nodes, function (node) {
@@ -1607,8 +1611,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           link.append("svg:path").attr({
             'class': 'link-path',
             "marker-end": function markerEnd(d) {
-              var markerItem = d.data.direction === 'out' ? 'source' : 'target';
-              return 'url(#arrow-head-' + d[markerItem].id + ')';
+              return 'url(#arrow-head-' + d.source.id + ')';
             }
           }).style({
             'stroke': dTextFn('color'),

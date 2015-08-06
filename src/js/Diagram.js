@@ -211,16 +211,24 @@ d.Diagram = class Diagram {
     }
   }
 
-  markRelatedItems(item) {
+  markRelatedItems(item, opts) {
     var diagram = this,
-      dependantItems,
-      dependencyItems;
+      relatedItemsGroup,
+      pushToRelatedItemsGroup = function(args) {
+        relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem.apply(diagram, [item].concat(args)));
+      };
 
+    opts = opts || {};
     if (diagram.markRelatedFn && item.relationships) {
-      dependantItems = diagram.getAllRelatedItemsOfItem(item, 'dependants');
-      dependencyItems = diagram.getAllRelatedItemsOfItem(item, 'dependencies');
+      relatedItemsGroup = [];
+      
+      if (opts.filter) pushToRelatedItemsGroup([opts.filter]);
+      else _.each([
+        ['dependants'],
+        ['dependencies']
+      ], pushToRelatedItemsGroup);
 
-      _.each([dependantItems, dependencyItems], function(relatedItems) {
+      _.each(relatedItemsGroup, function(relatedItems) {
         _.each(relatedItems, diagram.markRelatedFn);
       });
 

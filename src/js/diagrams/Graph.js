@@ -329,7 +329,7 @@ Graph = class Graph extends d.Diagram {
                     linkObj.target = nodeIndex;
                   }
                   linkObj.data = connection;
-                  linkObj.color = idsMap[node.id].color;
+                  linkObj.color = parsedData.nodes[linkObj.source].color;
                   helpers.updateLinksNumberMapWithLink(linkObj);
                   linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
                   if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
@@ -412,7 +412,7 @@ Graph = class Graph extends d.Diagram {
               });
               if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);
               else futureConditionalHide();
-            }, 1000);
+            }, 500);
           },
           allAreHiding, shyIsHidingIsSame;
 
@@ -448,7 +448,7 @@ Graph = class Graph extends d.Diagram {
       force, drag, link, linkOuter, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
     diagram.markRelatedFn = function(item) {
-      item.el.style('stroke-width', '10px');
+      item.el.style('stroke-width', '20px');
     };
     diagram.unmarkAllItems = function() {
       _.each(parsedData.nodes, function(node) {
@@ -469,7 +469,7 @@ Graph = class Graph extends d.Diagram {
       zoomed(d3.event.translate, d3.event.scale);
     });
     svg.call(zoom);
-    
+
     zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
     zoomed(zoom.translate(), zoom.scale());
 
@@ -494,9 +494,7 @@ Graph = class Graph extends d.Diagram {
         markerWidth: 8,
         markerHeight: 8,
         orient: 'auto'
-      })
-      .append("svg:path")
-      .attr("d", "M0,-5L10,0L0,5");
+      }).append("svg:path").attr("d", "M0,-5L10,0L0,5");
 
     link = container.selectAll(".link").data(parsedData.links).enter().append('g')
       .attr("class", function() {
@@ -507,8 +505,7 @@ Graph = class Graph extends d.Diagram {
     link.append("svg:path").attr({
       'class': 'link-path',
       "marker-end": function(d) {
-        var markerItem = (d.data.direction === 'out') ? 'source' : 'target';
-        return 'url(#arrow-head-' + d[markerItem].id + ')';
+        return 'url(#arrow-head-' + d.source.id + ')';
       }
     }).style({
       'stroke': dTextFn('color'),
