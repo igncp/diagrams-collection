@@ -2,6 +2,7 @@
 var linksNumberMap = {},
   SHY_CONNECTIONS = 'Show connections selectively',
   GRAPH_ZOOM = 'dia graph zoom',
+  GRAPH_DRAG = 'Drag nodes on click (may make links difficult)',
   graphZoomConfig = {
     'private': true,
     'type': Number,
@@ -77,6 +78,12 @@ var linksNumberMap = {},
       return function() {
         return diagrams.graph.generateNodeWithTargetLink(file, arguments[0]).apply({}, arguments);
       };
+    },
+    generatePrivateNode: function() {
+      var args = Array.prototype.slice.call(arguments);
+      args[2] = args[2] + '<br><strong>PRIVATE</strong>';
+      args[3] = 's-t';
+      return helpers.generateNode.apply({}, args);
     },
     generateNode: function() {
       var node = {
@@ -236,6 +243,7 @@ Graph = class Graph extends d.Diagram {
       container = svg.append('g'),
       height = bodyHeight - 250,
       width = svg.attr('width'),
+      dragNodesConfig = diagram.config(GRAPH_DRAG),
       tick = function() {
         var setPathToLink = function(pathClass) {
           link.select('path.' + pathClass).attr("d", function(d) {
@@ -274,7 +282,7 @@ Graph = class Graph extends d.Diagram {
           }, 0),
           idsMap = {},
           nodesWithLinkMap = {},
-          colors = d3.scale.category10(),
+          colors = d3.scale.category20(),
           nodeId, color, options, otherNode, linkObj;
         parsedData = {
           links: [],
@@ -299,13 +307,12 @@ Graph = class Graph extends d.Diagram {
           idsMap[nodeId] = {
             index: nodeIndex
           };
-          if (_.isArray(node.connections) && node.connections.length > 0) {
-            idsMap[nodeId].color = color;
-            markers.push({
-              id: nodeId,
-              color: color
-            });
-          }
+          idsMap[nodeId].color = color;
+          markers.push({
+            id: nodeId,
+            color: color
+          });
+
         });
 
         _.each(parsedData.nodes, function(node, nodeIndex) {
@@ -564,7 +571,7 @@ Graph = class Graph extends d.Diagram {
         d.utils.applySimpleTransform(shapeEl);
       }
 
-      shapeEl.call(drag);
+      if (dragNodesConfig === true) shapeEl.call(drag);
       if (singleNode.bold === true) singleNodeClasses += ' bold';
       else singleNodeClasses += ' thin';
       shapeEl.attr('class', singleNodeClasses);
@@ -587,9 +594,8 @@ Graph = class Graph extends d.Diagram {
 
     setRelationships();
     diagram.listen('configuration-changed', function(conf) {
-      if (conf.key === SHY_CONNECTIONS) {
-        d.Diagram.removePreviousDiagrams();
-        diagram.create(creationId, data, conf);
+      if (conf.key === SHY_CONNECTIONS || conf.key === GRAPH_DRAG) {
+        diagram.removePreviousAndCreate(creationId, data, conf);
       }
     });
 
@@ -600,6 +606,6 @@ new Graph({
   name: 'graph',
   helpers: helpers,
   configuration: {
-    [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig
+    [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false
   }
 });

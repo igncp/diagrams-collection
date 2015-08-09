@@ -19,8 +19,8 @@ d.Diagram = class Diagram {
   }
 
   static removePreviousDiagrams() {
-    d3.select('svg').remove();
     d3.selectAll('input.diagrams-diagram-button').remove();
+    d3.select('svg').remove();
   }
 
   static addDivBeforeSvg() {
@@ -90,6 +90,14 @@ d.Diagram = class Diagram {
     emitFn('mouseleave');
     emitFn('mouseenter');
     emitFn('click', 'itemclick');
+  }
+
+  removePreviousAndCreate() {
+    var diagram = this;
+    
+    d.Diagram.removePreviousDiagrams();
+    diagram.addConversionButtons();
+    diagram.create.apply(diagram, arguments);
   }
 
   config(opts, optValue) {
@@ -221,7 +229,7 @@ d.Diagram = class Diagram {
     opts = opts || {};
     if (diagram.markRelatedFn && item.relationships) {
       relatedItemsGroup = [];
-      
+
       if (opts.filter) pushToRelatedItemsGroup([opts.filter]);
       else _.each([
         ['dependants'],
@@ -249,7 +257,8 @@ d.Diagram = class Diagram {
           data: args,
           id: createdDiagramsMaxId
         });
-        diagram.addConversionButtons(createdDiagramsMaxId);
+        diagram.diagramId = createdDiagramsMaxId;
+        diagram.addConversionButtons();
         args.unshift(createdDiagramsMaxId);
         diagram.create.apply(diagram, args);
         d.events.emit('diagram-created', diagram);
@@ -259,14 +268,14 @@ d.Diagram = class Diagram {
     _.defaults(d[diagram.name], Object.getPrototypeOf(diagram));
   }
 
-  addConversionButtons(id) {
+  addConversionButtons() {
     var diagram = this,
       div = d.Diagram.addDivBeforeSvg(),
       onClickFn;
 
     _.each(d.diagramTypes, function(diagramType) {
       if (diagramType !== diagram.name) {
-        onClickFn = 'diagrams.Diagram.convertDiagram(' + id + ', \'' + diagramType + '\')';
+        onClickFn = 'diagrams.Diagram.convertDiagram(' + diagram.diagramId + ', \'' + diagramType + '\')';
         div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
       }
     });
