@@ -6,7 +6,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
@@ -30,7 +30,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     };
     d.utils.applySimpleTransform = function (el) {
       el.attr('transform', function (d) {
-        return 'translate(' + d.x + ',' + d.y + ')';
+        return "translate(" + d.x + "," + d.y + ")";
       });
     };
     d.utils.positionFn = function (props, offset) {
@@ -85,8 +85,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.codeBlockOfLanguageFn = function (language, commentsSymbol) {
       commentsSymbol = commentsSymbol || '';
       return function (codeBlock, where, withInlineStrs) {
-        if (withInlineStrs === true) codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
-        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
+        if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
+        if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + "\n" + codeBlock;
         return '``' + language + '``' + codeBlock + '``';
       };
     };
@@ -230,12 +230,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.utils.getUrlParams = function () {
       var query_string = {};
       var query = window.location.search.substring(1);
-      var vars = query.split('&');
+      var vars = query.split("&");
       for (var i = 0; i < vars.length; i++) {
-        var pair = vars[i].split('=');
-        if (typeof query_string[pair[0]] === 'undefined') {
+        var pair = vars[i].split("=");
+        if (typeof query_string[pair[0]] === "undefined") {
           query_string[pair[0]] = decodeURIComponent(pair[1]);
-        } else if (typeof query_string[pair[0]] === 'string') {
+        } else if (typeof query_string[pair[0]] === "string") {
           var arr = [query_string[pair[0]], decodeURIComponent(pair[1])];
           query_string[pair[0]] = arr;
         } else {
@@ -251,6 +251,63 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     d.diagramsRegistry = [];
 
     d.Diagram = (function () {
+      _createClass(Diagram, null, [{
+        key: 'convertDiagram',
+        value: function convertDiagram(creationId, toDiagramType) {
+          var item = d.Diagram.getRegistryItemWithCreationId(creationId),
+              newArgs = item.data.slice(1),
+              generalData,
+              specificData;
+
+          generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
+          specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
+
+          d.events.emit('diagram-to-transform', item.diagram);
+
+          d.Diagram.removePreviousDiagrams();
+          d[toDiagramType].apply(item.diagram, [specificData]);
+        }
+      }, {
+        key: 'removePreviousDiagrams',
+        value: function removePreviousDiagrams() {
+          d3.selectAll('input.diagrams-diagram-button').remove();
+          d3.select('svg').remove();
+        }
+      }, {
+        key: 'addDivBeforeSvg',
+        value: function addDivBeforeSvg() {
+          var body = d3.select('body'),
+              div = body.insert('div', 'svg');
+
+          div.appendButtonToDiv = function (cls, value, onClickFn) {
+            div.append('input').attr({
+              type: 'button',
+              'class': cls + ' diagrams-diagram-button btn btn-default',
+              value: value,
+              onclick: onClickFn
+            });
+          };
+
+          return div;
+        }
+      }, {
+        key: 'getRegistryItemWithCreationId',
+        value: function getRegistryItemWithCreationId(creationId) {
+          var items = _.where(d.diagramsRegistry, {
+            id: creationId
+          });
+
+          return items.length === 1 ? items[0] : null;
+        }
+      }, {
+        key: 'getDataWithCreationId',
+        value: function getDataWithCreationId(creationId) {
+          var item = d.Diagram.getRegistryItemWithCreationId(creationId);
+
+          return item ? item.data : null;
+        }
+      }]);
+
       function Diagram(opts) {
         _classCallCheck(this, Diagram);
 
@@ -489,61 +546,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
           });
         }
-      }], [{
-        key: 'convertDiagram',
-        value: function convertDiagram(creationId, toDiagramType) {
-          var item = d.Diagram.getRegistryItemWithCreationId(creationId),
-              newArgs = item.data.slice(1),
-              generalData,
-              specificData;
-
-          generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
-          specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
-
-          d.events.emit('diagram-to-transform', item.diagram);
-
-          d.Diagram.removePreviousDiagrams();
-          d[toDiagramType].apply(item.diagram, [specificData]);
-        }
-      }, {
-        key: 'removePreviousDiagrams',
-        value: function removePreviousDiagrams() {
-          d3.selectAll('input.diagrams-diagram-button').remove();
-          d3.select('svg').remove();
-        }
-      }, {
-        key: 'addDivBeforeSvg',
-        value: function addDivBeforeSvg() {
-          var body = d3.select('body'),
-              div = body.insert('div', 'svg');
-
-          div.appendButtonToDiv = function (cls, value, onClickFn) {
-            div.append('input').attr({
-              type: 'button',
-              'class': cls + ' diagrams-diagram-button btn btn-default',
-              value: value,
-              onclick: onClickFn
-            });
-          };
-
-          return div;
-        }
-      }, {
-        key: 'getRegistryItemWithCreationId',
-        value: function getRegistryItemWithCreationId(creationId) {
-          var items = _.where(d.diagramsRegistry, {
-            id: creationId
-          });
-
-          return items.length === 1 ? items[0] : null;
-        }
-      }, {
-        key: 'getDataWithCreationId',
-        value: function getDataWithCreationId(creationId) {
-          var item = d.Diagram.getRegistryItemWithCreationId(creationId);
-
-          return item ? item.data : null;
-        }
       }]);
 
       return Diagram;
@@ -588,7 +590,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         d.shared = _.defaults(d.shared, data);
       },
       getWithStartingBreakLine: function getWithStartingBreakLine() {
-        return '<br>' + d.shared.get.apply(d.shared, arguments);
+        return "<br>" + d.shared.get.apply(d.shared, arguments);
       },
       throwIfSharedMethodAlreadyExists: function throwIfSharedMethodAlreadyExists(data) {
         var keys;
@@ -730,7 +732,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       },
 
       convertToGraph: function convertToGraph(origConf) {
-        console.log('origConf', origConf);
+        console.log("origConf", origConf);
       },
 
       convertToLayer: function convertToLayer(origConf) {
@@ -869,13 +871,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         Box;
 
     Box = (function (_d$Diagram) {
+      _inherits(Box, _d$Diagram);
+
       function Box() {
         _classCallCheck(this, Box);
 
         _get(Object.getPrototypeOf(Box.prototype), 'constructor', this).apply(this, arguments);
       }
-
-      _inherits(Box, _d$Diagram);
 
       _createClass(Box, [{
         key: 'create',
@@ -922,7 +924,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   y: yDim
                 });
                 triggerEl.on('click', expandListener);
-              };
+              },
+                  clipPathId;
+
+              triggerElId += 1;
+              clipPathId = 'clippath-' + triggerElId;
+              triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
+                height: 15,
+                width: 20,
+                y: yDim - 17,
+                x: xDim - 20
+              });
+              triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
 
               if (_.isUndefined(item.collapsed)) {
                 item.collapsed = false;
@@ -968,7 +981,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 addBodyItems(item.items, newContainer, depth + 1);
               } else {
                 if (item.options && item.options.isLink === true) {
-                  newContainer = container.append('svg:a').attr('xlink:href', item.description);
+                  newContainer = container.append('svg:a').attr("xlink:href", item.description);
                   textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     id: currentTextGId,
                     x: depthWidth * depth,
@@ -983,9 +996,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                   });
                   textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                     x: depthWidth * depth,
-                    y: rowHeight * ++bodyPosition
-                  }).style({
-                    'font-weight': 'bold'
+                    y: rowHeight * ++bodyPosition,
+                    'class': 'diagrams-box-definition-text'
                   });
                   if (item.description) {
                     textWidth = textG[0][0].getBoundingClientRect().width;
@@ -1026,8 +1038,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 window.scrollTo(0, scrollElTop + currentScroll);
               });
             }
-            console.log('targetFound', targetFound);
+            console.log("targetFound", targetFound);
           },
+              triggerElId,
               bodyG,
               bodyPosition,
               bodyRect;
@@ -1049,6 +1062,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }).style({
               filter: 'url(#diagrams-drop-shadow-box)'
             });
+            triggerElId = 0;
             addBodyItems();
             diagram.setRelationships(conf.body);
             d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
@@ -1339,13 +1353,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         helpers;
 
     Graph = (function (_d$Diagram2) {
+      _inherits(Graph, _d$Diagram2);
+
       function Graph() {
         _classCallCheck(this, Graph);
 
         _get(Object.getPrototypeOf(Graph.prototype), 'constructor', this).apply(this, arguments);
       }
-
-      _inherits(Graph, _d$Diagram2);
 
       _createClass(Graph, [{
         key: 'create',
@@ -1359,13 +1373,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
               dragNodesConfig = diagram.config(GRAPH_DRAG),
               tick = function tick() {
             var setPathToLink = function setPathToLink(pathClass) {
-              link.select('path.' + pathClass).attr('d', function (d) {
+              link.select('path.' + pathClass).attr("d", function (d) {
                 var linksNumber = helpers.getLinksNumberMapItemWithLink(d),
                     linkIndex = d.data.linkIndex,
                     dx = d.target.x - d.source.x,
                     dy = d.target.y - d.source.y,
                     dr = Math.sqrt(dx * dx + dy * dy) * 3.5 * ((linkIndex + 1) / (linksNumber * 3));
-                return 'M' + d.source.x + ',' + d.source.y + 'A' + dr + ',' + dr + ' 0 0,1 ' + d.target.x + ',' + d.target.y;
+                return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
               });
             };
 
@@ -1373,14 +1387,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
             node.each(function (singleNode) {
               if (singleNode.shape === 'circle') {
-                node.select('circle').attr('cx', dPositionFn('x')).attr('cy', dPositionFn('y'));
+                node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
               } else {
                 if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
 
                 d.utils.applySimpleTransform(shapeEl);
               }
             });
-            node.select('text').attr('x', dPositionFn('x')).attr('y', dPositionFn('y', -20));
+            node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
           },
               parseData = function parseData() {
             var maxId = _.reduce(data, function (memo, node) {
@@ -1465,20 +1479,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           },
               zoomed = function zoomed(translate, scale) {
             scale = scale || 1;
-            container.attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+            container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
             graphZoomConfig.value = scale;
             diagram.config(GRAPH_ZOOM, graphZoomConfig);
           },
               dragstarted = function dragstarted() {
             d3.event.sourceEvent.stopPropagation();
-            d3.select(this).classed('dragging', true);
+            d3.select(this).classed("dragging", true);
             force.start();
           },
               dragged = function dragged(d) {
-            d3.select(this).attr('cx', d.x = d3.event.x).attr('cy', d.y = d3.event.y);
+            d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
           },
               dragended = function dragended() {
-            d3.select(this).classed('dragging', false);
+            d3.select(this).classed("dragging", false);
           },
               setRelationships = function setRelationships() {
             _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
@@ -1491,7 +1505,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             });
           },
               getAllLinks = function getAllLinks() {
-            return container.selectAll('.link');
+            return container.selectAll(".link");
           },
               getLinksWithIsHiding = function getLinksWithIsHiding() {
             return getAllLinks().filter(function (d) {
@@ -1589,7 +1603,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             'class': 'graph-diagram'
           });
 
-          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on('zoom', function () {
+          zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
             zoomed(d3.event.translate, d3.event.scale);
           });
           svg.call(zoom);
@@ -1597,15 +1611,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
           zoomed(zoom.translate(), zoom.scale());
 
-          force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on('tick', tick);
+          force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
 
           drag = d3.behavior.drag().origin(function (d) {
             return d;
-          }).on('dragstart', dragstarted).on('drag', dragged).on('dragend', dragended);
+          }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
 
           force.nodes(parsedData.nodes).links(parsedData.links).start();
 
-          container.append('svg:defs').selectAll('marker').data(markers).enter().append('svg:marker').attr({
+          container.append("svg:defs").selectAll("marker").data(markers).enter().append("svg:marker").attr({
             id: dTextFn('id', 'arrow-head-'),
             'class': 'arrow-head',
             fill: dTextFn('color'),
@@ -1615,16 +1629,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             markerWidth: 8,
             markerHeight: 8,
             orient: 'auto'
-          }).append('svg:path').attr('d', 'M0,-5L10,0L0,5');
+          }).append("svg:path").attr("d", "M0,-5L10,0L0,5");
 
-          link = container.selectAll('.link').data(parsedData.links).enter().append('g').attr('class', function () {
+          link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", function () {
             var finalClass = 'link';
             if (diagram.config(SHY_CONNECTIONS)) finalClass += ' shy-link shy-link-hidden';
             return finalClass;
           });
-          link.append('svg:path').attr({
+          link.append("svg:path").attr({
             'class': 'link-path',
-            'marker-end': function markerEnd(d) {
+            "marker-end": function markerEnd(d) {
               return 'url(#arrow-head-' + d.source.id + ')';
             }
           }).style({
@@ -1647,7 +1661,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             });
           });
 
-          node = container.selectAll('.node').data(parsedData.nodes).enter().append('g').attr({
+          node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
             'class': function _class(d) {
               var finalClass = 'node';
               if (d.hidden === true) finalClass += ' node-hidden';
@@ -1662,13 +1676,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             singleNode.fullText = d.utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
 
             if (singleNode.shape === 'circle') {
-              shapeEl = singleNodeEl.append('circle').attr({
+              shapeEl = singleNodeEl.append("circle").attr({
                 r: 12,
                 fill: dTextFn('color')
               });
             } else {
               shape = d3.svg.symbol().size(750);
-              shapeEl = singleNodeEl.append('path');
+              shapeEl = singleNodeEl.append("path");
               if (singleNode.shape === 'triangle') {
                 shape = shape.type('triangle-up');
                 singleNodeClasses += ' triangle';
@@ -1701,7 +1715,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             });
           });
 
-          node.append('text').text(dTextFn('name'));
+          node.append("text").text(dTextFn('name'));
 
           setRelationships();
           diagram.listen('configuration-changed', function (conf) {
@@ -2173,13 +2187,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 
     Layer = (function (_d$Diagram3) {
+      _inherits(Layer, _d$Diagram3);
+
       function Layer() {
         _classCallCheck(this, Layer);
 
         _get(Object.getPrototypeOf(Layer.prototype), 'constructor', this).apply(this, arguments);
       }
-
-      _inherits(Layer, _d$Diagram3);
 
       _createClass(Layer, [{
         key: 'create',
@@ -2320,7 +2334,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
 
-                connectionG.append('circle').attr({
+                connectionG.append("circle").attr({
                   cx: connectionCoords.to.x,
                   cy: connectionCoords.to.y,
                   r: 5,

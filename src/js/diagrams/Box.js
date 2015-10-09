@@ -222,7 +222,18 @@ Box = class Box extends d.Diagram {
                 y: yDim
               });
               triggerEl.on('click', expandListener);
-            };
+            },
+            clipPathId;
+
+          triggerElId += 1; 
+          clipPathId = 'clippath-' + triggerElId;
+          triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
+            height: 15,
+            width: 20,
+            y: yDim - 17,
+            x: xDim - 20
+          });
+          triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
 
           if (_.isUndefined(item.collapsed)) {
             item.collapsed = false;
@@ -269,7 +280,7 @@ Box = class Box extends d.Diagram {
             addBodyItems(item.items, newContainer, depth + 1);
           } else {
             if (item.options && item.options.isLink === true) {
-              newContainer = container.append('svg:a').attr("xlink:href", item.description)
+              newContainer = container.append('svg:a').attr("xlink:href", item.description);
               textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                 id: currentTextGId,
                 x: depthWidth * depth,
@@ -284,9 +295,8 @@ Box = class Box extends d.Diagram {
               });
               textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                 x: depthWidth * depth,
-                y: rowHeight * ++bodyPosition
-              }).style({
-                'font-weight': 'bold'
+                y: rowHeight * ++bodyPosition,
+                'class': 'diagrams-box-definition-text'
               });
               if (item.description) {
                 textWidth = textG[0][0].getBoundingClientRect().width;
@@ -329,7 +339,7 @@ Box = class Box extends d.Diagram {
         }
         console.log("targetFound", targetFound);
       },
-      bodyG, bodyPosition, bodyRect;
+      triggerElId, bodyG, bodyPosition, bodyRect;
 
     opts = opts || {};
 
@@ -348,6 +358,7 @@ Box = class Box extends d.Diagram {
       }).style({
         filter: 'url(#diagrams-drop-shadow-box)'
       });
+      triggerElId = 0;
       addBodyItems();
       diagram.setRelationships(conf.body);
       d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);

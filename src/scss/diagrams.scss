@@ -4,25 +4,33 @@ body {
   margin: 0;
 }
 rect {
-  stroke: #000000;
+  stroke: #000;
 }
 .diagrams-diagram-button {
-  margin: 10px 15px 20px;
+  margin: 5px 15px 10px;
 }
 .layer-node path {
   cursor: pointer;
 }
 .box-diagram {
   font-size: 25px;
+  .diagrams-box-definition-text {
+    font-weight: bold;
+
+    fill: #18694a;
+  }
 }
-.layers-diagram, .box-diagram {
-  rect, text {
+.layers-diagram,
+.box-diagram {
+  rect,
+  text {
     cursor: pointer;
   }
 }
 .layers-diagram {
   font-size: 13px;
-  rect, text {
+  rect,
+  text {
     cursor: pointer;
   }
 }
@@ -56,8 +64,10 @@ rect {
     text {
       text-anchor: middle;
     }
-    .triangle, .square, circle {
-      stroke: #000000;
+    .triangle,
+    .square,
+    circle {
+      stroke: #000;
       &.bold {
         stroke-width: 4px;
       }
@@ -70,11 +80,11 @@ rect {
 pre {
   font-size: 20px;
   &.last-code-block {
-    background-color: #EAF3FA;
+    background-color: #eaf3fa;
   }
 }
 .collapsible-trigger {
-  fill: rgb(49, 179, 35);
+  fill: #AF2661;
   text.plus {
     font-size: 30px;
   }
