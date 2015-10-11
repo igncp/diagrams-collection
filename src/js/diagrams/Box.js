@@ -1,4 +1,26 @@
 var helpers = {
+    filterByString: _.debounce(function(opts, creationId) {
+      var getHiddenValueSetter = function(value) {
+          return function(item) {
+            item.hidden = value;
+          };
+        },
+        isNotHidden = function(item) {
+          return item.hidden !== true;
+        },
+        setHiddenToFalse = getHiddenValueSetter(false);
+
+      helpers.traverseBodyDataAndRefresh(creationId, null, function(item, parents) {
+        var anyParentIsShowed = _.any(parents, isNotHidden);
+        if (opts.showChildren === false || anyParentIsShowed === false) {
+          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);
+          else {
+            _.each(parents, setHiddenToFalse);
+            setHiddenToFalse(item);
+          }
+        } else setHiddenToFalse(item);
+      });
+    }, 500),
     generateDefinitionWithSharedGet: function() {
       var text = arguments[0],
         sharedKey, preffix;
@@ -17,16 +39,28 @@ var helpers = {
     },
 
     expandOrCollapseAll: function(creationId, collapseOrExpand) {
-      var recursiveFn = function(items) {
-        _.each(items, function(item) {
-          if (item.hasOwnProperty('collapsed')) helpers[collapseOrExpand + 'Item'](item);
-          if (item.items) recursiveFn(item.items);
-          if (item.collapsedItems) recursiveFn(item.collapsedItems);
-        });
-      };
+      helpers.traverseBodyDataAndRefresh(creationId, {
+        withCollapsedItems: true
+      }, function(item) {
+        if (item.hasOwnProperty('collapsed')) helpers[collapseOrExpand + 'Item'](item);
+      });
+    },
 
-      var conf = d.Diagram.getDataWithCreationId(creationId)[1];
-      recursiveFn(conf.body);
+    traverseBodyDataAndRefresh: function(creationId, opts, cb) {
+      var conf = d.Diagram.getDataWithCreationId(creationId)[1],
+        bodyData = conf.body,
+        recursiveFn = function(items, parents) {
+          _.each(items, function(item) {
+            if (cb) cb(item, parents);
+            if (item.items) recursiveFn(item.items, parents.concat(item));
+            if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
+          });
+        };
+
+      opts = opts || {};
+
+      opts.withCollapsedItems = opts.withCollapsedItems || false;
+      recursiveFn(bodyData, []);
       helpers.addBodyItemsAndUpdateHeights();
     },
 
@@ -225,7 +259,7 @@ Box = class Box extends d.Diagram {
             },
             clipPathId;
 
-          triggerElId += 1; 
+          triggerElId += 1;
           clipPathId = 'clippath-' + triggerElId;
           triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
             height: 15,
@@ -254,67 +288,69 @@ Box = class Box extends d.Diagram {
         if (items === conf.body) bodyPosition = 1;
 
         _.each(items, function(item, itemIndex) {
-          var currentTextGId;
+          if (item.hidden !== true) {
+            var currentTextGId;
 
-          currentTextGId = 'diagrams-box-text-' + textGId++;
-          if (_.isString(item)) {
-            item = helpers.generateItem(item);
-            items[itemIndex] = item;
-          }
-          item.items = item.items || [];
-          if (item.items.length > 0) {
-            newContainer = container.append('g');
-            containerText = d.utils.formatShortDescription(item.text);
-            if (item.items && item.items.length > 0) containerText += ':';
-            if (item.description) {
-              item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
-              containerText += ' (...)';
-            } else item.fullText = item.text;
+            currentTextGId = 'diagrams-box-text-' + textGId++;
+            if (_.isString(item)) {
+              item = helpers.generateItem(item);
+              items[itemIndex] = item;
+            }
+            item.items = item.items || [];
+            if (item.items.length > 0) {
+              newContainer = container.append('g');
+              containerText = d.utils.formatShortDescription(item.text);
+              if (item.items && item.items.length > 0) containerText += ':';
+              if (item.description) {
+                item.fullText = d.utils.generateATextDescriptionStr(containerText, item.description);
+                containerText += ' (...)';
+              } else item.fullText = item.text;
 
-            textG = newContainer.append('text').text(containerText).attr({
-              x: depthWidth * depth,
-              y: rowHeight * ++bodyPosition,
-              id: currentTextGId
-            });
-            // item.items = _.sortBy(item.items, 'text');
-            addBodyItems(item.items, newContainer, depth + 1);
-          } else {
-            if (item.options && item.options.isLink === true) {
-              newContainer = container.append('svg:a').attr("xlink:href", item.description);
-              textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
-                id: currentTextGId,
+              textG = newContainer.append('text').text(containerText).attr({
                 x: depthWidth * depth,
                 y: rowHeight * ++bodyPosition,
-                fill: '#3962B8'
-              });
-
-              item.fullText = item.text + ' (' + item.description + ')';
-            } else {
-              newContainer = container.append('g').attr({
                 id: currentTextGId
               });
-              textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
-                x: depthWidth * depth,
-                y: rowHeight * ++bodyPosition,
-                'class': 'diagrams-box-definition-text'
-              });
-              if (item.description) {
-                textWidth = textG[0][0].getBoundingClientRect().width;
-                descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
+              // item.items = _.sortBy(item.items, 'text');
+              addBodyItems(item.items, newContainer, depth + 1);
+            } else {
+              if (item.options && item.options.isLink === true) {
+                newContainer = container.append('svg:a').attr("xlink:href", item.description);
+                textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                  id: currentTextGId,
+                  x: depthWidth * depth,
+                  y: rowHeight * ++bodyPosition,
+                  fill: '#3962B8'
+                });
 
-                newContainer.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
-                  x: depthWidth * depth + textWidth + 5,
-                  y: rowHeight * bodyPosition - 1
-                }).each(d.svg.textEllipsis(descriptionWidth));
+                item.fullText = item.text + ' (' + item.description + ')';
+              } else {
+                newContainer = container.append('g').attr({
+                  id: currentTextGId
+                });
+                textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                  x: depthWidth * depth,
+                  y: rowHeight * ++bodyPosition,
+                  'class': 'diagrams-box-definition-text'
+                });
+                if (item.description) {
+                  textWidth = textG[0][0].getBoundingClientRect().width;
+                  descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
+
+                  newContainer.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
+                    x: depthWidth * depth + textWidth + 5,
+                    y: rowHeight * bodyPosition - 1
+                  }).each(d.svg.textEllipsis(descriptionWidth));
+                }
+
+                item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
               }
-
-              item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
             }
-          }
-          collapseIfNecessary(newContainer, item);
-          item.textG = newContainer;
+            collapseIfNecessary(newContainer, item);
+            item.textG = newContainer;
 
-          diagram.addMouseListenersToEl(textG, item);
+            diagram.addMouseListenersToEl(textG, item);
+          }
         });
       },
       scrollToTarget = function(target) {
