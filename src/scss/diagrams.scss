@@ -19,6 +19,17 @@ rect {
 
     fill: #18694a;
   }
+  .diagrams-box-not-completed-tag {
+    font-weight: bold;
+
+    fill: #6576af;
+  }
+  .diagrams-box-not-completed-block {
+    fill: #333;
+    .diagrams-box-definition-text {
+      fill: #737958;
+    }
+  }
 }
 .layers-diagram,
 .box-diagram {
@@ -84,7 +95,7 @@ pre {
   }
 }
 .collapsible-trigger {
-  fill: #AF2661;
+  fill: #af2661;
   text.plus {
     font-size: 30px;
   }

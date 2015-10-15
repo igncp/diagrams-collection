@@ -123,11 +123,30 @@ var helpers = {
       }
     },
 
-    generateItem: function(text, description, options, items) {
+    parseItemGenerationOptions: function(options) {
+      var parsedOptions;
+
+      if (_.isString(options)) {
+        options = options.split(' ');
+        parsedOptions = {};
+        _.each(options, function(optionsKey) {
+          var newKey = optionsKey.replace(/-([a-z])/g, g => g[1].toUpperCase()); // option-one -> optionOne
+          parsedOptions[newKey] = true;
+        });
+      } else parsedOptions = options;
+
+      return parsedOptions;
+    },
+
+    generateItem: function(text, description, items, options) {
       var defaultOptions = {
-        isLink: false
+        isLink: false,
+        notCompleted: false
       };
+
       options = options || {};
+      options = helpers.parseItemGenerationOptions(options);
+
       return {
         text: text,
         description: description || null,
@@ -136,17 +155,20 @@ var helpers = {
       };
     },
 
-    generateContainer: function(text, description, items) {
+    generateContainer: function(text, description, items, options) {
+      options = options || null;
+
       if (_.isArray(description)) {
+        options = items;
         items = description;
         description = null;
       }
 
-      return helpers.generateItem(text, description, null, items);
+      return helpers.generateItem(text, description, items, options);
     },
 
     generateLink: function(text, url) {
-      return helpers.generateItem(text, url, {
+      return helpers.generateItem(text, url, null, {
         isLink: true
       });
     },
@@ -279,7 +301,7 @@ Box = class Box extends d.Diagram {
         }
       },
       addBodyItems = function(items, container, depth) {
-        var newContainer, textG, textWidth, descriptionWidth, containerText;
+        var newContainer, textEl, textWidth, descriptionWidth, containerText, textElValue;
 
         items = items || conf.body;
         container = container || bodyG;
@@ -306,17 +328,17 @@ Box = class Box extends d.Diagram {
                 containerText += ' (...)';
               } else item.fullText = item.text;
 
-              textG = newContainer.append('text').text(containerText).attr({
+              textEl = newContainer.append('text').text(containerText).attr({
                 x: depthWidth * depth,
                 y: rowHeight * ++bodyPosition,
                 id: currentTextGId
               });
-              // item.items = _.sortBy(item.items, 'text');
+
               addBodyItems(item.items, newContainer, depth + 1);
             } else {
               if (item.options && item.options.isLink === true) {
                 newContainer = container.append('svg:a').attr("xlink:href", item.description);
-                textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                textEl = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                   id: currentTextGId,
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
@@ -328,13 +350,13 @@ Box = class Box extends d.Diagram {
                 newContainer = container.append('g').attr({
                   id: currentTextGId
                 });
-                textG = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
+                textEl = newContainer.append('text').text(d.utils.formatShortDescription(item.text)).attr({
                   x: depthWidth * depth,
                   y: rowHeight * ++bodyPosition,
                   'class': 'diagrams-box-definition-text'
                 });
                 if (item.description) {
-                  textWidth = textG[0][0].getBoundingClientRect().width;
+                  textWidth = textEl[0][0].getBoundingClientRect().width;
                   descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
 
                   newContainer.append('text').text('- ' + d.utils.formatShortDescription(item.description)).attr({
@@ -346,10 +368,20 @@ Box = class Box extends d.Diagram {
                 item.fullText = d.utils.generateATextDescriptionStr(item.text, item.description);
               }
             }
+
             collapseIfNecessary(newContainer, item);
             item.textG = newContainer;
+            item.textEl = textEl;
 
-            diagram.addMouseListenersToEl(textG, item);
+            if (item.options.notCompleted === true) {
+              item.textG.attr('class', (item.textG.attr('class') || '') + ' diagrams-box-not-completed-block');
+              textElValue = item.textEl.text();
+              item.textEl.text('');
+              item.textEl.append('tspan').text(textElValue + ' ');
+              item.textEl.append('tspan').text('[NOT COMPLETED]').attr('class', 'diagrams-box-not-completed-tag');
+            }
+
+            diagram.addMouseListenersToEl(textEl, item);
           }
         });
       },
