@@ -60,6 +60,8 @@ d.Diagram = class Diagram {
     diagram.name = opts.name;
     diagram._configuration = opts.configuration || {};
 
+    prototype.configurationKeys = opts.configurationKeys || {};
+
     _.each(Object.keys(opts.helpers), function(helperName) {
       if (_.isFunction(opts.helpers[helperName])) {
         opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);

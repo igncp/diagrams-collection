@@ -317,6 +317,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         diagram.name = opts.name;
         diagram._configuration = opts.configuration || {};
 
+        prototype.configurationKeys = opts.configurationKeys || {};
+
         _.each(Object.keys(opts.helpers), function (helperName) {
           if (_.isFunction(opts.helpers[helperName])) {
             opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);
@@ -682,6 +684,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         var self = d3.select(this),
             textLength = self.node().getComputedTextLength(),
             text = self.text();
+
         while (textLength > width && text.length > 0) {
           text = text.slice(0, -4);
           self.text(text + '...');
@@ -1416,6 +1419,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
           return linksNumberMap[minIndex][maxIndex];
         });
+      },
+      addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
+        if (_.isString(info)) info = [info];
+        var hasDescription = info.length === 2;
+        var svgWidth = svg[0][0].getBoundingClientRect().width;
+        var infoText = info[0] + (hasDescription ? ' (...)' : '');
+        var el = svg.append('g').attr({
+          transform: 'translate(10, 50)',
+          'class': 'graph-info'
+        }).append('text').text(infoText).each(d.svg.textEllipsis(svgWidth));
+
+        if (hasDescription) {
+          diagram.addMouseListenersToEl(el, {
+            el: el,
+            fullText: d.utils.generateATextDescriptionStr(info[0], info[1])
+          });
+        }
       }
     },
         Graph,
@@ -1507,6 +1527,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 color: color
               });
             });
+
+            diagram.config(conf);
+            if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info);
 
             _.each(parsedData.nodes, function (node, nodeIndex) {
               if (node.connections.length > 0) {
@@ -1801,7 +1824,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     new Graph({
       name: 'graph',
       helpers: helpers,
-      configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _configuration)
+      configurationKeys: { SHY_CONNECTIONS: SHY_CONNECTIONS },
+      configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, 'info', null), _configuration)
     });
   })();(function () {
     var layerGId = 0,

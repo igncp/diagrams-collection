@@ -73,7 +73,8 @@ d.svg.textEllipsis = function(width) {
     var self = d3.select(this),
       textLength = self.node().getComputedTextLength(),
       text = self.text();
-    while (textLength > (width) && text.length > 0) {
+
+    while (textLength > width && text.length > 0) {
       text = text.slice(0, -4);
       self.text(text + '...');
       textLength = self.node().getComputedTextLength();

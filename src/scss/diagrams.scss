@@ -46,6 +46,12 @@ rect {
   }
 }
 .graph-diagram {
+  .graph-info {
+    cursor: default;
+    font-size: 23px;
+
+    fill: #407b38;
+  }
   .link {
     &.shy-link {
       &.shy-link-hidden {

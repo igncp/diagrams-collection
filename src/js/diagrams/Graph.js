@@ -231,6 +231,25 @@ var linksNumberMap = {},
       return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function(minIndex, maxIndex) {
         return linksNumberMap[minIndex][maxIndex];
       });
+    },
+    addDiagramInfo: function(diagram, svg, info) {
+      if (_.isString(info)) info = [info];
+      const hasDescription = info.length === 2;
+      const svgWidth = svg[0][0].getBoundingClientRect().width;
+      const infoText = info[0] + (hasDescription ? ' (...)' : '');
+      const el = svg.append('g').attr({
+          transform: 'translate(10, 50)',
+          'class': 'graph-info'
+        })
+        .append('text').text(infoText)
+        .each(d.svg.textEllipsis(svgWidth));
+
+      if (hasDescription) {
+        diagram.addMouseListenersToEl(el, {
+          el: el,
+          fullText: d.utils.generateATextDescriptionStr(info[0], info[1])
+        });
+      }
     }
   },
   Graph, helpers;
@@ -314,6 +333,9 @@ Graph = class Graph extends d.Diagram {
           });
 
         });
+
+        diagram.config(conf);
+        if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info);
 
         _.each(parsedData.nodes, function(node, nodeIndex) {
           if (node.connections.length > 0) {
@@ -605,7 +627,8 @@ Graph = class Graph extends d.Diagram {
 new Graph({
   name: 'graph',
   helpers: helpers,
+  configurationKeys: {SHY_CONNECTIONS},
   configuration: {
-    [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false
+    [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false, info: null
   }
 });
