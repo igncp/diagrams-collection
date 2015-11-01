@@ -6,7 +6,7 @@ Add the link to diagrams to your html. You can see some examples [here](http://i
  
 ## Build
 
-The build system concatenates the src files, from top to bottom relatively to the directory depth.
+The project uses [webpack](https://webpack.github.io/) to create the final `diagrams.js`. Run `grunt` to generate the bundle file and the source map, and `make prod` to minify it.
 
 ## Dependencies
 
