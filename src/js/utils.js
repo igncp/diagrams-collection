@@ -1,8 +1,6 @@
-// This file is always concatenated at the beginning of the library.
-// Maybe it would be worth to separate public and private utils (relatively to the external clients)
+const utils = {};
 
-d.utils = {};
-d.utils.d3DefaultReturnFn = function(props, preffix, suffix) {
+utils.d3DefaultReturnFn = function(props, preffix, suffix) {
   props = props.split('.');
   return function(d) {
     var position = _.reduce(props, function(memo, property) {
@@ -11,25 +9,25 @@ d.utils.d3DefaultReturnFn = function(props, preffix, suffix) {
     return (preffix || suffix) ? preffix + position + suffix : position;
   };
 };
-d.utils.applySimpleTransform = function(el) {
+utils.applySimpleTransform = function(el) {
   el.attr('transform', function(d) {
     return "translate(" + d.x + "," + d.y + ")";
   });
 };
-d.utils.positionFn = function(props, offset) {
+utils.positionFn = function(props, offset) {
   offset = offset || 0;
-  return d.utils.d3DefaultReturnFn(props, 0, offset);
+  return utils.d3DefaultReturnFn(props, 0, offset);
 };
-d.utils.textFn = function(props, preffix, suffix) {
+utils.textFn = function(props, preffix, suffix) {
   preffix = preffix || '';
   suffix = suffix || '';
-  return d.utils.d3DefaultReturnFn(props, preffix, suffix);
+  return utils.d3DefaultReturnFn(props, preffix, suffix);
 };
-d.utils.runIfReady = function(fn) {
+utils.runIfReady = function(fn) {
   if (document.readyState === 'complete') fn();
   else window.onload = fn;
 };
-d.utils.replaceCodeFragmentOfText = function(text, predicate) {
+utils.replaceCodeFragmentOfText = function(text, predicate) {
   var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g,
     allMatches = text.match(codeRegex);
 
@@ -37,7 +35,7 @@ d.utils.replaceCodeFragmentOfText = function(text, predicate) {
     return predicate(matchStr, language, codeBlock, allMatches);
   });
 };
-d.utils.formatTextFragment = function(text) {
+utils.formatTextFragment = function(text) {
   var tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'],
     encodeOrDecodeTags = function(action, tag) {
       var encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action),
@@ -57,7 +55,7 @@ d.utils.formatTextFragment = function(text) {
         });
       }
     };
-  text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, code, allMatches) {
+  text = utils.replaceCodeFragmentOfText(text, function(matchStr, language, code, allMatches) {
     var lastMatch = (matchStr === _.last(allMatches));
     return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
   });
@@ -68,7 +66,7 @@ d.utils.formatTextFragment = function(text) {
 
   return text;
 };
-d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
+utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
   commentsSymbol = commentsSymbol || '';
   return function(codeBlock, where, withInlineStrs) {
     if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
@@ -77,11 +75,11 @@ d.utils.codeBlockOfLanguageFn = function(language, commentsSymbol) {
   };
 };
 // This function is created to be able to reference it in the diagrams
-d.utils.wrapInParagraph = function(text) {
+utils.wrapInParagraph = function(text) {
   return '<p>' + text + '</p>';
 };
 
-d.utils.composeWithEventEmitter = function(constructor) {
+utils.composeWithEventEmitter = function(constructor) {
   var _subjects = [],
     createName = function(name) {
       return '$' + name;
@@ -111,30 +109,30 @@ d.utils.composeWithEventEmitter = function(constructor) {
   };
 };
 
-d.utils.createAnEventEmitter = function() {
+utils.createAnEventEmitter = function() {
   var constructor = function EventEmitter() {};
 
-  d.utils.composeWithEventEmitter(constructor);
+  utils.composeWithEventEmitter(constructor);
 
   return new constructor();
 };
 
-d.utils.generateATextDescriptionStr = function(text, description) {
+utils.generateATextDescriptionStr = function(text, description) {
   return '<strong>' + text + '</strong>' + (description ? '<br>' + description : '');
 };
 
-d.utils.formatShortDescription = function(text) {
+utils.formatShortDescription = function(text) {
   text = text.replace(/<p>/g, '');
   text = text.replace(/<br>/g, ' ');
   text = text.replace(/<\/p>/g, '. ');
-  text = d.utils.replaceCodeFragmentOfText(text, function(matchStr, language, codeBlock) {
+  text = utils.replaceCodeFragmentOfText(text, function(matchStr, language, codeBlock) {
     if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
     else return ' <CODE...>';
   });
   return text;
 };
 
-d.utils.dataFromGeneralToSpecificForATreeStructureType = function(generalData) {
+utils.dataFromGeneralToSpecificForATreeStructureType = function(generalData) {
   // FPN: Find Parent Node
   var FPNRecursiveFailed = false,
     itemsIdToItemsMap = {},
@@ -206,7 +204,7 @@ d.utils.dataFromGeneralToSpecificForATreeStructureType = function(generalData) {
 
   findParentNodeFn();
   if (FPNRecursiveFailed) {
-    alert('The data structure is not suitable for this diagram')
+    alert('The data structure is not suitable for this diagram');
     return [];
   } else {
     buildNodesDataRecursiveFn(nodesData, parentNode);
@@ -214,7 +212,7 @@ d.utils.dataFromGeneralToSpecificForATreeStructureType = function(generalData) {
   }
 };
 
-d.utils.getUrlParams = function() {
+utils.getUrlParams = function() {
   var query_string = {};
   var query = window.location.search.substring(1);
   var vars = query.split("&");
@@ -231,3 +229,5 @@ d.utils.getUrlParams = function() {
   }
   return query_string;
 };
+
+export default utils;

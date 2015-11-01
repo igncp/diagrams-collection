@@ -1,5 +1,6 @@
-d.shapes = {};
-d.shapes.hexagon = function(opts) {
+const shapes = {};
+
+shapes.hexagon = function(opts) {
   var halfHeight = opts.height / 2,
     halfWidth = opts.width / 2,
     gap = opts.widthPercent ? (1 - (opts.widthPercent / 100)) * opts.width : (opts.width - opts.height) / 2,
@@ -20,3 +21,5 @@ d.shapes.hexagon = function(opts) {
 
   return result;
 };
+
+export default shapes;

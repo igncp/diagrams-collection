@@ -1,4 +1,0 @@
-  })();
-
-  scope.diagrams = diagrams;
-})(window);

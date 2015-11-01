@@ -1,5 +1,6 @@
-d.svg = {};
-d.svg.addVerticalGradientFilter = function(container, id, colors) {
+const svg = {};
+
+svg.addVerticalGradientFilter = function(container, id, colors) {
   var defs = container.append('defs'),
     linearGradient = defs.append('linearGradient').attr({
       id: id,
@@ -19,7 +20,7 @@ d.svg.addVerticalGradientFilter = function(container, id, colors) {
   });
 };
 
-d.svg.addFilterColor = function(id, container, deviation, slope, extra) {
+svg.addFilterColor = function(id, container, deviation, slope, extra) {
   var defs = container.append('defs'),
     filter = defs.append('filter').attr({
       id: 'diagrams-drop-shadow-' + id
@@ -53,7 +54,7 @@ d.svg.addFilterColor = function(id, container, deviation, slope, extra) {
   });
 };
 
-d.svg.generateSvg = function(style) {
+svg.generateSvg = function(style) {
   var bodyDims = document.body.getBoundingClientRect();
 
   return d3.select('body').append('svg').attr({
@@ -62,13 +63,13 @@ d.svg.generateSvg = function(style) {
   }).style(style);
 };
 
-d.svg.updateHeigthOfElWithOtherEl = function(el, otherEl, offset) {
+svg.updateHeigthOfElWithOtherEl = function(el, otherEl, offset) {
   el.attr({
     height: otherEl[0][0].getBoundingClientRect().height + (offset || 0)
   });
 };
 
-d.svg.textEllipsis = function(width) {
+svg.textEllipsis = function(width) {
   return function() {
     var self = d3.select(this),
       textLength = self.node().getComputedTextLength(),
@@ -81,3 +82,5 @@ d.svg.textEllipsis = function(width) {
     }
   };
 };
+
+export default svg;

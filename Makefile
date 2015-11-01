@@ -1,2 +1,2 @@
-compile-prod:
-	@grunt compile-prod
+prod:
+	@grunt uglify
