@@ -5,6 +5,7 @@ export default ()=> {
     SHY_CONNECTIONS = 'Show connections selectively',
     GRAPH_ZOOM = 'dia graph zoom',
     GRAPH_DRAG = 'Drag nodes on click (may make links difficult)',
+    CURVED_ARROWS = 'All arrows are curved',
     graphZoomConfig = {
       'private': true,
       'type': Number,
@@ -34,8 +35,7 @@ export default ()=> {
               return connection;
             };
 
-          if (_.isArray(connection)) return _.map(connection, setVal);
-          else return setVal(connection);
+          return (_.isArray(connection)) ? _.map(connection, setVal) : setVal(connection);
         };
       },
       generateNodeOptions: function(options) {
@@ -265,6 +265,7 @@ export default ()=> {
         height = bodyHeight - 250,
         width = svg.attr('width'),
         dragNodesConfig = diagram.config(GRAPH_DRAG),
+        curvedArrows = diagram.config(CURVED_ARROWS),
         tick = function() {
           var setPathToLink = function(pathClass) {
             link.select('path.' + pathClass).attr("d", function(d) {
@@ -272,7 +273,8 @@ export default ()=> {
                 linkIndex = d.data.linkIndex,
                 dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
-                dr = Math.sqrt(dx * dx + dy * dy) * 3.5 * ((linkIndex + 1) / (linksNumber * 3));
+                dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0)/ (linksNumber * 3));
+
               return "M" +
                 d.source.x + "," +
                 d.source.y + "A" +
@@ -521,7 +523,7 @@ export default ()=> {
           fill: dTextFn('color'),
           viewBox: '0 -5 10 10',
           refX: 19,
-          refY: -1.5,
+          refY: curvedArrows ? -1.5 : 0,
           markerWidth: 8,
           markerHeight: 8,
           orient: 'auto'
@@ -529,7 +531,7 @@ export default ()=> {
 
       link = container.selectAll(".link").data(parsedData.links).enter().append('g')
         .attr("class", function() {
-          var finalClass = 'link';
+          let finalClass = 'link';
           if (diagram.config(SHY_CONNECTIONS)) finalClass += ' shy-link shy-link-hidden';
           return finalClass;
         });
@@ -631,7 +633,8 @@ export default ()=> {
     helpers: helpers,
     configurationKeys: {SHY_CONNECTIONS},
     configuration: {
-      [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false, info: null
+      [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false, info: null,
+      [CURVED_ARROWS]: false
     }
   });
 };

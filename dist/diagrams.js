@@ -1419,6 +1419,7 @@
 	      SHY_CONNECTIONS = 'Show connections selectively',
 	      GRAPH_ZOOM = 'dia graph zoom',
 	      GRAPH_DRAG = 'Drag nodes on click (may make links difficult)',
+	      CURVED_ARROWS = 'All arrows are curved',
 	      graphZoomConfig = {
 	    'private': true,
 	    'type': Number,
@@ -1447,7 +1448,7 @@
 	          return connection;
 	        };
 	
-	        if (_.isArray(connection)) return _.map(connection, setVal);else return setVal(connection);
+	        return _.isArray(connection) ? _.map(connection, setVal) : setVal(connection);
 	      };
 	    },
 	    generateNodeOptions: function generateNodeOptions(options) {
@@ -1678,6 +1679,7 @@
 	            height = bodyHeight - 250,
 	            width = svg.attr('width'),
 	            dragNodesConfig = diagram.config(GRAPH_DRAG),
+	            curvedArrows = diagram.config(CURVED_ARROWS),
 	            tick = function tick() {
 	          var setPathToLink = function setPathToLink(pathClass) {
 	            link.select('path.' + pathClass).attr("d", function (d) {
@@ -1685,7 +1687,8 @@
 	                  linkIndex = d.data.linkIndex,
 	                  dx = d.target.x - d.source.x,
 	                  dy = d.target.y - d.source.y,
-	                  dr = Math.sqrt(dx * dx + dy * dy) * 3.5 * ((linkIndex + 1) / (linksNumber * 3));
+	                  dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
+	
 	              return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
 	            });
 	          };
@@ -1935,7 +1938,7 @@
 	          fill: dTextFn('color'),
 	          viewBox: '0 -5 10 10',
 	          refX: 19,
-	          refY: -1.5,
+	          refY: curvedArrows ? -1.5 : 0,
 	          markerWidth: 8,
 	          markerHeight: 8,
 	          orient: 'auto'
@@ -2043,7 +2046,7 @@
 	    name: 'graph',
 	    helpers: helpers,
 	    configurationKeys: { SHY_CONNECTIONS: SHY_CONNECTIONS },
-	    configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, 'info', null), _configuration)
+	    configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, 'info', null), _defineProperty(_configuration, CURVED_ARROWS, false), _configuration)
 	  });
 	};
 	
