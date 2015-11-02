@@ -230,4 +230,10 @@ utils.getUrlParams = function() {
   return query_string;
 };
 
+utils.joinWithLastDifferent = function(arr, separator, lastSeparator) {
+  return arr.slice(0, -1).join(separator) + lastSeparator + arr[arr.length - 1];
+};
+
+utils.commasAndAndJoin = _.partial(utils.joinWithLastDifferent, _, ', ', ' and ');
+
 export default utils;

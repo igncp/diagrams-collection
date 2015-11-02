@@ -1,6 +1,6 @@
 import d from 'diagrams';
 
-export default ()=> {
+export default () => {
   var linksNumberMap = {},
     SHY_CONNECTIONS = 'Show connections selectively',
     GRAPH_ZOOM = 'dia graph zoom',
@@ -46,26 +46,24 @@ export default ()=> {
           _.each(options, function(opt) {
             if (opt.substr(0, 2) === 's-') {
               shape = opt.substr(2, opt.length - 2);
-              if (shape === 't') obj.shape = 'triangle';
-              else if (shape === 's') obj.shape = 'square';
-              else obj.shape = 'circle';
+              obj.shape =
+                (shape === 't') ? 'triangle' :
+                (shape === 's') ? 'square' :
+                'circle';
             } else if (opt === 'b') obj.bold = true;
             else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
           });
           return obj;
         }
       },
-      getDefaultConnection: function() {
-        var defaultConnection = {
+      mergeWithDefaultConnection: function(connection) {
+        const defaultConnection = {
           direction: 'out',
           symbol: 'arrow',
           line: 'plain'
         };
 
-        return _.cloneDeep(defaultConnection);
-      },
-      mergeWithDefaultConnection: function(connection) {
-        return _.defaults(connection, helpers.getDefaultConnection());
+        return _.defaults(connection, defaultConnection);
       },
       generateNodeWithTargetLink: function(file, target) {
         return function() {
@@ -273,7 +271,7 @@ export default ()=> {
                 linkIndex = d.data.linkIndex,
                 dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
-                dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0)/ (linksNumber * 3));
+                dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
 
               return "M" +
                 d.source.x + "," +
@@ -631,10 +629,11 @@ export default ()=> {
   new Graph({
     name: 'graph',
     helpers: helpers,
-    configurationKeys: {SHY_CONNECTIONS},
+    configurationKeys: {
+      SHY_CONNECTIONS
+    },
     configuration: {
-      [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false, info: null,
-      [CURVED_ARROWS]: false
+      [SHY_CONNECTIONS]: true, [GRAPH_ZOOM]: graphZoomConfig, [GRAPH_DRAG]: false, info: null, [CURVED_ARROWS]: false
     }
   });
 };

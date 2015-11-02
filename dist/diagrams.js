@@ -316,6 +316,12 @@
 	  return query_string;
 	};
 	
+	utils.joinWithLastDifferent = function (arr, separator, lastSeparator) {
+	  return arr.slice(0, -1).join(separator) + lastSeparator + arr[arr.length - 1];
+	};
+	
+	utils.commasAndAndJoin = _.partial(utils.joinWithLastDifferent, _, ', ', ' and ');
+	
 	exports['default'] = utils;
 	module.exports = exports['default'];
 
@@ -1458,23 +1464,20 @@
 	        _.each(options, function (opt) {
 	          if (opt.substr(0, 2) === 's-') {
 	            shape = opt.substr(2, opt.length - 2);
-	            if (shape === 't') obj.shape = 'triangle';else if (shape === 's') obj.shape = 'square';else obj.shape = 'circle';
+	            obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
 	          } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
 	        });
 	        return obj;
 	      }
 	    },
-	    getDefaultConnection: function getDefaultConnection() {
+	    mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
 	      var defaultConnection = {
 	        direction: 'out',
 	        symbol: 'arrow',
 	        line: 'plain'
 	      };
 	
-	      return _.cloneDeep(defaultConnection);
-	    },
-	    mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
-	      return _.defaults(connection, helpers.getDefaultConnection());
+	      return _.defaults(connection, defaultConnection);
 	    },
 	    generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
 	      return function () {
@@ -2045,7 +2048,9 @@
 	  new Graph({
 	    name: 'graph',
 	    helpers: helpers,
-	    configurationKeys: { SHY_CONNECTIONS: SHY_CONNECTIONS },
+	    configurationKeys: {
+	      SHY_CONNECTIONS: SHY_CONNECTIONS
+	    },
 	    configuration: (_configuration = {}, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, 'info', null), _defineProperty(_configuration, CURVED_ARROWS, false), _configuration)
 	  });
 	};
