@@ -1,4 +1,5 @@
 import d from 'diagrams';
+import svg from 'svg';
 
 const defaultDiagramConfiguration = {};
 let createdDiagramsMaxId = 0;
@@ -27,8 +28,7 @@ const getDiagramClass = ()=> {
     }
 
     static addDivBeforeSvg() {
-      var body = d3.select('body'),
-        div = body.insert('div', 'svg');
+      const div = svg.insertInBodyBeforeSvg('div');
 
       div.appendButtonToDiv = function(cls, value, onClickFn) {
         div.append('input').attr({
@@ -76,6 +76,10 @@ const getDiagramClass = ()=> {
       });
       _.defaults(prototype, opts.helpers);
       diagram.register();
+    }
+
+    reRender() {
+      return null;
     }
 
     addMouseListenersToEl(el, data, callbacks) {

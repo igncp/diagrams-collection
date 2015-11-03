@@ -407,13 +407,20 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
 	var svg = {};
 	
 	svg.addVerticalGradientFilter = function (container, id, colors) {
@@ -470,10 +477,15 @@
 	  });
 	};
 	
+	svg.getDiagramWrapperStr = function () {
+	  return _diagrams2['default'].diagramsWrapperSelector || 'body';
+	};
+	
 	svg.generateSvg = function (style) {
+	  var selector = svg.getDiagramWrapperStr();
 	  var bodyDims = document.body.getBoundingClientRect();
 	
-	  return d3.select('body').append('svg').attr({
+	  return d3.select(selector).append('svg').attr({
 	    width: bodyDims.width - 40,
 	    height: 4000
 	  }).style(style);
@@ -499,6 +511,23 @@
 	  };
 	};
 	
+	svg.insertInBodyBeforeSvg = function (tag) {
+	  var diagramWrapper = svg.getDiagramWrapperStr();
+	  var body = d3.select('body');
+	  var elementAfterName = diagramWrapper === 'body' ? 'svg' : diagramWrapper;
+	  var el = body.insert(tag, elementAfterName);
+	
+	  return el;
+	};
+	
+	svg.fullscreenElement = function () {
+	  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement || null;
+	};
+	
+	svg.selectScreenHeightOrHeight = function (height) {
+	  return _diagrams2['default'].svg.fullscreenElement() ? screen.height - 30 : height;
+	};
+	
 	exports['default'] = svg;
 	module.exports = exports['default'];
 
@@ -521,6 +550,10 @@
 	var _diagrams = __webpack_require__(1);
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _svg = __webpack_require__(5);
+	
+	var _svg2 = _interopRequireDefault(_svg);
 	
 	var defaultDiagramConfiguration = {};
 	var createdDiagramsMaxId = 0;
@@ -554,8 +587,7 @@
 	    }, {
 	      key: 'addDivBeforeSvg',
 	      value: function addDivBeforeSvg() {
-	        var body = d3.select('body'),
-	            div = body.insert('div', 'svg');
+	        var div = _svg2['default'].insertInBodyBeforeSvg('div');
 	
 	        div.appendButtonToDiv = function (cls, value, onClickFn) {
 	          div.append('input').attr({
@@ -611,6 +643,11 @@
 	    }
 	
 	    _createClass(Diagram, [{
+	      key: 'reRender',
+	      value: function reRender() {
+	        return null;
+	      }
+	    }, {
 	      key: 'addMouseListenersToEl',
 	      value: function addMouseListenersToEl(el, data, callbacks) {
 	        var diagram = this,
@@ -1659,6 +1696,9 @@
 	          fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
 	        });
 	      }
+	    },
+	    setReRender: function setReRender(diagram, creationId, data, conf) {
+	      diagram.reRender = _.partial(diagram.removePreviousAndCreate, creationId, data, conf);
 	    }
 	  },
 	      Graph;
@@ -1679,11 +1719,25 @@
 	            bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
 	            svg = _diagrams2['default'].svg.generateSvg(),
 	            container = svg.append('g'),
-	            height = bodyHeight - 250,
 	            width = svg.attr('width'),
 	            dragNodesConfig = diagram.config(GRAPH_DRAG),
-	            curvedArrows = diagram.config(CURVED_ARROWS),
-	            tick = function tick() {
+	            curvedArrows = diagram.config(CURVED_ARROWS);
+	
+	        var force = undefined,
+	            drag = undefined,
+	            link = undefined,
+	            linkOuter = undefined,
+	            node = undefined,
+	            zoom = undefined,
+	            singleNodeEl = undefined,
+	            shape = undefined,
+	            shapeEl = undefined,
+	            markers = undefined,
+	            parsedData = undefined;
+	
+	        var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
+	
+	        var tick = function tick() {
 	          var setPathToLink = function setPathToLink(pathClass) {
 	            link.select('path.' + pathClass).attr("d", function (d) {
 	              var linksNumber = helpers.getLinksNumberMapItemWithLink(d),
@@ -1708,8 +1762,8 @@
 	            }
 	          });
 	          node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
-	        },
-	            parseData = function parseData() {
+	        };
+	        var parseData = function parseData() {
 	          var maxId = _.reduce(data, function (memo, node) {
 	            var id = node.id || 0;
 	            return memo > id ? memo : id;
@@ -1792,25 +1846,30 @@
 	              if (nodesWithLinkMap[nodeIndex] !== true) node.hidden = true;
 	            });
 	          }
-	        },
-	            zoomed = function zoomed(translate, scale) {
+	        };
+	
+	        var zoomed = function zoomed(translate, scale) {
 	          scale = scale || 1;
 	          container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
 	          graphZoomConfig.value = scale;
 	          diagram.config(GRAPH_ZOOM, graphZoomConfig);
-	        },
-	            dragstarted = function dragstarted() {
+	        };
+	
+	        var dragstarted = function dragstarted() {
 	          d3.event.sourceEvent.stopPropagation();
 	          d3.select(this).classed("dragging", true);
 	          force.start();
-	        },
-	            dragged = function dragged(d) {
+	        };
+	
+	        var dragged = function dragged(d) {
 	          d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
-	        },
-	            dragended = function dragended() {
+	        };
+	
+	        var dragended = function dragended() {
 	          d3.select(this).classed("dragging", false);
-	        },
-	            setRelationships = function setRelationships() {
+	        };
+	
+	        var setRelationships = function setRelationships() {
 	          _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
 	          _.each(parsedData.nodes, function (node) {
 	            diagram.addSelfRelationship(node, node.shapeEl, node);
@@ -1819,16 +1878,32 @@
 	            diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
 	            diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
 	          });
-	        },
-	            getAllLinks = function getAllLinks() {
+	        };
+	
+	        var getAllLinks = function getAllLinks() {
 	          return container.selectAll(".link");
-	        },
-	            getLinksWithIsHiding = function getLinksWithIsHiding() {
+	        };
+	
+	        var getLinksWithIsHiding = function getLinksWithIsHiding() {
 	          return getAllLinks().filter(function (d) {
 	            return d.data.hasOwnProperty('shyIsHiding');
 	          });
-	        },
-	            setDisplayOfShyConnections = function setDisplayOfShyConnections(display, node) {
+	        };
+	
+	        var setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, link) {
+	          var linksWithIsHiding;
+	          if (diagram.config(SHY_CONNECTIONS)) {
+	            if (isHiding === false) link.data.shyIsHiding = isHiding;else if (isHiding === true) {
+	              linksWithIsHiding = getLinksWithIsHiding();
+	              linksWithIsHiding.each(function (d) {
+	                d.data.shyIsHiding = true;
+	              });
+	            }
+	            link.data.shyIsHidingChanged = true;
+	          }
+	        };
+	
+	        var setDisplayOfShyConnections = function setDisplayOfShyConnections(display, node) {
 	          var isShowing = display === 'show',
 	              isHiding = display === 'hide',
 	              nodeData = node.data,
@@ -1877,30 +1952,9 @@
 	              });
 	            } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
 	          }
-	        },
-	            setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, link) {
-	          var linksWithIsHiding;
-	          if (diagram.config(SHY_CONNECTIONS)) {
-	            if (isHiding === false) link.data.shyIsHiding = isHiding;else if (isHiding === true) {
-	              linksWithIsHiding = getLinksWithIsHiding();
-	              linksWithIsHiding.each(function (d) {
-	                d.data.shyIsHiding = true;
-	              });
-	            }
-	            link.data.shyIsHidingChanged = true;
-	          }
-	        },
-	            force,
-	            drag,
-	            link,
-	            linkOuter,
-	            node,
-	            zoom,
-	            singleNodeEl,
-	            shape,
-	            shapeEl,
-	            markers,
-	            parsedData;
+	        };
+	
+	        var setReRender = _.partial(helpers.setReRender, diagram, creationId, data, _);
 	
 	        diagram.markRelatedFn = function (item) {
 	          item.el.style('stroke-width', '20px');
@@ -1922,9 +1976,11 @@
 	        zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
 	          zoomed(d3.event.translate, d3.event.scale);
 	        });
+	
 	        svg.call(zoom);
 	
 	        zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
+	
 	        zoomed(zoom.translate(), zoom.scale());
 	
 	        force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
@@ -2034,8 +2090,10 @@
 	        node.append("text").text(dTextFn('name'));
 	
 	        setRelationships();
+	        setReRender(conf);
 	        diagram.listen('configuration-changed', function (conf) {
 	          if (conf.key === SHY_CONNECTIONS || conf.key === GRAPH_DRAG) {
+	            setReRender(conf);
 	            diagram.removePreviousAndCreate(creationId, data, conf);
 	          }
 	        });

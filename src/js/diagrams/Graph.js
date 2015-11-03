@@ -250,6 +250,9 @@ export default () => {
             fullText: d.utils.generateATextDescriptionStr(info[0], info[1])
           });
         }
+      },
+      setReRender: function(diagram, creationId, data, conf) {
+        diagram.reRender = _.partial(diagram.removePreviousAndCreate, creationId, data, conf);
       }
     },
     Graph;
@@ -260,223 +263,237 @@ export default () => {
         bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0),
         svg = d.svg.generateSvg(),
         container = svg.append('g'),
-        height = bodyHeight - 250,
         width = svg.attr('width'),
         dragNodesConfig = diagram.config(GRAPH_DRAG),
-        curvedArrows = diagram.config(CURVED_ARROWS),
-        tick = function() {
-          var setPathToLink = function(pathClass) {
-            link.select('path.' + pathClass).attr("d", function(d) {
-              var linksNumber = helpers.getLinksNumberMapItemWithLink(d),
-                linkIndex = d.data.linkIndex,
-                dx = d.target.x - d.source.x,
-                dy = d.target.y - d.source.y,
-                dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
+        curvedArrows = diagram.config(CURVED_ARROWS);
 
-              return "M" +
-                d.source.x + "," +
-                d.source.y + "A" +
-                dr + "," + dr + " 0 0,1 " +
-                d.target.x + "," +
-                d.target.y;
-            });
-          };
+      let force, drag, link, linkOuter, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
-          _.each(['link-path', 'link-path-outer'], setPathToLink);
+      const height = d.svg.selectScreenHeightOrHeight(bodyHeight - 250);
 
-          node.each(function(singleNode) {
-            if (singleNode.shape === 'circle') {
-              node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
-            } else {
-              if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');
-              else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
+      const tick = function() {
+        var setPathToLink = function(pathClass) {
+          link.select('path.' + pathClass).attr("d", function(d) {
+            var linksNumber = helpers.getLinksNumberMapItemWithLink(d),
+              linkIndex = d.data.linkIndex,
+              dx = d.target.x - d.source.x,
+              dy = d.target.y - d.source.y,
+              dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
 
-              d.utils.applySimpleTransform(shapeEl);
-            }
+            return "M" +
+              d.source.x + "," +
+              d.source.y + "A" +
+              dr + "," + dr + " 0 0,1 " +
+              d.target.x + "," +
+              d.target.y;
           });
-          node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
-        },
-        parseData = function() {
-          var maxId = _.reduce(data, function(memo, node) {
-              var id = node.id || 0;
-              return (memo > id) ? memo : id;
-            }, 0),
-            idsMap = {},
-            nodesWithLinkMap = {},
-            colors = d3.scale.category20(),
-            nodeId, color, options, otherNode, linkObj;
-          parsedData = {
-            links: [],
-            nodes: []
-          };
-          markers = [];
-          _.each(data, function(node, nodeIndex) {
-            nodeId = _.isUndefined(node.id) ? maxId++ : node.id;
-            color = colors(nodeIndex);
-            options = node.options || {};
+        };
 
-            parsedData.nodes.push({
-              name: node.name,
-              id: nodeId,
-              connections: node.connections || [],
-              description: node.description || null,
-              color: color,
-              shape: options.shape || 'circle',
-              linkToUrl: options.linkToUrl || null,
-              bold: options.bold || false
-            });
-            idsMap[nodeId] = {
-              index: nodeIndex
-            };
-            idsMap[nodeId].color = color;
-            markers.push({
-              id: nodeId,
-              color: color
-            });
+        _.each(['link-path', 'link-path-outer'], setPathToLink);
 
-          });
-
-          diagram.config(conf);
-          if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info);
-
-          _.each(parsedData.nodes, function(node, nodeIndex) {
-            if (node.connections.length > 0) {
-              _.each(node.connections, function(connection) {
-                _.each(connection.nodesIds, function(otherNodeId) {
-                  otherNode = idsMap[otherNodeId];
-
-                  if (otherNode) {
-                    if (conf.hideNodesWithoutLinks) {
-                      nodesWithLinkMap[otherNode.index] = true;
-                      nodesWithLinkMap[nodeIndex] = true;
-                    }
-
-                    linkObj = {};
-                    if (connection.direction === 'out') {
-                      linkObj.source = nodeIndex;
-                      linkObj.target = otherNode.index;
-                    } else {
-                      linkObj.source = otherNode.index;
-                      linkObj.target = nodeIndex;
-                    }
-                    linkObj.data = connection;
-                    linkObj.color = parsedData.nodes[linkObj.source].color;
-                    helpers.updateLinksNumberMapWithLink(linkObj);
-                    linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
-                    if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
-                    parsedData.links.push(linkObj);
-                  }
-                });
-              });
-            }
-          });
-
-          if (conf.hideNodesWithoutLinks === true) {
-            _.each(parsedData.nodes, function(node, nodeIndex) {
-              if (nodesWithLinkMap[nodeIndex] !== true) node.hidden = true;
-            });
-          }
-        },
-        zoomed = function(translate, scale) {
-          scale = scale || 1;
-          container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
-          graphZoomConfig.value = scale;
-          diagram.config(GRAPH_ZOOM, graphZoomConfig);
-        },
-        dragstarted = function() {
-          d3.event.sourceEvent.stopPropagation();
-          d3.select(this).classed("dragging", true);
-          force.start();
-        },
-        dragged = function(d) {
-          d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
-        },
-        dragended = function() {
-          d3.select(this).classed("dragging", false);
-        },
-        setRelationships = function() {
-          _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
-          _.each(parsedData.nodes, function(node) {
-            diagram.addSelfRelationship(node, node.shapeEl, node);
-          });
-          _.each(parsedData.links, function(link) {
-            diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
-            diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
-          });
-        },
-        getAllLinks = function() {
-          return container.selectAll(".link");
-        },
-        getLinksWithIsHiding = function() {
-          return getAllLinks().filter(function(d) {
-            return d.data.hasOwnProperty('shyIsHiding');
-          });
-        },
-        setDisplayOfShyConnections = function(display, node) {
-          var isShowing = display === 'show',
-            isHiding = display === 'hide',
-            nodeData = node.data,
-            linksWithIsHiding = getLinksWithIsHiding(),
-            nodeLinks = getAllLinks().filter(function(d) {
-              return d.source.id === nodeData.id || d.target.id === nodeData.id;
-            }),
-            setDisplay = function(links, show) {
-              links.classed('shy-link-hidden', !show);
-              links.classed('shy-link-showed', show);
-            },
-            hideLinks = function(links) {
-              setDisplay(links, false);
-              links.each(function(d) {
-                delete d.data.shyIsHiding;
-              });
-            },
-            futureConditionalHide = function() {
-              setTimeout(function() {
-                allAreHiding = true;
-                shyIsHidingIsSame = true;
-                nodeLinks.each(function(d) {
-                  allAreHiding = allAreHiding && d.data.shyIsHiding;
-                  if (d.data.shyIsHidingChanged) {
-                    shyIsHidingIsSame = false;
-                    delete d.data.shyIsHidingChanged;
-                  }
-                });
-                if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);
-                else futureConditionalHide();
-              }, 500);
-            },
-            allAreHiding, shyIsHidingIsSame;
-
-          if (linksWithIsHiding[0].length === 0) {
-            if (isShowing) setDisplay(nodeLinks, true);
-            else if (isHiding) {
-              nodeLinks.each(function(d) {
-                d.data.shyIsHiding = true;
-              });
-              futureConditionalHide();
-            }
+        node.each(function(singleNode) {
+          if (singleNode.shape === 'circle') {
+            node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
           } else {
-            if (isShowing) {
-              linksWithIsHiding.each(function(d, index) {
-                if (index === 0) d.data.shyIsHiding = false;
-              });
-            } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
+            if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');
+            else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
+
+            d.utils.applySimpleTransform(shapeEl);
           }
-        },
-        setLinkIsHidingIfNecessary = function(isHiding, link) {
-          var linksWithIsHiding;
-          if (diagram.config(SHY_CONNECTIONS)) {
-            if (isHiding === false) link.data.shyIsHiding = isHiding;
-            else if (isHiding === true) {
-              linksWithIsHiding = getLinksWithIsHiding();
-              linksWithIsHiding.each(function(d) {
-                d.data.shyIsHiding = true;
+        });
+        node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
+      };
+      const parseData = function() {
+        var maxId = _.reduce(data, function(memo, node) {
+            var id = node.id || 0;
+            return (memo > id) ? memo : id;
+          }, 0),
+          idsMap = {},
+          nodesWithLinkMap = {},
+          colors = d3.scale.category20(),
+          nodeId, color, options, otherNode, linkObj;
+        parsedData = {
+          links: [],
+          nodes: []
+        };
+        markers = [];
+        _.each(data, function(node, nodeIndex) {
+          nodeId = _.isUndefined(node.id) ? maxId++ : node.id;
+          color = colors(nodeIndex);
+          options = node.options || {};
+
+          parsedData.nodes.push({
+            name: node.name,
+            id: nodeId,
+            connections: node.connections || [],
+            description: node.description || null,
+            color: color,
+            shape: options.shape || 'circle',
+            linkToUrl: options.linkToUrl || null,
+            bold: options.bold || false
+          });
+          idsMap[nodeId] = {
+            index: nodeIndex
+          };
+          idsMap[nodeId].color = color;
+          markers.push({
+            id: nodeId,
+            color: color
+          });
+
+        });
+
+        diagram.config(conf);
+        if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info);
+
+        _.each(parsedData.nodes, function(node, nodeIndex) {
+          if (node.connections.length > 0) {
+            _.each(node.connections, function(connection) {
+              _.each(connection.nodesIds, function(otherNodeId) {
+                otherNode = idsMap[otherNodeId];
+
+                if (otherNode) {
+                  if (conf.hideNodesWithoutLinks) {
+                    nodesWithLinkMap[otherNode.index] = true;
+                    nodesWithLinkMap[nodeIndex] = true;
+                  }
+
+                  linkObj = {};
+                  if (connection.direction === 'out') {
+                    linkObj.source = nodeIndex;
+                    linkObj.target = otherNode.index;
+                  } else {
+                    linkObj.source = otherNode.index;
+                    linkObj.target = nodeIndex;
+                  }
+                  linkObj.data = connection;
+                  linkObj.color = parsedData.nodes[linkObj.source].color;
+                  helpers.updateLinksNumberMapWithLink(linkObj);
+                  linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
+                  if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
+                  parsedData.links.push(linkObj);
+                }
               });
-            }
-            link.data.shyIsHidingChanged = true;
+            });
           }
-        },
-        force, drag, link, linkOuter, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
+        });
+
+        if (conf.hideNodesWithoutLinks === true) {
+          _.each(parsedData.nodes, function(node, nodeIndex) {
+            if (nodesWithLinkMap[nodeIndex] !== true) node.hidden = true;
+          });
+        }
+      };
+
+      const zoomed = function(translate, scale) {
+        scale = scale || 1;
+        container.attr("transform", "translate(" + translate + ")scale(" + scale + ")");
+        graphZoomConfig.value = scale;
+        diagram.config(GRAPH_ZOOM, graphZoomConfig);
+      };
+
+      const dragstarted = function() {
+        d3.event.sourceEvent.stopPropagation();
+        d3.select(this).classed("dragging", true);
+        force.start();
+      };
+
+      const dragged = function(d) {
+        d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+      };
+
+      const dragended = function() {
+        d3.select(this).classed("dragging", false);
+      };
+
+      const setRelationships = function() {
+        _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
+        _.each(parsedData.nodes, function(node) {
+          diagram.addSelfRelationship(node, node.shapeEl, node);
+        });
+        _.each(parsedData.links, function(link) {
+          diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
+          diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
+        });
+      };
+
+      const getAllLinks = function() {
+        return container.selectAll(".link");
+      };
+
+      const getLinksWithIsHiding = function() {
+        return getAllLinks().filter(function(d) {
+          return d.data.hasOwnProperty('shyIsHiding');
+        });
+      };
+
+      const setLinkIsHidingIfNecessary = function(isHiding, link) {
+        var linksWithIsHiding;
+        if (diagram.config(SHY_CONNECTIONS)) {
+          if (isHiding === false) link.data.shyIsHiding = isHiding;
+          else if (isHiding === true) {
+            linksWithIsHiding = getLinksWithIsHiding();
+            linksWithIsHiding.each(function(d) {
+              d.data.shyIsHiding = true;
+            });
+          }
+          link.data.shyIsHidingChanged = true;
+        }
+      };
+
+      const setDisplayOfShyConnections = function(display, node) {
+        var isShowing = display === 'show',
+          isHiding = display === 'hide',
+          nodeData = node.data,
+          linksWithIsHiding = getLinksWithIsHiding(),
+          nodeLinks = getAllLinks().filter(function(d) {
+            return d.source.id === nodeData.id || d.target.id === nodeData.id;
+          }),
+          setDisplay = function(links, show) {
+            links.classed('shy-link-hidden', !show);
+            links.classed('shy-link-showed', show);
+          },
+          hideLinks = function(links) {
+            setDisplay(links, false);
+            links.each(function(d) {
+              delete d.data.shyIsHiding;
+            });
+          },
+          futureConditionalHide = function() {
+            setTimeout(function() {
+              allAreHiding = true;
+              shyIsHidingIsSame = true;
+              nodeLinks.each(function(d) {
+                allAreHiding = allAreHiding && d.data.shyIsHiding;
+                if (d.data.shyIsHidingChanged) {
+                  shyIsHidingIsSame = false;
+                  delete d.data.shyIsHidingChanged;
+                }
+              });
+              if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);
+              else futureConditionalHide();
+            }, 500);
+          },
+          allAreHiding, shyIsHidingIsSame;
+
+        if (linksWithIsHiding[0].length === 0) {
+          if (isShowing) setDisplay(nodeLinks, true);
+          else if (isHiding) {
+            nodeLinks.each(function(d) {
+              d.data.shyIsHiding = true;
+            });
+            futureConditionalHide();
+          }
+        } else {
+          if (isShowing) {
+            linksWithIsHiding.each(function(d, index) {
+              if (index === 0) d.data.shyIsHiding = false;
+            });
+          } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
+        }
+      };
+
+      const setReRender = _.partial(helpers.setReRender, diagram, creationId, data, _);
 
       diagram.markRelatedFn = function(item) {
         item.el.style('stroke-width', '20px');
@@ -495,16 +512,22 @@ export default () => {
         'class': 'graph-diagram'
       });
 
-
       zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function() {
         zoomed(d3.event.translate, d3.event.scale);
       });
+      
       svg.call(zoom);
 
-      zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
+      zoom.translate([100, 100])
+        .scale(diagram.config(GRAPH_ZOOM).value);
+
       zoomed(zoom.translate(), zoom.scale());
 
-      force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
+      force = d3.layout.force()
+        .size([width, height])
+        .charge(conf.charge || -10000)
+        .linkDistance(conf.linkDistance || 140)
+        .on("tick", tick);
 
       drag = d3.behavior.drag().origin(function(d) {
         return d;
@@ -617,8 +640,10 @@ export default () => {
       node.append("text").text(dTextFn('name'));
 
       setRelationships();
+      setReRender(conf);
       diagram.listen('configuration-changed', function(conf) {
         if (conf.key === SHY_CONNECTIONS || conf.key === GRAPH_DRAG) {
+          setReRender(conf);
           diagram.removePreviousAndCreate(creationId, data, conf);
         }
       });

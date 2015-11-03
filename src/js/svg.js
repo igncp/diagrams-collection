@@ -1,3 +1,5 @@
+import d from 'diagrams';
+
 const svg = {};
 
 svg.addVerticalGradientFilter = function(container, id, colors) {
@@ -54,10 +56,13 @@ svg.addFilterColor = function(id, container, deviation, slope, extra) {
   });
 };
 
+svg.getDiagramWrapperStr = ()=>  d.diagramsWrapperSelector || 'body';
+
 svg.generateSvg = function(style) {
+  const selector = svg.getDiagramWrapperStr();
   var bodyDims = document.body.getBoundingClientRect();
 
-  return d3.select('body').append('svg').attr({
+  return d3.select(selector).append('svg').attr({
     width: bodyDims.width - 40,
     height: 4000
   }).style(style);
@@ -82,5 +87,22 @@ svg.textEllipsis = function(width) {
     }
   };
 };
+
+svg.insertInBodyBeforeSvg = (tag)=> {
+  const diagramWrapper = svg.getDiagramWrapperStr();
+  const body = d3.select('body');
+  const elementAfterName = (diagramWrapper === 'body') ? 'svg' : diagramWrapper;
+  const el = body.insert(tag,  elementAfterName);
+
+  return el;
+};
+
+svg.fullscreenElement = ()=> document.fullscreenElement ||
+  document.webkitFullscreenElement ||
+  document.mozFullScreenElement ||
+  document.msFullscreenElement ||
+  null;
+
+svg.selectScreenHeightOrHeight = height => (d.svg.fullscreenElement()) ? screen.height - 30 : height;
 
 export default svg;
