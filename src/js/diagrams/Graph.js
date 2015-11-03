@@ -251,8 +251,12 @@ export default () => {
           });
         }
       },
-      setReRender: function(diagram, creationId, data, conf) {
-        diagram.reRender = _.partial(diagram.removePreviousAndCreate, creationId, data, conf);
+      setReRender: function(diagram, creationId, data) {
+        diagram.reRender = function(conf) {
+          diagram.unlisten('configuration-changed');
+          diagram.reRender = null;
+          diagram.removePreviousAndCreate(creationId, data, conf);
+        };
       }
     },
     Graph;
@@ -647,7 +651,6 @@ export default () => {
           diagram.removePreviousAndCreate(creationId, data, conf);
         }
       });
-
     }
   };
 

@@ -167,9 +167,15 @@
 	};
 	
 	utils.composeWithEventEmitter = function (constructor) {
-	  var _subjects = [],
+	  var _subjects = {},
 	      createName = function createName(name) {
 	    return '$' + name;
+	  },
+	      dispose = function dispose(prop) {
+	    if (({}).hasOwnProperty.call(_subjects, prop)) {
+	      _subjects[prop].dispose();
+	      _subjects[prop] = null;
+	    }
 	  };
 	
 	  constructor.prototype.emit = function (name, data) {
@@ -184,15 +190,16 @@
 	    return _subjects[fnName].subscribe(handler);
 	  };
 	
-	  constructor.prototype.dispose = function () {
-	    var subjects = _subjects;
-	    for (var prop in subjects) {
-	      if (({}).hasOwnProperty.call(subjects, prop)) {
-	        subjects[prop].dispose();
-	      }
-	    }
+	  constructor.prototype.unlisten = function (name) {
+	    var fnName = createName(name);
 	
-	    _subjects = {};
+	    dispose(fnName);
+	  };
+	
+	  constructor.prototype.dispose = function () {
+	    for (var prop in _subjects) {
+	      dispose(prop);
+	    }_subjects = {};
 	  };
 	};
 	
@@ -1697,8 +1704,12 @@
 	        });
 	      }
 	    },
-	    setReRender: function setReRender(diagram, creationId, data, conf) {
-	      diagram.reRender = _.partial(diagram.removePreviousAndCreate, creationId, data, conf);
+	    setReRender: function setReRender(diagram, creationId, data) {
+	      diagram.reRender = function (conf) {
+	        diagram.unlisten('configuration-changed');
+	        diagram.reRender = null;
+	        diagram.removePreviousAndCreate(creationId, data, conf);
+	      };
 	    }
 	  },
 	      Graph;

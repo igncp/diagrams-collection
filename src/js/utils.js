@@ -80,9 +80,15 @@ utils.wrapInParagraph = function(text) {
 };
 
 utils.composeWithEventEmitter = function(constructor) {
-  var _subjects = [],
+  var _subjects = {},
     createName = function(name) {
       return '$' + name;
+    },
+    dispose = function(prop) {
+      if ({}.hasOwnProperty.call(_subjects, prop)) {
+        _subjects[prop].dispose();
+        _subjects[prop] = null;
+      }
     };
 
   constructor.prototype.emit = function(name, data) {
@@ -97,13 +103,14 @@ utils.composeWithEventEmitter = function(constructor) {
     return _subjects[fnName].subscribe(handler);
   };
 
+  constructor.prototype.unlisten = function(name) {
+    var fnName = createName(name);
+    
+    dispose(fnName);
+  };
+
   constructor.prototype.dispose = function() {
-    var subjects = _subjects;
-    for (var prop in subjects) {
-      if ({}.hasOwnProperty.call(subjects, prop)) {
-        subjects[prop].dispose();
-      }
-    }
+    for (let prop in _subjects) dispose(prop);
 
     _subjects = {};
   };
