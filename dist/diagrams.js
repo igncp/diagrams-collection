@@ -1746,6 +1746,8 @@
 	            markers = undefined,
 	            parsedData = undefined;
 	
+	        linksNumberMap = {};
+	
 	        var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
 	
 	        var tick = function tick() {
@@ -1756,7 +1758,6 @@
 	                  dx = d.target.x - d.source.x,
 	                  dy = d.target.y - d.source.y,
 	                  dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
-	
 	              return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
 	            });
 	          };

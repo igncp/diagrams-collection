@@ -273,6 +273,8 @@ export default () => {
 
       let force, drag, link, linkOuter, node, zoom, singleNodeEl, shape, shapeEl, markers, parsedData;
 
+      linksNumberMap = {};
+
       const height = d.svg.selectScreenHeightOrHeight(bodyHeight - 250);
 
       const tick = function() {
@@ -283,7 +285,6 @@ export default () => {
               dx = d.target.x - d.source.x,
               dy = d.target.y - d.source.y,
               dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
-
             return "M" +
               d.source.x + "," +
               d.source.y + "A" +
