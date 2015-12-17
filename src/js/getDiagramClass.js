@@ -6,12 +6,12 @@ let createdDiagramsMaxId = 0;
 
 d.diagramsRegistry = [];
 
-const getDiagramClass = ()=> {
+const getDiagramClass = () => {
   const Diagram = class Diagram {
     static convertDiagram(creationId, toDiagramType) {
-      var item = Diagram.getRegistryItemWithCreationId(creationId),
-        newArgs = item.data.slice(1),
-        generalData, specificData;
+      const item = Diagram.getRegistryItemWithCreationId(creationId);
+      const newArgs = item.data.slice(1);
+      let generalData, specificData;
 
       generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
       specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
@@ -30,12 +30,11 @@ const getDiagramClass = ()=> {
     static addDivBeforeSvg() {
       const div = svg.insertInBodyBeforeSvg('div');
 
-      div.appendButtonToDiv = function(cls, value, onClickFn) {
+      div.appendButtonToDiv = function(cls, value, onclick) {
         div.append('input').attr({
           type: 'button',
-          'class': cls + ' diagrams-diagram-button btn btn-default',
-          value: value,
-          onclick: onClickFn
+          class: `${cls} diagrams-diagram-button btn btn-default`,
+          onclick, value,
         });
       };
 
@@ -43,35 +42,35 @@ const getDiagramClass = ()=> {
     }
 
     static getRegistryItemWithCreationId(creationId) {
-      var items = _.where(d.diagramsRegistry, {
-        id: creationId
+      const items = _.where(d.diagramsRegistry, {
+        id: creationId,
       });
 
       return (items.length === 1) ? items[0] : null;
     }
 
     static getDataWithCreationId(creationId) {
-      var item = Diagram.getRegistryItemWithCreationId(creationId);
+      const item = Diagram.getRegistryItemWithCreationId(creationId);
 
       return (item) ? item.data : null;
     }
 
     constructor(opts) {
-      var diagram = this,
-        prototype = Object.getPrototypeOf(diagram);
+      const diagram = this;
+      const prototype = Object.getPrototypeOf(diagram);
 
       diagram.name = opts.name;
       diagram._configuration = opts.configuration || {};
 
       prototype.configurationKeys = opts.configurationKeys || {};
 
-      _.each(Object.keys(opts.helpers), function(helperName) {
+      _.each(Object.keys(opts.helpers), (helperName) => {
         if (_.isFunction(opts.helpers[helperName])) {
           opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);
         }
       });
       _.merge(diagram._configuration, defaultDiagramConfiguration);
-      _.each(Object.keys(diagram._configuration), function(confKey) {
+      _.each(Object.keys(diagram._configuration), (confKey) => {
         diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
       });
       _.defaults(prototype, opts.helpers);
@@ -83,18 +82,16 @@ const getDiagramClass = ()=> {
     }
 
     addMouseListenersToEl(el, data, callbacks) {
-      var diagram = this,
-        emitFn = function(d3Event, emitedEvent) {
-          emitedEvent = emitedEvent || d3Event;
-          el.on(d3Event, function() {
-            diagram.emit(emitedEvent, emitContent);
-            if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
-          });
-        },
-        emitContent = {
-          el: el,
-          data: data
-        };
+      const diagram = this;
+      const emitFn = (d3Event, emitedEvent) => {
+        emitedEvent = emitedEvent || d3Event;
+        el.on(d3Event, () => {
+          diagram.emit(emitedEvent, emitContent);
+
+          if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
+        });
+      };
+      const emitContent = { el, data };
 
       emitFn('mouseleave');
       emitFn('mouseenter');
@@ -102,66 +99,74 @@ const getDiagramClass = ()=> {
     }
 
     removePreviousAndCreate() {
-      var diagram = this;
-      
+      const diagram = this;
+
       Diagram.removePreviousDiagrams();
       diagram.addConversionButtons();
-      diagram.create.apply(diagram, arguments);
+      diagram.create(...arguments);
     }
 
     config(opts, optValue) {
-      var argsLength = arguments.length,
-        optsType = typeof(opts),
-        optsKey;
+      const argsLength = arguments.length;
+      const optsType = typeof(opts);
+      let optsKey;
 
       if (argsLength === 0) return this._configuration;
       else if (argsLength === 1) {
         if (_.isFunction(optsType)) optsKey = opts();
         else if (_.isString(opts)) optsKey = opts;
         else if (_.isObject(opts)) {
-          for (let key in opts) {
+          for (const key in opts) {
             if (opts.hasOwnProperty(key)) this.config(key, opts[key]);
           }
+
           return opts;
         }
+
         return this._configuration[optsKey];
       } else if (argsLength === 2) {
         this._configuration[opts] = optValue;
+
         if (_.isObject(optValue)) this.setToLocalStorage(opts, optValue.value);
         else this.setToLocalStorage(opts, optValue);
 
         this.emit('configuration-changed', {
           key: opts,
-          value: optValue
+          value: optValue,
         });
+
         return optValue;
       }
     }
 
     configCheckingLocalStorage(key, defaultValue) {
-      var diagram = this,
-        finalValue = diagram.getFromLocalStorage(key, defaultValue);
+      const diagram = this;
+      const finalValue = diagram.getFromLocalStorage(key, defaultValue);
 
       diagram.config(key, finalValue);
     }
 
     generateLocalStorageKeyPreffix(originalKey) {
-      return 'diagramsjs-' + originalKey;
+      return `diagramsjs-${originalKey}`;
     }
 
     getFromLocalStorage(originalKey, defaultItem) {
-      var diagram = this,
-        getAndConvertStrBoolean = function(defaultValue) {
-          var rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
-          if (rv === 'false') rv = false;
-          else if (rv === 'true') rv = true;
-          return rv;
-        },
-        finalValue = defaultItem;
+      const diagram = this;
+      const getAndConvertStrBoolean = function(defaultValue) {
+        let rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey))
+          || defaultValue;
+
+        if (rv === 'false') rv = false;
+        else if (rv === 'true') rv = true;
+
+        return rv;
+      };
+      let finalValue = defaultItem;
 
       if (localStorage && localStorage.getItem) {
         if (_.isObject(finalValue)) {
           finalValue.value = getAndConvertStrBoolean(finalValue.value);
+
           if (finalValue.type) finalValue.value = finalValue.type(finalValue.value);
         } else finalValue = getAndConvertStrBoolean(finalValue);
       }
@@ -170,7 +175,8 @@ const getDiagramClass = ()=> {
     }
 
     setToLocalStorage(originalKey, value) {
-      var diagram = this;
+      const diagram = this;
+
       if (localStorage && localStorage.setItem) {
         return localStorage.setItem(diagram.generateLocalStorageKeyPreffix(originalKey), value);
       }
@@ -195,57 +201,59 @@ const getDiagramClass = ()=> {
     }
 
     generateRelationship(el, data) {
-      return {
-        el: el,
-        data: data
-      };
+      return { el, data };
     }
 
     getAllRelatedItemsOfItem(item, relationshipType) {
-      var diagram = this,
-        relatedItems = [],
-        recursiveFn = function(relatedItemData, depth) {
-          _.each(relatedItemData.relationships[relationshipType], function(relatedItemChild) {
-            if (depth < 100) {
-              if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) { // Handle circular loops
-                relatedItems.push(relatedItemChild);
-                recursiveFn(relatedItemChild.data, depth + 1);
-              }
+      const diagram = this;
+      const relatedItems = [];
+      const recursiveFn = function(relatedItemData, depth) {
+        _.each(relatedItemData.relationships[relationshipType], (relatedItemChild) => {
+          if (depth < 100) {
+            // Handle circular loops
+            if (relatedItems.indexOf(relatedItemChild) < 0
+              && relatedItemChild.data !== relatedItemData) {
+              relatedItems.push(relatedItemChild);
+              recursiveFn(relatedItemChild.data, depth + 1);
             }
-          });
-        },
-        returnObj;
+          }
+        });
+      };
+      let returnObj;
 
       if (relationshipType) {
         recursiveFn(item, 0);
+
         return relatedItems;
       } else {
         returnObj = {};
-        _.each(['dependants', 'dependencies'], function(relationshipName) {
+        _.each(['dependants', 'dependencies'], (relationshipName) => {
           returnObj[relationshipName] = diagram.getAllRelatedItemsOfItem(item, relationshipName);
         });
+
         return returnObj;
       }
     }
 
     markRelatedItems(item, opts) {
-      var diagram = this,
-        relatedItemsGroup,
-        pushToRelatedItemsGroup = function(args) {
-          relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem.apply(diagram, [item].concat(args)));
-        };
+      let relatedItemsGroup;
+      const diagram = this;
+      const pushToRelatedItemsGroup = (args) => {
+        relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem(...[item].concat(args)));
+      };
 
       opts = opts || {};
+
       if (diagram.markRelatedFn && item.relationships) {
         relatedItemsGroup = [];
 
         if (opts.filter) pushToRelatedItemsGroup([opts.filter]);
         else _.each([
           ['dependants'],
-          ['dependencies']
+          ['dependencies'],
         ], pushToRelatedItemsGroup);
 
-        _.each(relatedItemsGroup, function(relatedItems) {
+        _.each(relatedItemsGroup, (relatedItems) => {
           _.each(relatedItems, diagram.markRelatedFn);
         });
 
@@ -254,22 +262,24 @@ const getDiagramClass = ()=> {
     }
 
     register() {
-      var diagram = this;
+      const diagram = this;
+
       d.diagramTypes = d.diagramTypes || [];
       d.diagramTypes.push(diagram.name);
       d[diagram.name] = function() {
-        var args = Array.prototype.slice.call(arguments);
-        d.utils.runIfReady(function() {
+        const args = Array.prototype.slice.call(arguments);
+
+        d.utils.runIfReady(() => {
           createdDiagramsMaxId++;
           d.diagramsRegistry.push({
-            diagram: diagram,
+            diagram,
             data: args,
-            id: createdDiagramsMaxId
+            id: createdDiagramsMaxId,
           });
           diagram.diagramId = createdDiagramsMaxId;
           diagram.addConversionButtons();
           args.unshift(createdDiagramsMaxId);
-          diagram.create.apply(diagram, args);
+          diagram.create(...args);
           d.events.emit('diagram-created', diagram);
         });
       };
@@ -278,14 +288,15 @@ const getDiagramClass = ()=> {
     }
 
     addConversionButtons() {
-      var diagram = this,
-        div = Diagram.addDivBeforeSvg(),
-        onClickFn;
+      const diagram = this;
+      const div = Diagram.addDivBeforeSvg();
+      let onClickFn;
 
-      _.each(d.diagramTypes, function(diagramType) {
+      _.each(d.diagramTypes, (diagramType) => {
         if (diagramType !== diagram.name) {
-          onClickFn = 'diagrams.Diagram.convertDiagram(' + diagram.diagramId + ', \'' + diagramType + '\')';
-          div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
+          onClickFn = `diagrams.Diagram.convertDiagram(${diagram.diagramId}, '${diagramType}')`;
+          div.appendButtonToDiv('diagrams-box-conversion-button',
+            `To ${diagramType} diagram`, onClickFn);
         }
       });
     }

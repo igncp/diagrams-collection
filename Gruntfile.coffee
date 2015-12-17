@@ -42,7 +42,8 @@ gruntConfig.webpack =
     module:
       loaders: [{
         test: /\.js$/
-        loader: "babel-loader"
+        loader: "babel"
+        exclude: /(node_modules|bower_components)/
       }]
     resolve:
       root: path.resolve __dirname, 'src/js/'
