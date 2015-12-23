@@ -463,6 +463,7 @@
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
 	var addEllipsis = function addEllipsis(_ref) {
+	  var self = _ref.self;
 	  var textLength = _ref.textLength;
 	  var width = _ref.width;
 	  var text = _ref.text;
@@ -560,7 +561,7 @@
 	      var textLength = self.node().getComputedTextLength();
 	      var text = self.text();
 	
-	      addEllipsis({ width: width, textLength: textLength, text: text });
+	      addEllipsis({ self: self, width: width, textLength: textLength, text: text });
 	    };
 	  },
 	

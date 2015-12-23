@@ -1,6 +1,6 @@
 import d from 'diagrams';
 
-const addEllipsis = ({ textLength, width, text }) => {
+const addEllipsis = ({ self, textLength, width, text }) => {
   while (textLength > width && text.length > 0) {
     text = text.slice(0, -4);
     self.text(`${text}...`);
@@ -84,7 +84,7 @@ const svg = {
       const textLength = self.node().getComputedTextLength();
       const text = self.text();
 
-      addEllipsis({ width, textLength, text });
+      addEllipsis({ self, width, textLength, text });
     };
   },
 
