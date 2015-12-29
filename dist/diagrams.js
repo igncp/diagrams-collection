@@ -127,7 +127,7 @@
 	    var allMatches = text.match(codeRegex);
 	
 	    return text.replace(codeRegex, function (matchStr, language, codeBlock) {
-	      return predicate(matchStr, language, codeBlock, allMatches);
+	      return predicate({ matchStr: matchStr, language: language, codeBlock: codeBlock, allMatches: allMatches });
 	    });
 	  },
 	
@@ -150,10 +150,15 @@
 	      }
 	    };
 	
-	    text = utils.replaceCodeFragmentOfText(text, function (matchStr, language, code, allMatches) {
+	    text = utils.replaceCodeFragmentOfText(text, function (_ref) {
+	      var matchStr = _ref.matchStr;
+	      var language = _ref.language;
+	      var codeBlock = _ref.codeBlock;
+	      var allMatches = _ref.allMatches;
+	
 	      var lastMatch = matchStr === _.last(allMatches);
 	
-	      return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
+	      return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + (hljs.highlight(language, codeBlock).value + '</pre></code>');
 	    });
 	
 	    encodeOrDecodeTags('encode', tagsToEncode);
@@ -167,7 +172,9 @@
 	    commentsSymbol = commentsSymbol || '';
 	
 	    return function (codeBlock, where, withInlineStrs) {
-	      if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
+	      if (withInlineStrs === true) {
+	        codeBlock = commentsSymbol + ' ...\n' + codeBlock + '\n' + commentsSymbol + ' ...';
+	      }
 	
 	      if (_.isString(where)) codeBlock = commentsSymbol + ' @' + where + '\n' + codeBlock;
 	
@@ -238,7 +245,10 @@
 	    text = text.replace(/<p>/g, '');
 	    text = text.replace(/<br>/g, ' ');
 	    text = text.replace(/<\/p>/g, '. ');
-	    text = utils.replaceCodeFragmentOfText(text, function (matchStr, language, codeBlock) {
+	    text = utils.replaceCodeFragmentOfText(text, function (_ref2) {
+	      var matchStr = _ref2.matchStr;
+	      var codeBlock = _ref2.codeBlock;
+	
 	      if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else {
 	        return ' <CODE...>';
 	      }
@@ -957,7 +967,7 @@
 	var map = {
 		"./Box/index": 8,
 		"./Graph/index": 9,
-		"./Layer/index": 10
+		"./Layer/index": 11
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -1558,8 +1568,6 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-	
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
@@ -1570,10 +1578,13 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
+	var _helpers = __webpack_require__(10);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
 	exports['default'] = function () {
 	  var _configuration;
 	
-	  var linksNumberMap = {};
 	  var SHY_CONNECTIONS = 'Show connections selectively';
 	  var GRAPH_ZOOM = 'dia graph zoom';
 	  var GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
@@ -1585,269 +1596,6 @@
 	  };
 	  var dPositionFn = _diagrams2['default'].utils.positionFn;
 	  var dTextFn = _diagrams2['default'].utils.textFn;
-	  var helpers = {
-	    generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
-	      if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
-	        return _.map(nodesIds, function (args) {
-	          return helpers.generateConnectionWithText.apply({}, args);
-	        });
-	      }
-	
-	      if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
-	
-	      return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
-	    },
-	    connectionFnFactory: function connectionFnFactory(baseFn, changedProp, changedVal) {
-	      var _arguments2 = arguments;
-	
-	      return function () {
-	        var connection = baseFn.apply(undefined, _arguments2);
-	        var setVal = function setVal(singleConnection) {
-	          singleConnection[changedProp] = changedVal;
-	
-	          return connection;
-	        };
-	
-	        return _.isArray(connection) ? _.map(connection, setVal) : setVal(connection);
-	      };
-	    },
-	    generateNodeOptions: function generateNodeOptions(options) {
-	      var obj = {};
-	      var shape = undefined;
-	
-	      if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));else if (_.isArray(options)) {
-	        _.each(options, function (opt) {
-	          if (opt.substr(0, 2) === 's-') {
-	            shape = opt.substr(2, opt.length - 2);
-	            obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
-	          } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
-	        });
-	
-	        return obj;
-	      }
-	    },
-	    mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
-	      var defaultConnection = {
-	        direction: 'out',
-	        symbol: 'arrow',
-	        line: 'plain'
-	      };
-	
-	      return _.defaults(connection, defaultConnection);
-	    },
-	    generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
-	      var _arguments3 = arguments;
-	
-	      return function () {
-	        var args = Array.prototype.slice.call(_arguments3);
-	
-	        if (_.isUndefined(args[3])) args[3] = '';else args[3] += ' ';
-	        args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
-	
-	        return helpers.generateNode.apply({}, args);
-	      };
-	    },
-	    generateNodeWithTextAsTargetLink: function generateNodeWithTextAsTargetLink(file) {
-	      var _arguments4 = arguments;
-	
-	      return function () {
-	        return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments4[0]).apply({}, _arguments4);
-	      };
-	    },
-	    generatePrivateNode: function generatePrivateNode() {
-	      var args = Array.prototype.slice.call(arguments);
-	
-	      args[2] += '<br><strong>PRIVATE</strong>';
-	      args[3] = 's-t';
-	
-	      return helpers.generateNode.apply(helpers, _toConsumableArray(args));
-	    },
-	    generateNode: function generateNode() {
-	      var node = {
-	        name: arguments[0]
-	      };
-	      var addDefaultConnectionFromNumber = function addDefaultConnectionFromNumber(nodeId) {
-	        node.connections.push(helpers.mergeWithDefaultConnection({
-	          nodesIds: [nodeId]
-	        }));
-	      };
-	      var addConnection = function addConnection(connection) {
-	        if (_.isArray(connection)) _.each(connection, addConnection);else if (_.isNumber(connection)) addConnection({
-	          nodesIds: [connection]
-	        });else if (_.isObject(connection)) {
-	          helpers.mergeWithDefaultConnection(connection);
-	          node.connections.push(connection);
-	        }
-	      };
-	      var connections = undefined;
-	
-	      if (arguments.length > 1) {
-	        connections = arguments[1];
-	        node.connections = [];
-	
-	        if (_.isString(connections)) {
-	          connections = connections.split(' ').map(Number);
-	
-	          if (connections.length > 0) node.id = connections[0];
-	
-	          if (connections.length > 1) {
-	            _.each(connections, function (nodeId, index) {
-	              if (index > 0) addConnection(nodeId);
-	            });
-	          }
-	        } else if (_.isArray(connections)) {
-	          node.id = connections[0];
-	          connections = connections.slice(1);
-	          _.each(connections, function (connection) {
-	            if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);else addConnection(connection);
-	          });
-	        } else if (_.isNumber(connections)) node.id = connections;
-	
-	        if (arguments.length > 2) node.description = arguments[2];
-	
-	        if (arguments.length > 3) node.options = helpers.generateNodeOptions(arguments[3]);
-	      }
-	
-	      return node;
-	    },
-	    generateNodeWithSharedGet: function generateNodeWithSharedGet() {
-	      var text = arguments[0];
-	      var sharedKey = undefined,
-	          preffix = undefined,
-	          options = undefined;
-	
-	      preffix = arguments.length > 2 ? arguments[2] : '';
-	      sharedKey = preffix + text.split('(')[0];
-	      options = arguments.length > 3 ? arguments[3] : null;
-	
-	      return helpers.generateNode(text, arguments[1], _diagrams2['default'].shared.get(sharedKey), options);
-	    },
-	    generateFnNodeWithSharedGetAndBoldIfFile: function generateFnNodeWithSharedGetAndBoldIfFile(file) {
-	      var _arguments5 = arguments;
-	
-	      return function () {
-	        var opts = '';
-	        var preffix = '';
-	
-	        if (_arguments5[0].split('@')[0] === file) opts = 'b';
-	
-	        if (_arguments5.length > 2) preffix = _arguments5[2];
-	
-	        if (_arguments5.length > 3) opts = _arguments5[3] + ' ' + opts;
-	
-	        return helpers.generateNodeWithSharedGet(_arguments5[0], _arguments5[1], preffix, opts);
-	      };
-	    },
-	    dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	      var finalItems = [];
-	      var idToIndexMap = {};
-	      var targetItem = undefined;
-	
-	      _.each(generalData.items, function (item, index) {
-	        finalItems.push({
-	          name: item.name,
-	          id: item.id,
-	          description: item.description
-	        });
-	        idToIndexMap[item.id] = index;
-	      });
-	
-	      _.each(generalData.connections, function (connection) {
-	        targetItem = finalItems[idToIndexMap[connection.to]];
-	        targetItem.connections = targetItem.connections || [];
-	        targetItem.connections.push({
-	          direction: 'in',
-	          nodesIds: [connection.from]
-	        });
-	      });
-	
-	      return finalItems;
-	    },
-	    dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
-	      var finalItems = [];
-	      var connections = [];
-	      var setConnection = function setConnection(node, connection) {
-	        _.each(connection.nodesIds, function (otherNodeId) {
-	          newConnection = {};
-	
-	          if (connection.direction === 'out') {
-	            newConnection.from = node.id;
-	            newConnection.to = otherNodeId;
-	          } else if (connection.direction === 'in') {
-	            newConnection.from = otherNodeId;
-	            newConnection.to = node.id;
-	          }
-	
-	          connections.push(newConnection);
-	        });
-	      };
-	      var newConnection = undefined;
-	
-	      _.each(data, function (node) {
-	        finalItems.push({
-	          id: node.id,
-	          name: node.name,
-	          description: node.description
-	        });
-	        _.each(node.connections, function (connection) {
-	          return setConnection(node, connection);
-	        });
-	      });
-	
-	      return {
-	        items: finalItems,
-	        connections: connections
-	      };
-	    },
-	    doWithMinIdAndMaxIdOfLinkNodes: function doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
-	      var getIndex = function getIndex(item) {
-	        return _.isNumber(item) ? item : item.index;
-	      };
-	      var ids = [getIndex(link.source), getIndex(link.target)];
-	      var minIndex = _.min(ids);
-	      var maxIndex = _.max(ids);
-	
-	      return cb(minIndex, maxIndex);
-	    },
-	    updateLinksNumberMapWithLink: function updateLinksNumberMapWithLink(link) {
-	      helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
-	        if (_.isUndefined(linksNumberMap[minIndex])) linksNumberMap[minIndex] = {};
-	
-	        if (_.isUndefined(linksNumberMap[minIndex][maxIndex])) {
-	          linksNumberMap[minIndex][maxIndex] = 1;
-	        } else linksNumberMap[minIndex][maxIndex] += 1;
-	      });
-	    },
-	    getLinksNumberMapItemWithLink: function getLinksNumberMapItemWithLink(link) {
-	      return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
-	        return linksNumberMap[minIndex][maxIndex];
-	      });
-	    },
-	    addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
-	      if (_.isString(info)) info = [info];
-	      var hasDescription = info.length === 2;
-	      var svgWidth = svg[0][0].getBoundingClientRect().width;
-	      var infoText = info[0] + (hasDescription ? ' (...)' : '');
-	      var el = svg.append('g').attr({
-	        transform: 'translate(10, 50)',
-	        'class': 'graph-info'
-	      }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
-	
-	      if (hasDescription) {
-	        diagram.addMouseListenersToEl(el, {
-	          el: el,
-	          fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
-	        });
-	      }
-	    },
-	    setReRender: function setReRender(diagram, creationId, data) {
-	      diagram.reRender = function (conf) {
-	        diagram.unlisten('configuration-changed');
-	        diagram.reRender = null;
-	        diagram.removePreviousAndCreate(creationId, data, conf);
-	      };
-	    }
-	  };
 	
 	  var Graph = (function (_d$Diagram) {
 	    _inherits(Graph, _d$Diagram);
@@ -1869,7 +1617,7 @@
 	        var dragNodesConfig = diagram.config(GRAPH_DRAG);
 	        var curvedArrows = diagram.config(CURVED_ARROWS);
 	
-	        linksNumberMap = {};
+	        _helpers2['default'].resetLinksNumberMap();
 	
 	        var force = undefined,
 	            drag = undefined,
@@ -1888,7 +1636,7 @@
 	        var tick = function tick() {
 	          var setPathToLink = function setPathToLink(pathClass) {
 	            link.select('path.' + pathClass).attr("d", function (d) {
-	              var linksNumber = helpers.getLinksNumberMapItemWithLink(d);
+	              var linksNumber = _helpers2['default'].getLinksNumberMapItemWithLink(d);
 	              var linkIndex = d.data.linkIndex;
 	              var dx = d.target.x - d.source.x;
 	              var dy = d.target.y - d.source.y;
@@ -1920,6 +1668,38 @@
 	          var idsMap = {};
 	          var nodesWithLinkMap = {};
 	          var colors = d3.scale.category20();
+	          var handleConnections = function handleConnections(node, nodeIndex) {
+	            if (node.connections.length > 0) {
+	              _.each(node.connections, function (connection) {
+	                _.each(connection.nodesIds, function (otherNodeId) {
+	                  otherNode = idsMap[otherNodeId];
+	
+	                  if (otherNode) {
+	                    if (conf.hideNodesWithoutLinks) {
+	                      nodesWithLinkMap[otherNode.index] = true;
+	                      nodesWithLinkMap[nodeIndex] = true;
+	                    }
+	                    linkObj = {};
+	
+	                    if (connection.direction === 'out') {
+	                      linkObj.source = nodeIndex;
+	                      linkObj.target = otherNode.index;
+	                    } else {
+	                      linkObj.source = otherNode.index;
+	                      linkObj.target = nodeIndex;
+	                    }
+	                    linkObj.data = connection;
+	                    linkObj.color = parsedData.nodes[linkObj.source].color;
+	                    _helpers2['default'].updateLinksNumberMapWithLink(linkObj);
+	                    linkObj.data.linkIndex = _helpers2['default'].getLinksNumberMapItemWithLink(linkObj) - 1;
+	
+	                    if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
+	                    parsedData.links.push(linkObj);
+	                  }
+	                });
+	              });
+	            }
+	          };
 	          var nodeId = undefined,
 	              color = undefined,
 	              options = undefined,
@@ -1958,40 +1738,9 @@
 	
 	          diagram.config(conf);
 	
-	          if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info);
+	          if (conf.info) _helpers2['default'].addDiagramInfo(diagram, svg, conf.info);
 	
-	          _.each(parsedData.nodes, function (node, nodeIndex) {
-	            if (node.connections.length > 0) {
-	              _.each(node.connections, function (connection) {
-	                _.each(connection.nodesIds, function (otherNodeId) {
-	                  otherNode = idsMap[otherNodeId];
-	
-	                  if (otherNode) {
-	                    if (conf.hideNodesWithoutLinks) {
-	                      nodesWithLinkMap[otherNode.index] = true;
-	                      nodesWithLinkMap[nodeIndex] = true;
-	                    }
-	                    linkObj = {};
-	
-	                    if (connection.direction === 'out') {
-	                      linkObj.source = nodeIndex;
-	                      linkObj.target = otherNode.index;
-	                    } else {
-	                      linkObj.source = otherNode.index;
-	                      linkObj.target = nodeIndex;
-	                    }
-	                    linkObj.data = connection;
-	                    linkObj.color = parsedData.nodes[linkObj.source].color;
-	                    helpers.updateLinksNumberMapWithLink(linkObj);
-	                    linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1;
-	
-	                    if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
-	                    parsedData.links.push(linkObj);
-	                  }
-	                });
-	              });
-	            }
-	          });
+	          _.each(parsedData.nodes, handleConnections);
 	
 	          if (conf.hideNodesWithoutLinks === true) {
 	            _.each(parsedData.nodes, function (node, nodeIndex) {
@@ -2109,7 +1858,7 @@
 	          }
 	        };
 	
-	        var setReRender = _.partial(helpers.setReRender, diagram, creationId, data, _);
+	        var setReRender = _.partial(_helpers2['default'].setReRender, diagram, creationId, data, _);
 	
 	        diagram.markRelatedFn = function (item) {
 	          item.el.style('stroke-width', '20px');
@@ -2267,7 +2016,7 @@
 	
 	  new Graph({
 	    name: 'graph',
-	    helpers: helpers,
+	    helpers: _helpers2['default'],
 	    configurationKeys: {
 	      SHY_CONNECTIONS: SHY_CONNECTIONS
 	    },
@@ -2289,503 +2038,320 @@
 	  value: true
 	});
 	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
 	var _diagrams = __webpack_require__(1);
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
+	var linksNumberMap = undefined;
+	
+	var helpers = {
+	  resetLinksNumberMap: function resetLinksNumberMap() {
+	    linksNumberMap = {};
+	  },
+	  generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
+	    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
+	      return _.map(nodesIds, function (args) {
+	        return helpers.generateConnectionWithText.apply({}, args);
+	      });
+	    }
+	
+	    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
+	
+	    return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
+	  },
+	  connectionFnFactory: function connectionFnFactory(baseFn, changedProp, changedVal) {
+	    var _arguments = arguments;
+	
+	    return function () {
+	      var connection = baseFn.apply(undefined, _arguments);
+	      var setVal = function setVal(singleConnection) {
+	        singleConnection[changedProp] = changedVal;
+	
+	        return connection;
+	      };
+	
+	      return _.isArray(connection) ? _.map(connection, setVal) : setVal(connection);
+	    };
+	  },
+	  generateNodeOptions: function generateNodeOptions(options) {
+	    var obj = {};
+	    var shape = undefined;
+	
+	    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));else if (_.isArray(options)) {
+	      _.each(options, function (opt) {
+	        if (opt.substr(0, 2) === 's-') {
+	          shape = opt.substr(2, opt.length - 2);
+	          obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
+	        } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+	      });
+	
+	      return obj;
+	    }
+	  },
+	  mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
+	    var defaultConnection = {
+	      direction: 'out',
+	      symbol: 'arrow',
+	      line: 'plain'
+	    };
+	
+	    return _.defaults(connection, defaultConnection);
+	  },
+	  generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
+	    var _arguments2 = arguments;
+	
+	    return function () {
+	      var args = Array.prototype.slice.call(_arguments2);
+	
+	      if (_.isUndefined(args[3])) args[3] = '';else args[3] += ' ';
+	      args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
+	
+	      return helpers.generateNode.apply({}, args);
+	    };
+	  },
+	  generateNodeWithTextAsTargetLink: function generateNodeWithTextAsTargetLink(file) {
+	    var _arguments3 = arguments;
+	
+	    return function () {
+	      return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments3[0]).apply({}, _arguments3);
+	    };
+	  },
+	  generatePrivateNode: function generatePrivateNode() {
+	    var args = Array.prototype.slice.call(arguments);
+	
+	    args[2] += '<br><strong>PRIVATE</strong>';
+	    args[3] = 's-t';
+	
+	    return helpers.generateNode.apply(helpers, _toConsumableArray(args));
+	  },
+	  generateNode: function generateNode() {
+	    var node = {
+	      name: arguments[0]
+	    };
+	    var addDefaultConnectionFromNumber = function addDefaultConnectionFromNumber(nodeId) {
+	      node.connections.push(helpers.mergeWithDefaultConnection({
+	        nodesIds: [nodeId]
+	      }));
+	    };
+	    var addConnection = function addConnection(connection) {
+	      if (_.isArray(connection)) _.each(connection, addConnection);else if (_.isNumber(connection)) addConnection({
+	        nodesIds: [connection]
+	      });else if (_.isObject(connection)) {
+	        helpers.mergeWithDefaultConnection(connection);
+	        node.connections.push(connection);
+	      }
+	    };
+	    var connections = undefined;
+	
+	    if (arguments.length > 1) {
+	      connections = arguments[1];
+	      node.connections = [];
+	
+	      if (_.isString(connections)) {
+	        connections = connections.split(' ').map(Number);
+	
+	        if (connections.length > 0) node.id = connections[0];
+	
+	        if (connections.length > 1) {
+	          _.each(connections, function (nodeId, index) {
+	            if (index > 0) addConnection(nodeId);
+	          });
+	        }
+	      } else if (_.isArray(connections)) {
+	        node.id = connections[0];
+	        connections = connections.slice(1);
+	        _.each(connections, function (connection) {
+	          if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);else addConnection(connection);
+	        });
+	      } else if (_.isNumber(connections)) node.id = connections;
+	
+	      if (arguments.length > 2) node.description = arguments[2];
+	
+	      if (arguments.length > 3) node.options = helpers.generateNodeOptions(arguments[3]);
+	    }
+	
+	    return node;
+	  },
+	  generateNodeWithSharedGet: function generateNodeWithSharedGet() {
+	    var text = arguments[0];
+	    var sharedKey = undefined,
+	        preffix = undefined,
+	        options = undefined;
+	
+	    preffix = arguments.length > 2 ? arguments[2] : '';
+	    sharedKey = preffix + text.split('(')[0];
+	    options = arguments.length > 3 ? arguments[3] : null;
+	
+	    return helpers.generateNode(text, arguments[1], _diagrams2['default'].shared.get(sharedKey), options);
+	  },
+	  generateFnNodeWithSharedGetAndBoldIfFile: function generateFnNodeWithSharedGetAndBoldIfFile(file) {
+	    var _arguments4 = arguments;
+	
+	    return function () {
+	      var opts = '';
+	      var preffix = '';
+	
+	      if (_arguments4[0].split('@')[0] === file) opts = 'b';
+	
+	      if (_arguments4.length > 2) preffix = _arguments4[2];
+	
+	      if (_arguments4.length > 3) opts = _arguments4[3] + ' ' + opts;
+	
+	      return helpers.generateNodeWithSharedGet(_arguments4[0], _arguments4[1], preffix, opts);
+	    };
+	  },
+	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+	    var finalItems = [];
+	    var idToIndexMap = {};
+	    var targetItem = undefined;
+	
+	    _.each(generalData.items, function (item, index) {
+	      finalItems.push({
+	        name: item.name,
+	        id: item.id,
+	        description: item.description
+	      });
+	      idToIndexMap[item.id] = index;
+	    });
+	
+	    _.each(generalData.connections, function (connection) {
+	      targetItem = finalItems[idToIndexMap[connection.to]];
+	      targetItem.connections = targetItem.connections || [];
+	      targetItem.connections.push({
+	        direction: 'in',
+	        nodesIds: [connection.from]
+	      });
+	    });
+	
+	    return finalItems;
+	  },
+	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
+	    var finalItems = [];
+	    var connections = [];
+	    var setConnection = function setConnection(node, connection) {
+	      _.each(connection.nodesIds, function (otherNodeId) {
+	        newConnection = {};
+	
+	        if (connection.direction === 'out') {
+	          newConnection.from = node.id;
+	          newConnection.to = otherNodeId;
+	        } else if (connection.direction === 'in') {
+	          newConnection.from = otherNodeId;
+	          newConnection.to = node.id;
+	        }
+	
+	        connections.push(newConnection);
+	      });
+	    };
+	    var newConnection = undefined;
+	
+	    _.each(data, function (node) {
+	      finalItems.push({
+	        id: node.id,
+	        name: node.name,
+	        description: node.description
+	      });
+	      _.each(node.connections, function (connection) {
+	        return setConnection(node, connection);
+	      });
+	    });
+	
+	    return {
+	      items: finalItems,
+	      connections: connections
+	    };
+	  },
+	  doWithMinIdAndMaxIdOfLinkNodes: function doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
+	    var getIndex = function getIndex(item) {
+	      return _.isNumber(item) ? item : item.index;
+	    };
+	    var ids = [getIndex(link.source), getIndex(link.target)];
+	    var minIndex = _.min(ids);
+	    var maxIndex = _.max(ids);
+	
+	    return cb(minIndex, maxIndex);
+	  },
+	  updateLinksNumberMapWithLink: function updateLinksNumberMapWithLink(link) {
+	    helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
+	      if (_.isUndefined(linksNumberMap[minIndex])) linksNumberMap[minIndex] = {};
+	
+	      if (_.isUndefined(linksNumberMap[minIndex][maxIndex])) {
+	        linksNumberMap[minIndex][maxIndex] = 1;
+	      } else linksNumberMap[minIndex][maxIndex] += 1;
+	    });
+	  },
+	  getLinksNumberMapItemWithLink: function getLinksNumberMapItemWithLink(link) {
+	    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
+	      return linksNumberMap[minIndex][maxIndex];
+	    });
+	  },
+	  addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
+	    if (_.isString(info)) info = [info];
+	    var hasDescription = info.length === 2;
+	    var svgWidth = svg[0][0].getBoundingClientRect().width;
+	    var infoText = info[0] + (hasDescription ? ' (...)' : '');
+	    var el = svg.append('g').attr({
+	      transform: 'translate(10, 50)',
+	      'class': 'graph-info'
+	    }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
+	
+	    if (hasDescription) {
+	      diagram.addMouseListenersToEl(el, {
+	        el: el,
+	        fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
+	      });
+	    }
+	  },
+	  setReRender: function setReRender(diagram, creationId, data) {
+	    diagram.reRender = function (conf) {
+	      diagram.unlisten('configuration-changed');
+	      diagram.reRender = null;
+	      diagram.removePreviousAndCreate(creationId, data, conf);
+	    };
+	  }
+	};
+	
+	helpers.resetLinksNumberMap();
+	
+	exports['default'] = helpers;
+	module.exports = exports['default'];
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _helpers = __webpack_require__(12);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
 	exports['default'] = function () {
 	  var layerGId = 0;
-	  var dTextFn = _diagrams2['default'].utils.textFn;
-	  var helpers = {
-	    ids: 0,
-	    Grid: (function () {
-	      function Grid(fixedWidth) {
-	        _classCallCheck(this, Grid);
-	
-	        this.position = {
-	          x: 0,
-	          y: 0
-	        };
-	        this.width = fixedWidth;
-	        this.cells = [];
-	      }
-	
-	      _createClass(Grid, [{
-	        key: 'addItemAtNewRow',
-	        value: function addItemAtNewRow(item) {
-	          var counter = 0;
-	
-	          this.position.x = 0;
-	          while (counter < 1000) {
-	            this.position.y += 1;
-	
-	            if (this.itemFitsAtCurrentPos(item)) break;
-	          }
-	          this.addItemAtCurrentPos(item);
-	        }
-	      }, {
-	        key: 'addItemAtCurrentPos',
-	        value: function addItemAtCurrentPos(item) {
-	          this.addItemAtPos(item, this.position);
-	        }
-	      }, {
-	        key: 'createRowIfNecessary',
-	        value: function createRowIfNecessary(posY) {
-	          if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
-	        }
-	      }, {
-	        key: 'addItemAtPos',
-	        value: function addItemAtPos(item, pos) {
-	          var row = undefined;
-	
-	          item.x = pos.x;
-	          item.y = pos.y;
-	
-	          for (var i = 0; i < item.height; i++) {
-	            this.createRowIfNecessary(i + pos.y);
-	            row = this.cells[i + pos.y];
-	
-	            for (var j = 0; j < item.width; j++) {
-	              row[j + pos.x] = true;
-	            }
-	          }
-	          this.updatePosition();
-	        }
-	      }, {
-	        key: 'updatePosition',
-	        value: function updatePosition() {
-	          var counter = 0;
-	
-	          while (counter < 1000) {
-	            this.position.x += 1;
-	
-	            if (this.position.x === this.width) {
-	              this.position.x = -1;
-	              this.position.y += 1;
-	              this.createRowIfNecessary(this.position.y);
-	            } else if (this.cells[this.position.y][this.position.x] !== true) {
-	              break;
-	            }
-	            counter++;
-	          }
-	        }
-	      }, {
-	        key: 'itemFitsAtPos',
-	        value: function itemFitsAtPos(item, pos) {
-	          var row = undefined;
-	
-	          for (var i = 0; i < item.height; i++) {
-	            row = this.cells[i + pos.y];
-	
-	            if (_.isUndefined(row)) return true;
-	
-	            for (var j = 0; j < item.width; j++) {
-	              if (row[j + pos.x] === true) return false;
-	
-	              if (j + pos.x + 1 > this.width) return false;
-	            }
-	          }
-	
-	          return true;
-	        }
-	      }, {
-	        key: 'itemFitsAtCurrentPos',
-	        value: function itemFitsAtCurrentPos(item) {
-	          return this.itemFitsAtPos(item, this.position);
-	        }
-	      }, {
-	        key: 'movePositionToNextRow',
-	        value: function movePositionToNextRow() {
-	          this.position.y++;
-	          this.position.x = 0;
-	          this.createRowIfNecessary(this.position.y);
-	        }
-	      }, {
-	        key: 'lastRowIsEmpty',
-	        value: function lastRowIsEmpty() {
-	          var rows = this.cells.length;
-	
-	          for (var i = 0; i < this.width; i++) {
-	            if (this.cells[rows - 1][i] === true) return false;
-	          }
-	
-	          return true;
-	        }
-	      }, {
-	        key: 'getSize',
-	        value: function getSize() {
-	          var rows = this.cells.length;
-	
-	          return {
-	            width: this.width,
-	            height: this.lastRowIsEmpty() ? rows - 1 : rows
-	          };
-	        }
-	      }]);
-	
-	      return Grid;
-	    })(),
-	
-	    config: {
-	      widthSize: 350,
-	      heightSize: 60,
-	      depthWidthFactor: 4,
-	      depthHeightFactor: 2,
-	      showNumbersAll: false
-	    },
-	
-	    handleConnectedToNextCaseIfNecessary: function handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
-	      var layer = layers[currentIndex];
-	      var nextLayer = layers[currentIndex + 1];
-	      var connectedTo = undefined,
-	          newId = undefined;
-	
-	      if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-	        if (nextLayer.id) newId = nextLayer.id;else {
-	          newId = 'to-next-' + String(++helpers.ids);
-	          nextLayer.id = newId;
-	        }
-	
-	        if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
-	          connectedTo = {
-	            id: newId,
-	            type: layer.connectedWithNext.type
-	          };
-	        } else connectedTo = newId;
-	
-	        if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
-	      }
-	    },
-	
-	    itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
-	      var ret = true;
-	
-	      _.each(itemsArray, function (item) {
-	        if (item.hasOwnProperty('connectedTo')) ret = false;
-	
-	        if (item.hasOwnProperty('connectToNext')) ret = false;
-	      });
-	
-	      return ret;
-	    },
-	
-	    calculateLayerWithChildrenDimensions: function calculateLayerWithChildrenDimensions(layer) {
-	      var itemsOfLayer = undefined,
-	          grid = undefined,
-	          itemsOfLayerIndex = undefined,
-	          width = undefined,
-	          gridSize = undefined,
-	          itemsShouldBeSorted = undefined;
-	      var totalWidth = 0;
-	      var totalHeight = 0;
-	      var maxWidth = 0;
-	      var maxHeight = 0;
-	      var whileCounter = 0;
-	      var itemsArray = [];
-	      var addedItemToGrid = function addedItemToGrid(index) {
-	        if (itemsOfLayer[index].inNewRow === true) {
-	          grid.addItemAtNewRow(itemsOfLayer[index]);
-	          itemsOfLayer.splice(index, 1);
-	
-	          return true;
-	        } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
-	          grid.addItemAtCurrentPos(itemsOfLayer[index]);
-	          itemsOfLayer.splice(index, 1);
-	
-	          return true;
-	        } else {
-	          return false;
-	        }
-	      };
-	
-	      _.each(layer.items, function (item) {
-	        totalWidth += item.width;
-	        totalHeight += item.height;
-	        maxHeight = item.height > maxHeight ? item.height : maxHeight;
-	        maxWidth = item.width > maxWidth ? item.width : maxWidth;
-	        itemsArray.push(item);
-	      });
-	
-	      if (totalWidth / 2 >= maxWidth) {
-	        if (totalHeight > totalWidth) {
-	          if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
-	        } else width = Math.ceil(totalWidth / 2);
-	      } else width = maxWidth;
-	
-	      width = helpers.maxUnityWidth < width ? helpers.maxUnityWidth : width;
-	
-	      grid = new helpers.Grid(width);
-	
-	      itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
-	
-	      if (itemsShouldBeSorted) {
-	        itemsOfLayer = itemsArray.sort(function (itemA, itemB) {
-	          if (itemA.width === itemB.width) {
-	            return itemA.height < itemB.height;
-	          } else {
-	            return itemA.width < itemB.width;
-	          }
-	        });
-	      } else itemsOfLayer = itemsArray;
-	      addedItemToGrid(0);
-	      itemsOfLayerIndex = 0;
-	      while (itemsOfLayer.length > 0 && whileCounter < 1000) {
-	        if (addedItemToGrid(itemsOfLayerIndex)) {
-	          itemsOfLayerIndex = 0;
-	        } else {
-	          if (itemsShouldBeSorted) {
-	            itemsOfLayerIndex++;
-	
-	            if (itemsOfLayerIndex === itemsOfLayer.length) {
-	              itemsOfLayerIndex = 0;
-	              grid.movePositionToNextRow();
-	            }
-	          } else {
-	            grid.movePositionToNextRow();
-	          }
-	        }
-	        whileCounter++;
-	      }
-	
-	      gridSize = grid.getSize();
-	      // This two values only persist if the layer is a top one
-	      layer.x = 0;
-	      layer.y = 0;
-	      layer.width = gridSize.width;
-	      layer.height = layer.items.length > 0 ? gridSize.height + 1 : gridSize.height;
-	    },
-	
-	    generateLayersData: function generateLayersData(layers, currentDepth) {
-	      var config = helpers.config;
-	      var maxDepth = undefined,
-	          itemsDepth = undefined;
-	
-	      currentDepth = currentDepth || 1;
-	      maxDepth = currentDepth;
-	      _.each(layers, function (layer, layerIndex) {
-	        if (layer.showNumbersAll === true) config.showNumbersAll = true;
-	        layer.depth = currentDepth;
-	        helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
-	
-	        if (layer.items.length > 0) {
-	          itemsDepth = helpers.generateLayersData(layer.items, currentDepth + 1);
-	          layer.maxLayerDepthBelow = itemsDepth - currentDepth;
-	          helpers.calculateLayerWithChildrenDimensions(layer);
-	          maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
-	        } else {
-	          layer.maxLayerDepthBelow = 0;
-	          layer.width = 1;
-	          layer.height = 1;
-	          maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
-	        }
-	        layer.alreadyConnections = [];
-	      });
-	
-	      return maxDepth;
-	    },
-	
-	    getFinalLayerDimensions: function getFinalLayerDimensions(layer) {
-	      var config = helpers.config;
-	      var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
-	      var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
-	      var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
-	      var fill = 'url(#color-' + String(layer.depth - 1) + ')';
-	      var dimensions = { height: height, width: width, transform: transform, fill: fill };
-	
-	      if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
-	        dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
-	      }
-	
-	      return dimensions;
-	    },
-	
-	    dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
-	      var maxId = -1;
-	      var finalItems = [];
-	      var connections = [];
-	      var recursiveFn = function recursiveFn(items, parentCreatedItem) {
-	        _.each(items, function (item) {
-	          var firstOccurrence = /(\. |:)/.exec(item.fullText);
-	          var name = undefined,
-	              description = undefined,
-	              splittedText = undefined,
-	              createdItem = undefined;
-	
-	          if (firstOccurrence) {
-	            splittedText = item.fullText.split(firstOccurrence[0]);
-	            name = splittedText[0];
-	            description = splittedText.slice(1).join(firstOccurrence);
-	          }
-	          createdItem = {
-	            name: name || item.fullText,
-	            description: description || null,
-	            graphsData: {
-	              layer: {
-	                relationships: item.options,
-	                id: item.id
-	              }
-	            },
-	            id: ++maxId
-	          };
-	          finalItems.push(createdItem);
-	
-	          if (parentCreatedItem) {
-	            connections.push({
-	              from: createdItem.id,
-	              to: parentCreatedItem.id
-	            });
-	          }
-	
-	          if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
-	        });
-	      };
-	
-	      recursiveFn([conf]);
-	
-	      return {
-	        items: finalItems,
-	        connections: connections
-	      };
-	    },
-	
-	    dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	      return _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
-	    },
-	
-	    newLayer: function newLayer(text, opts, items) {
-	      var layer = { text: text };
-	
-	      if (_.isArray(opts)) items = opts;else {
-	        if (_.isString(opts)) opts = helpers.extendOpts(opts);
-	
-	        if (_.isObject(opts)) layer = _.extend(layer, opts);
-	      }
-	
-	      if (items) layer.items = items;
-	
-	      // Have to limit the id by the two sides to enable .indexOf to work
-	      if (_.isUndefined(layer.id)) layer.id = 'layer-' + ++helpers.ids + '-auto';
-	
-	      return layer;
-	    },
-	
-	    newLayerConnectedToNext: function newLayerConnectedToNext() {
-	      var args = arguments.length;
-	
-	      if (args === 1) return helpers.newLayer(arguments[0], 'cn');else if (args === 2) {
-	        if (typeof arguments[1] === 'object') return helpers.newLayer(arguments[0], 'cn', arguments[1]);else if (typeof (arguments[1] === 'string')) return helpers.newLayer(arguments[0], arguments[1] + ' cn');
-	      } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
-	    },
-	
-	    staticOptsLetters: {
-	      co: {
-	        conditional: true
-	      },
-	      cn: {
-	        connectedWithNext: true
-	      },
-	      sna: {
-	        showNumbersAll: true
-	      },
-	      sn: {
-	        showNumbers: true
-	      },
-	      cnd: {
-	        connectedWithNext: {
-	          type: 'dashed'
-	        }
-	      },
-	      nr: {
-	        inNewRow: true
-	      }
-	    },
-	
-	    idOpt: function idOpt(id) {
-	      return {
-	        id: 'layer-' + id + '-custom'
-	      };
-	    },
-	
-	    extendOpts: function extendOpts() {
-	      var result = {};
-	
-	      _.each(arguments, function (arg) {
-	        if (typeof arg === 'string') {
-	          _.each(arg.split(' '), function (opt) {
-	            if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, helpers.staticOptsLetters[opt]);
-	          });
-	        } else if (_.isObject(arg)) {
-	          result = _.extend(result, arg);
-	        }
-	      });
-	
-	      return result;
-	    },
-	
-	    connectWithOpt: function connectWithOpt(ids, result, type) {
-	      var objs = [];
-	
-	      if (_.isNumber(ids)) ids = [ids];
-	      type = type || 'standard';
-	
-	      _.each(ids, function (id) {
-	        objs.push({
-	          id: 'layer-' + id + '-custom',
-	          type: type
-	        });
-	      });
-	
-	      if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;else result.connectedTo = result.connectedTo.concat(objs);
-	    },
-	
-	    connectWithOptAndIdOpt: function connectWithOptAndIdOpt(ids, id) {
-	      var connectWithOpt = _diagrams2['default'].layer.connectWithOpt(ids);
-	      var idOpt = _diagrams2['default'].layer.idOpt(id);
-	
-	      return _.extend(connectWithOpt, idOpt);
-	    }
-	  };
 	  var Layer = undefined;
-	
-	  _.each(['newLayer', 'newLayerConnectedToNext'], function (helpersMethod) {
-	    helpers[helpersMethod + 'WithCode'] = function (codeLanguage) {
-	      var codeFn = _diagrams2['default'].utils.codeBlockOfLanguageFn(codeLanguage);
-	
-	      return function () {
-	        var args = arguments;
-	
-	        args[0] = codeFn(args[0]);
-	
-	        return helpers[helpersMethod].apply(this, args);
-	      };
-	    };
-	
-	    helpers[helpersMethod + 'WithParagraphAndCode'] = function (codeLanguage) {
-	      var codeFn = _diagrams2['default'].utils.codeBlockOfLanguageFn(codeLanguage);
-	
-	      return function () {
-	        var args = [].splice.call(arguments, 0);
-	        var paragraphText = args[0];
-	        var code = args[1];
-	        var text = _diagrams2['default'].utils.wrapInParagraph(paragraphText) + codeFn(code);
-	
-	        args = args.splice(2);
-	        args.unshift(text);
-	
-	        return helpers[helpersMethod].apply(this, args);
-	      };
-	    };
-	  });
+	  var dTextFn = _diagrams2['default'].utils.textFn;
 	
 	  Layer = (function (_d$Diagram) {
 	    _inherits(Layer, _d$Diagram);
@@ -2800,7 +2366,7 @@
 	      key: 'create',
 	      value: function create(creationId, conf) {
 	        var diagram = this;
-	        var config = helpers.config;
+	        var config = _helpers2['default'].config;
 	        var colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'];
 	        var addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
 	          _.each(layers, function (layer) {
@@ -2846,7 +2412,12 @@
 	          var distance = {
 	            val: Infinity
 	          };
-	          var doesNotCrossAnyOfTwoLayers = function doesNotCrossAnyOfTwoLayers(posA, posB, sideA, sideB) {
+	          var doesNotCrossAnyOfTwoLayers = function doesNotCrossAnyOfTwoLayers(_ref) {
+	            var posA = _ref.posA;
+	            var posB = _ref.posB;
+	            var sideA = _ref.sideA;
+	            var sideB = _ref.sideB;
+	
 	            if ((sideA === 'bottom' || sideA === 'left' || sideA === 'top') && sideB === 'right') {
 	              if (posA.x < posB.x) return false;
 	            } else if ((sideA === 'bottom' || sideA === 'right' || sideA === 'top') && sideB === 'left') {
@@ -2896,7 +2467,8 @@
 	
 	                if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
 	                  if (sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false || sameTypeOfSides(sideA, sideB)) {
-	                    if (doesNotCrossAnyOfTwoLayers(layerAPos[sideA], layerBPos[sideB], sideA, sideB)) {
+	                    if (doesNotCrossAnyOfTwoLayers({ posA: layerAPos[sideA],
+	                      posB: layerBPos[sideB], sideA: sideA, sideB: sideB })) {
 	                      changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
 	
 	                      if (changed === true) {
@@ -3015,7 +2587,7 @@
 	        var calcMaxUnityWidth = function calcMaxUnityWidth() {
 	          var bodyWidth = document.body.getBoundingClientRect().width;
 	
-	          helpers.maxUnityWidth = Math.floor(bodyWidth / config.widthSize);
+	          _helpers2['default'].maxUnityWidth = Math.floor(bodyWidth / config.widthSize);
 	        };
 	        var drawLayersInContainer = function drawLayersInContainer(layers, container, containerData) {
 	          var widthSize = config.widthSize;
@@ -3042,7 +2614,7 @@
 	            layer.container = container;
 	            layer.containerData = containerData;
 	
-	            layerDims = helpers.getFinalLayerDimensions(layer);
+	            layerDims = _helpers2['default'].getFinalLayerDimensions(layer);
 	            layerNode = layerG.append('g');
 	
 	            if (layer.conditional === true) {
@@ -3141,7 +2713,7 @@
 	
 	        addItemsPropToBottomItems(conf);
 	        calcMaxUnityWidth();
-	        helpers.generateLayersData(conf);
+	        _helpers2['default'].generateLayersData(conf);
 	        drawLayersInContainer();
 	        drawConnectionsIfAny();
 	        updateSvgHeight();
@@ -3173,10 +2745,513 @@
 	
 	  new Layer({
 	    name: 'layer',
-	    helpers: helpers
+	    helpers: _helpers2['default']
 	  });
 	};
 	
+	module.exports = exports['default'];
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var helpers = {
+	  ids: 0,
+	  Grid: (function () {
+	    function Grid(fixedWidth) {
+	      _classCallCheck(this, Grid);
+	
+	      this.position = {
+	        x: 0,
+	        y: 0
+	      };
+	      this.width = fixedWidth;
+	      this.cells = [];
+	    }
+	
+	    _createClass(Grid, [{
+	      key: 'addItemAtNewRow',
+	      value: function addItemAtNewRow(item) {
+	        var counter = 0;
+	
+	        this.position.x = 0;
+	        while (counter < 1000) {
+	          this.position.y += 1;
+	
+	          if (this.itemFitsAtCurrentPos(item)) break;
+	        }
+	        this.addItemAtCurrentPos(item);
+	      }
+	    }, {
+	      key: 'addItemAtCurrentPos',
+	      value: function addItemAtCurrentPos(item) {
+	        this.addItemAtPos(item, this.position);
+	      }
+	    }, {
+	      key: 'createRowIfNecessary',
+	      value: function createRowIfNecessary(posY) {
+	        if (_.isUndefined(this.cells[posY])) this.cells[posY] = [];
+	      }
+	    }, {
+	      key: 'addItemAtPos',
+	      value: function addItemAtPos(item, pos) {
+	        var row = undefined;
+	
+	        item.x = pos.x;
+	        item.y = pos.y;
+	
+	        for (var i = 0; i < item.height; i++) {
+	          this.createRowIfNecessary(i + pos.y);
+	          row = this.cells[i + pos.y];
+	
+	          for (var j = 0; j < item.width; j++) {
+	            row[j + pos.x] = true;
+	          }
+	        }
+	        this.updatePosition();
+	      }
+	    }, {
+	      key: 'updatePosition',
+	      value: function updatePosition() {
+	        var counter = 0;
+	
+	        while (counter < 1000) {
+	          this.position.x += 1;
+	
+	          if (this.position.x === this.width) {
+	            this.position.x = -1;
+	            this.position.y += 1;
+	            this.createRowIfNecessary(this.position.y);
+	          } else if (this.cells[this.position.y][this.position.x] !== true) {
+	            break;
+	          }
+	          counter++;
+	        }
+	      }
+	    }, {
+	      key: 'itemFitsAtPos',
+	      value: function itemFitsAtPos(item, pos) {
+	        var row = undefined;
+	
+	        for (var i = 0; i < item.height; i++) {
+	          row = this.cells[i + pos.y];
+	
+	          if (_.isUndefined(row)) return true;
+	
+	          for (var j = 0; j < item.width; j++) {
+	            if (row[j + pos.x] === true) return false;
+	
+	            if (j + pos.x + 1 > this.width) return false;
+	          }
+	        }
+	
+	        return true;
+	      }
+	    }, {
+	      key: 'itemFitsAtCurrentPos',
+	      value: function itemFitsAtCurrentPos(item) {
+	        return this.itemFitsAtPos(item, this.position);
+	      }
+	    }, {
+	      key: 'movePositionToNextRow',
+	      value: function movePositionToNextRow() {
+	        this.position.y++;
+	        this.position.x = 0;
+	        this.createRowIfNecessary(this.position.y);
+	      }
+	    }, {
+	      key: 'lastRowIsEmpty',
+	      value: function lastRowIsEmpty() {
+	        var rows = this.cells.length;
+	
+	        for (var i = 0; i < this.width; i++) {
+	          if (this.cells[rows - 1][i] === true) return false;
+	        }
+	
+	        return true;
+	      }
+	    }, {
+	      key: 'getSize',
+	      value: function getSize() {
+	        var rows = this.cells.length;
+	
+	        return {
+	          width: this.width,
+	          height: this.lastRowIsEmpty() ? rows - 1 : rows
+	        };
+	      }
+	    }]);
+	
+	    return Grid;
+	  })(),
+	
+	  config: {
+	    widthSize: 350,
+	    heightSize: 60,
+	    depthWidthFactor: 4,
+	    depthHeightFactor: 2,
+	    showNumbersAll: false
+	  },
+	
+	  handleConnectedToNextCaseIfNecessary: function handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
+	    var layer = layers[currentIndex];
+	    var nextLayer = layers[currentIndex + 1];
+	    var connectedTo = undefined,
+	        newId = undefined;
+	
+	    if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
+	      if (nextLayer.id) newId = nextLayer.id;else {
+	        newId = 'to-next-' + String(++helpers.ids);
+	        nextLayer.id = newId;
+	      }
+	
+	      if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
+	        connectedTo = {
+	          id: newId,
+	          type: layer.connectedWithNext.type
+	        };
+	      } else connectedTo = newId;
+	
+	      if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
+	    }
+	  },
+	
+	  itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
+	    var ret = true;
+	
+	    _.each(itemsArray, function (item) {
+	      if (item.hasOwnProperty('connectedTo')) ret = false;
+	
+	      if (item.hasOwnProperty('connectToNext')) ret = false;
+	    });
+	
+	    return ret;
+	  },
+	
+	  calculateLayerWithChildrenDimensions: function calculateLayerWithChildrenDimensions(layer) {
+	    var itemsOfLayer = undefined,
+	        grid = undefined,
+	        itemsOfLayerIndex = undefined,
+	        width = undefined,
+	        gridSize = undefined,
+	        itemsShouldBeSorted = undefined;
+	    var totalWidth = 0;
+	    var totalHeight = 0;
+	    var maxWidth = 0;
+	    var maxHeight = 0;
+	    var whileCounter = 0;
+	    var itemsArray = [];
+	    var addedItemToGrid = function addedItemToGrid(index) {
+	      if (itemsOfLayer[index].inNewRow === true) {
+	        grid.addItemAtNewRow(itemsOfLayer[index]);
+	        itemsOfLayer.splice(index, 1);
+	
+	        return true;
+	      } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
+	        grid.addItemAtCurrentPos(itemsOfLayer[index]);
+	        itemsOfLayer.splice(index, 1);
+	
+	        return true;
+	      } else {
+	        return false;
+	      }
+	    };
+	
+	    _.each(layer.items, function (item) {
+	      totalWidth += item.width;
+	      totalHeight += item.height;
+	      maxHeight = item.height > maxHeight ? item.height : maxHeight;
+	      maxWidth = item.width > maxWidth ? item.width : maxWidth;
+	      itemsArray.push(item);
+	    });
+	
+	    if (totalWidth / 2 >= maxWidth) {
+	      if (totalHeight > totalWidth) {
+	        if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2);else width = totalWidth;
+	      } else width = Math.ceil(totalWidth / 2);
+	    } else width = maxWidth;
+	
+	    width = helpers.maxUnityWidth < width ? helpers.maxUnityWidth : width;
+	
+	    grid = new helpers.Grid(width);
+	
+	    itemsShouldBeSorted = helpers.itemsOfLayerShouldBeSorted(itemsArray);
+	
+	    if (itemsShouldBeSorted) {
+	      itemsOfLayer = itemsArray.sort(function (itemA, itemB) {
+	        if (itemA.width === itemB.width) {
+	          return itemA.height < itemB.height;
+	        } else {
+	          return itemA.width < itemB.width;
+	        }
+	      });
+	    } else itemsOfLayer = itemsArray;
+	    addedItemToGrid(0);
+	    itemsOfLayerIndex = 0;
+	    while (itemsOfLayer.length > 0 && whileCounter < 1000) {
+	      if (addedItemToGrid(itemsOfLayerIndex)) {
+	        itemsOfLayerIndex = 0;
+	      } else {
+	        if (itemsShouldBeSorted) {
+	          itemsOfLayerIndex++;
+	
+	          if (itemsOfLayerIndex === itemsOfLayer.length) {
+	            itemsOfLayerIndex = 0;
+	            grid.movePositionToNextRow();
+	          }
+	        } else {
+	          grid.movePositionToNextRow();
+	        }
+	      }
+	      whileCounter++;
+	    }
+	
+	    gridSize = grid.getSize();
+	    // This two values only persist if the layer is a top one
+	    layer.x = 0;
+	    layer.y = 0;
+	    layer.width = gridSize.width;
+	    layer.height = layer.items.length > 0 ? gridSize.height + 1 : gridSize.height;
+	  },
+	
+	  generateLayersData: function generateLayersData(layers, currentDepth) {
+	    var config = helpers.config;
+	    var maxDepth = undefined,
+	        itemsDepth = undefined;
+	
+	    currentDepth = currentDepth || 1;
+	    maxDepth = currentDepth;
+	    _.each(layers, function (layer, layerIndex) {
+	      if (layer.showNumbersAll === true) config.showNumbersAll = true;
+	      layer.depth = currentDepth;
+	      helpers.handleConnectedToNextCaseIfNecessary(layers, layerIndex);
+	
+	      if (layer.items.length > 0) {
+	        itemsDepth = helpers.generateLayersData(layer.items, currentDepth + 1);
+	        layer.maxLayerDepthBelow = itemsDepth - currentDepth;
+	        helpers.calculateLayerWithChildrenDimensions(layer);
+	        maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+	      } else {
+	        layer.maxLayerDepthBelow = 0;
+	        layer.width = 1;
+	        layer.height = 1;
+	        maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+	      }
+	      layer.alreadyConnections = [];
+	    });
+	
+	    return maxDepth;
+	  },
+	
+	  getFinalLayerDimensions: function getFinalLayerDimensions(layer) {
+	    var config = helpers.config;
+	    var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
+	    var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
+	    var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
+	    var fill = 'url(#color-' + String(layer.depth - 1) + ')';
+	    var dimensions = { height: height, width: width, transform: transform, fill: fill };
+	
+	    if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
+	      dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
+	    }
+	
+	    return dimensions;
+	  },
+	
+	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
+	    var maxId = -1;
+	    var finalItems = [];
+	    var connections = [];
+	    var recursiveFn = function recursiveFn(items, parentCreatedItem) {
+	      _.each(items, function (item) {
+	        var firstOccurrence = /(\. |:)/.exec(item.fullText);
+	        var name = undefined,
+	            description = undefined,
+	            splittedText = undefined,
+	            createdItem = undefined;
+	
+	        if (firstOccurrence) {
+	          splittedText = item.fullText.split(firstOccurrence[0]);
+	          name = splittedText[0];
+	          description = splittedText.slice(1).join(firstOccurrence);
+	        }
+	        createdItem = {
+	          name: name || item.fullText,
+	          description: description || null,
+	          graphsData: {
+	            layer: {
+	              relationships: item.options,
+	              id: item.id
+	            }
+	          },
+	          id: ++maxId
+	        };
+	        finalItems.push(createdItem);
+	
+	        if (parentCreatedItem) {
+	          connections.push({
+	            from: createdItem.id,
+	            to: parentCreatedItem.id
+	          });
+	        }
+	
+	        if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+	      });
+	    };
+	
+	    recursiveFn([conf]);
+	
+	    return {
+	      items: finalItems,
+	      connections: connections
+	    };
+	  },
+	
+	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+	    return _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+	  },
+	
+	  newLayer: function newLayer(text, opts, items) {
+	    var layer = { text: text };
+	
+	    if (_.isArray(opts)) items = opts;else {
+	      if (_.isString(opts)) opts = helpers.extendOpts(opts);
+	
+	      if (_.isObject(opts)) layer = _.extend(layer, opts);
+	    }
+	
+	    if (items) layer.items = items;
+	
+	    // Have to limit the id by the two sides to enable .indexOf to work
+	    if (_.isUndefined(layer.id)) layer.id = 'layer-' + ++helpers.ids + '-auto';
+	
+	    return layer;
+	  },
+	
+	  newLayerConnectedToNext: function newLayerConnectedToNext() {
+	    var args = arguments.length;
+	
+	    if (args === 1) return helpers.newLayer(arguments[0], 'cn');else if (args === 2) {
+	      if (typeof arguments[1] === 'object') return helpers.newLayer(arguments[0], 'cn', arguments[1]);else if (typeof (arguments[1] === 'string')) return helpers.newLayer(arguments[0], arguments[1] + ' cn');
+	    } else if (args === 3) return helpers.newLayer(arguments[0], arguments[1] + ' cn', arguments[2]);
+	  },
+	
+	  staticOptsLetters: {
+	    co: {
+	      conditional: true
+	    },
+	    cn: {
+	      connectedWithNext: true
+	    },
+	    sna: {
+	      showNumbersAll: true
+	    },
+	    sn: {
+	      showNumbers: true
+	    },
+	    cnd: {
+	      connectedWithNext: {
+	        type: 'dashed'
+	      }
+	    },
+	    nr: {
+	      inNewRow: true
+	    }
+	  },
+	
+	  idOpt: function idOpt(id) {
+	    return {
+	      id: 'layer-' + id + '-custom'
+	    };
+	  },
+	
+	  extendOpts: function extendOpts() {
+	    var result = {};
+	
+	    _.each(arguments, function (arg) {
+	      if (typeof arg === 'string') {
+	        _.each(arg.split(' '), function (opt) {
+	          if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, helpers.staticOptsLetters[opt]);
+	        });
+	      } else if (_.isObject(arg)) {
+	        result = _.extend(result, arg);
+	      }
+	    });
+	
+	    return result;
+	  },
+	
+	  connectWithOpt: function connectWithOpt(ids, result, type) {
+	    var objs = [];
+	
+	    if (_.isNumber(ids)) ids = [ids];
+	    type = type || 'standard';
+	
+	    _.each(ids, function (id) {
+	      objs.push({
+	        id: 'layer-' + id + '-custom',
+	        type: type
+	      });
+	    });
+	
+	    if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;else result.connectedTo = result.connectedTo.concat(objs);
+	  },
+	
+	  connectWithOptAndIdOpt: function connectWithOptAndIdOpt(ids, id) {
+	    var connectWithOpt = _diagrams2['default'].layer.connectWithOpt(ids);
+	    var idOpt = _diagrams2['default'].layer.idOpt(id);
+	
+	    return _.extend(connectWithOpt, idOpt);
+	  }
+	};
+	
+	_.each(['newLayer', 'newLayerConnectedToNext'], function (helpersMethod) {
+	  helpers[helpersMethod + 'WithCode'] = function (codeLanguage) {
+	    var codeFn = _diagrams2['default'].utils.codeBlockOfLanguageFn(codeLanguage);
+	
+	    return function () {
+	      var args = arguments;
+	
+	      args[0] = codeFn(args[0]);
+	
+	      return helpers[helpersMethod].apply(this, args);
+	    };
+	  };
+	
+	  helpers[helpersMethod + 'WithParagraphAndCode'] = function (codeLanguage) {
+	    var codeFn = _diagrams2['default'].utils.codeBlockOfLanguageFn(codeLanguage);
+	
+	    return function () {
+	      var args = [].splice.call(arguments, 0);
+	      var paragraphText = args[0];
+	      var code = args[1];
+	      var text = _diagrams2['default'].utils.wrapInParagraph(paragraphText) + codeFn(code);
+	
+	      args = args.splice(2);
+	      args.unshift(text);
+	
+	      return helpers[helpersMethod].apply(this, args);
+	    };
+	  };
+	});
+	
+	exports['default'] = helpers;
 	module.exports = exports['default'];
 
 /***/ }

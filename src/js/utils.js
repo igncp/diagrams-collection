@@ -36,7 +36,7 @@ const utils = {
     const allMatches = text.match(codeRegex);
 
     return text.replace(codeRegex, (matchStr, language, codeBlock) => {
-      return predicate(matchStr, language, codeBlock, allMatches);
+      return predicate({ matchStr, language, codeBlock, allMatches });
     });
   },
 
@@ -44,7 +44,12 @@ const utils = {
     const tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
     const encodeOrDecodeTags = (action, tag) => {
       const encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action);
-      const beginningTagArr = ['<' + tag + '(.*?)>', '<' + tag + '$1>', tag + 'DIAGSA(.*?)DIAGSB' + tag + 'DIAGSC', tag + 'DIAGSA$1DIAGSB' + tag + 'DIAGSC'];
+      const beginningTagArr = [
+        `<${tag}(.*?)>`,
+        `<${tag}$1>`,
+        `${tag}DIAGSA(.*?)DIAGSB${tag}DIAGSC`,
+        `${tag}DIAGSA$1DIAGSB${tag}DIAGSC`,
+      ];
       const endingTagReal = `</${tag}>`;
       const endingTagFake = `${tag}ENDREPLACEDDIAGRAMS`;
       const endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake];
@@ -61,11 +66,13 @@ const utils = {
       }
     };
 
-    text = utils.replaceCodeFragmentOfText(text, (matchStr, language, code, allMatches) => {
-      const lastMatch = (matchStr === _.last(allMatches));
+    text = utils.replaceCodeFragmentOfText(text,
+      ({ matchStr, language, codeBlock, allMatches }) => {
+        const lastMatch = (matchStr === _.last(allMatches));
 
-      return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + hljs.highlight(language, code).value + '</pre></code>';
-    });
+        return `<pre${(lastMatch ? ' class="last-code-block" ' : '')}><code>`
+          + `${hljs.highlight(language, codeBlock).value}</pre></code>`;
+      });
 
     encodeOrDecodeTags('encode', tagsToEncode);
     text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -78,11 +85,13 @@ const utils = {
     commentsSymbol = commentsSymbol || '';
 
     return function(codeBlock, where, withInlineStrs) {
-      if (withInlineStrs === true) codeBlock = commentsSymbol + " ...\n" + codeBlock + "\n" + commentsSymbol + " ...";
+      if (withInlineStrs === true) {
+        codeBlock = `${commentsSymbol} ...\n${codeBlock}\n${commentsSymbol} ...`;
+      }
 
       if (_.isString(where)) codeBlock = `${commentsSymbol} @${where}\n${codeBlock}`;
 
-      return '``' + language + '``' + codeBlock + '``';
+      return `\`\`${language}\`\`${codeBlock}\`\``;
     };
   },
 
@@ -145,7 +154,7 @@ const utils = {
     text = text.replace(/<p>/g, '');
     text = text.replace(/<br>/g, ' ');
     text = text.replace(/<\/p>/g, '. ');
-    text = utils.replaceCodeFragmentOfText(text, (matchStr, language, codeBlock) => {
+    text = utils.replaceCodeFragmentOfText(text, ({ matchStr, codeBlock }) => {
       if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
       else {
         return ' <CODE...>';

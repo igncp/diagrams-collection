@@ -2,6 +2,7 @@ prod:
 	@grunt uglify
 
 lint: lint-jscs lint-eslint
+	@echo "All lints passing"
 
 lint-jscs:
 	@./node_modules/.bin/jscs -c .jscsrc src/js/
