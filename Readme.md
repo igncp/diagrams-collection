@@ -1,5 +1,9 @@
 # Diagrams Collection
 
+| Linting |
+|:---:|
+| [![Build Status](https://travis-ci.org/igncp/diagrams-collections.svg?branch=master)](https://travis-ci.org/igncp/diagrams-collections) |
+
 ## Usage
 
 Add the link to diagrams to your html. You can see some examples [here](http://igncp-sketchbook.herokuapp.com)
