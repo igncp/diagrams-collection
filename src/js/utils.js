@@ -1,84 +1,6 @@
 const utils = {
-  d3DefaultReturnFn(props, preffix, suffix) {
-    props = props.split('.');
-
-    return (d) => {
-      const position = _.reduce(props, (memo, property) => memo[property], d);
-
-      return (preffix || suffix) ? preffix + position + suffix : position;
-    };
-  },
-
   applySimpleTransform(el) {
     el.attr('transform', d => `translate(${d.x},${d.y})`);
-  },
-
-  positionFn(props, offset) {
-    offset = offset || 0;
-
-    return utils.d3DefaultReturnFn(props, 0, offset);
-  },
-
-  textFn(props, preffix, suffix) {
-    preffix = preffix || '';
-    suffix = suffix || '';
-
-    return utils.d3DefaultReturnFn(props, preffix, suffix);
-  },
-
-  runIfReady(fn) {
-    if (document.readyState === 'complete') fn();
-    else window.onload = fn;
-  },
-
-  replaceCodeFragmentOfText(text, predicate) {
-    const codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g;
-    const allMatches = text.match(codeRegex);
-
-    return text.replace(codeRegex, (matchStr, language, codeBlock) => {
-      return predicate({ matchStr, language, codeBlock, allMatches });
-    });
-  },
-
-  formatTextFragment(text) {
-    const tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
-    const encodeOrDecodeTags = (action, tag) => {
-      const encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action);
-      const beginningTagArr = [
-        `<${tag}(.*?)>`,
-        `<${tag}$1>`,
-        `${tag}DIAGSA(.*?)DIAGSB${tag}DIAGSC`,
-        `${tag}DIAGSA$1DIAGSB${tag}DIAGSC`,
-      ];
-      const endingTagReal = `</${tag}>`;
-      const endingTagFake = `${tag}ENDREPLACEDDIAGRAMS`;
-      const endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake];
-      const replaceText = function(from, to) {
-        text = text.replace(new RegExp(from, 'g'), to);
-      };
-
-      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction);
-      else {
-        _.each([beginningTagArr, endingTagArr], (arr) => {
-          if (action === 'encode') replaceText(arr[0], arr[3]);
-          else if (action === 'decode') replaceText(arr[2], arr[1]);
-        });
-      }
-    };
-
-    text = utils.replaceCodeFragmentOfText(text,
-      ({ matchStr, language, codeBlock, allMatches }) => {
-        const lastMatch = (matchStr === _.last(allMatches));
-
-        return `<pre${(lastMatch ? ' class="last-code-block" ' : '')}><code>`
-          + `${hljs.highlight(language, codeBlock).value}</pre></code>`;
-      });
-
-    encodeOrDecodeTags('encode', tagsToEncode);
-    text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    encodeOrDecodeTags('decode', tagsToEncode);
-
-    return text;
   },
 
   codeBlockOfLanguageFn(language, commentsSymbol) {
@@ -94,9 +16,6 @@ const utils = {
       return `\`\`${language}\`\`${codeBlock}\`\``;
     };
   },
-
-  // This function is created to be able to reference it in the diagrams
-  wrapInParagraph: (text) => `<p>${text}</p>`,
 
   composeWithEventEmitter(constructor) {
     let _subjects = {};
@@ -144,24 +63,14 @@ const utils = {
     return new constructor();
   },
 
-  generateATextDescriptionStr(text, description) {
-    const descriptionText = (description ? `<br>${description}` : '');
+  d3DefaultReturnFn(props, preffix, suffix) {
+    props = props.split('.');
 
-    return `<strong>${text}</strong>${descriptionText}`;
-  },
+    return (d) => {
+      const position = _.reduce(props, (memo, property) => memo[property], d);
 
-  formatShortDescription(text) {
-    text = text.replace(/<p>/g, '');
-    text = text.replace(/<br>/g, ' ');
-    text = text.replace(/<\/p>/g, '. ');
-    text = utils.replaceCodeFragmentOfText(text, ({ matchStr, codeBlock }) => {
-      if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
-      else {
-        return ' <CODE...>';
-      }
-    });
-
-    return text;
+      return (preffix || suffix) ? preffix + position + suffix : position;
+    };
   },
 
   dataFromGeneralToSpecificForATreeStructureType(generalData) {
@@ -252,6 +161,67 @@ const utils = {
     }
   },
 
+  formatShortDescription(text) {
+    text = text.replace(/<p>/g, '');
+    text = text.replace(/<br>/g, ' ');
+    text = text.replace(/<\/p>/g, '. ');
+    text = utils.replaceCodeFragmentOfText(text, ({ codeBlock, matchStr }) => {
+      if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;
+      else {
+        return ' <CODE...>';
+      }
+    });
+
+    return text;
+  },
+
+  formatTextFragment(text) {
+    const tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
+    const encodeOrDecodeTags = (action, tag) => {
+      const encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action);
+      const beginningTagArr = [
+        `<${tag}(.*?)>`,
+        `<${tag}$1>`,
+        `${tag}DIAGSA(.*?)DIAGSB${tag}DIAGSC`,
+        `${tag}DIAGSA$1DIAGSB${tag}DIAGSC`,
+      ];
+      const endingTagReal = `</${tag}>`;
+      const endingTagFake = `${tag}ENDREPLACEDDIAGRAMS`;
+      const endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake];
+      const replaceText = function(from, to) {
+        text = text.replace(new RegExp(from, 'g'), to);
+      };
+
+      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction);
+      else {
+        _.each([beginningTagArr, endingTagArr], (arr) => {
+          if (action === 'encode') replaceText(arr[0], arr[3]);
+          else if (action === 'decode') replaceText(arr[2], arr[1]);
+        });
+      }
+    };
+
+    text = utils.replaceCodeFragmentOfText(text,
+      ({ allMatches, codeBlock, language, matchStr }) => {
+        const lastMatch = (matchStr === _.last(allMatches));
+
+        return `<pre${(lastMatch ? ' class="last-code-block" ' : '')}><code>`
+          + `${hljs.highlight(language, codeBlock).value}</pre></code>`;
+      });
+
+    encodeOrDecodeTags('encode', tagsToEncode);
+    text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    encodeOrDecodeTags('decode', tagsToEncode);
+
+    return text;
+  },
+
+  generateATextDescriptionStr(text, description) {
+    const descriptionText = (description ? `<br>${description}` : '');
+
+    return `<strong>${text}</strong>${descriptionText}`;
+  },
+
   getUrlParams() {
     const query_string = {};
     const query = window.location.search.substring(1);
@@ -277,6 +247,36 @@ const utils = {
   joinWithLastDifferent(arr, separator, lastSeparator) {
     return arr.slice(0, -1).join(separator) + lastSeparator + arr[arr.length - 1];
   },
+
+  positionFn(props, offset) {
+    offset = offset || 0;
+
+    return utils.d3DefaultReturnFn(props, 0, offset);
+  },
+
+  replaceCodeFragmentOfText(text, predicate) {
+    const codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g;
+    const allMatches = text.match(codeRegex);
+
+    return text.replace(codeRegex, (matchStr, language, codeBlock) => {
+      return predicate({ allMatches, codeBlock, language, matchStr });
+    });
+  },
+
+  runIfReady(fn) {
+    if (document.readyState === 'complete') fn();
+    else window.onload = fn;
+  },
+
+  textFn(props, preffix, suffix) {
+    preffix = preffix || '';
+    suffix = suffix || '';
+
+    return utils.d3DefaultReturnFn(props, preffix, suffix);
+  },
+
+  // This function is created to be able to reference it in the diagrams
+  wrapInParagraph: (text) => `<p>${text}</p>`,
 };
 
 utils.commasAndAndJoin = _.partial(utils.joinWithLastDifferent, _, ', ', ' and ');

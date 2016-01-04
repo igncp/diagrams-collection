@@ -87,85 +87,10 @@
 	  value: true
 	});
 	var utils = {
-	  d3DefaultReturnFn: function d3DefaultReturnFn(props, preffix, suffix) {
-	    props = props.split('.');
-	
-	    return function (d) {
-	      var position = _.reduce(props, function (memo, property) {
-	        return memo[property];
-	      }, d);
-	
-	      return preffix || suffix ? preffix + position + suffix : position;
-	    };
-	  },
-	
 	  applySimpleTransform: function applySimpleTransform(el) {
 	    el.attr('transform', function (d) {
 	      return 'translate(' + d.x + ',' + d.y + ')';
 	    });
-	  },
-	
-	  positionFn: function positionFn(props, offset) {
-	    offset = offset || 0;
-	
-	    return utils.d3DefaultReturnFn(props, 0, offset);
-	  },
-	
-	  textFn: function textFn(props, preffix, suffix) {
-	    preffix = preffix || '';
-	    suffix = suffix || '';
-	
-	    return utils.d3DefaultReturnFn(props, preffix, suffix);
-	  },
-	
-	  runIfReady: function runIfReady(fn) {
-	    if (document.readyState === 'complete') fn();else window.onload = fn;
-	  },
-	
-	  replaceCodeFragmentOfText: function replaceCodeFragmentOfText(text, predicate) {
-	    var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g;
-	    var allMatches = text.match(codeRegex);
-	
-	    return text.replace(codeRegex, function (matchStr, language, codeBlock) {
-	      return predicate({ matchStr: matchStr, language: language, codeBlock: codeBlock, allMatches: allMatches });
-	    });
-	  },
-	
-	  formatTextFragment: function formatTextFragment(text) {
-	    var tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
-	    var encodeOrDecodeTags = function encodeOrDecodeTags(action, tag) {
-	      var encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action);
-	      var beginningTagArr = ['<' + tag + '(.*?)>', '<' + tag + '$1>', tag + 'DIAGSA(.*?)DIAGSB' + tag + 'DIAGSC', tag + 'DIAGSA$1DIAGSB' + tag + 'DIAGSC'];
-	      var endingTagReal = '</' + tag + '>';
-	      var endingTagFake = tag + 'ENDREPLACEDDIAGRAMS';
-	      var endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake];
-	      var replaceText = function replaceText(from, to) {
-	        text = text.replace(new RegExp(from, 'g'), to);
-	      };
-	
-	      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction);else {
-	        _.each([beginningTagArr, endingTagArr], function (arr) {
-	          if (action === 'encode') replaceText(arr[0], arr[3]);else if (action === 'decode') replaceText(arr[2], arr[1]);
-	        });
-	      }
-	    };
-	
-	    text = utils.replaceCodeFragmentOfText(text, function (_ref) {
-	      var matchStr = _ref.matchStr;
-	      var language = _ref.language;
-	      var codeBlock = _ref.codeBlock;
-	      var allMatches = _ref.allMatches;
-	
-	      var lastMatch = matchStr === _.last(allMatches);
-	
-	      return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + (hljs.highlight(language, codeBlock).value + '</pre></code>');
-	    });
-	
-	    encodeOrDecodeTags('encode', tagsToEncode);
-	    text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	    encodeOrDecodeTags('decode', tagsToEncode);
-	
-	    return text;
 	  },
 	
 	  codeBlockOfLanguageFn: function codeBlockOfLanguageFn(language, commentsSymbol) {
@@ -180,11 +105,6 @@
 	
 	      return '``' + language + '``' + codeBlock + '``';
 	    };
-	  },
-	
-	  // This function is created to be able to reference it in the diagrams
-	  wrapInParagraph: function wrapInParagraph(text) {
-	    return '<p>' + text + '</p>';
 	  },
 	
 	  composeWithEventEmitter: function composeWithEventEmitter(constructor) {
@@ -235,26 +155,16 @@
 	    return new constructor();
 	  },
 	
-	  generateATextDescriptionStr: function generateATextDescriptionStr(text, description) {
-	    var descriptionText = description ? '<br>' + description : '';
+	  d3DefaultReturnFn: function d3DefaultReturnFn(props, preffix, suffix) {
+	    props = props.split('.');
 	
-	    return '<strong>' + text + '</strong>' + descriptionText;
-	  },
+	    return function (d) {
+	      var position = _.reduce(props, function (memo, property) {
+	        return memo[property];
+	      }, d);
 	
-	  formatShortDescription: function formatShortDescription(text) {
-	    text = text.replace(/<p>/g, '');
-	    text = text.replace(/<br>/g, ' ');
-	    text = text.replace(/<\/p>/g, '. ');
-	    text = utils.replaceCodeFragmentOfText(text, function (_ref2) {
-	      var matchStr = _ref2.matchStr;
-	      var codeBlock = _ref2.codeBlock;
-	
-	      if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else {
-	        return ' <CODE...>';
-	      }
-	    });
-	
-	    return text;
+	      return preffix || suffix ? preffix + position + suffix : position;
+	    };
 	  },
 	
 	  dataFromGeneralToSpecificForATreeStructureType: function dataFromGeneralToSpecificForATreeStructureType(generalData) {
@@ -348,6 +258,65 @@
 	    }
 	  },
 	
+	  formatShortDescription: function formatShortDescription(text) {
+	    text = text.replace(/<p>/g, '');
+	    text = text.replace(/<br>/g, ' ');
+	    text = text.replace(/<\/p>/g, '. ');
+	    text = utils.replaceCodeFragmentOfText(text, function (_ref) {
+	      var codeBlock = _ref.codeBlock;
+	      var matchStr = _ref.matchStr;
+	
+	      if (matchStr === text && /\n/.test(matchStr) === false) return codeBlock;else {
+	        return ' <CODE...>';
+	      }
+	    });
+	
+	    return text;
+	  },
+	
+	  formatTextFragment: function formatTextFragment(text) {
+	    var tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
+	    var encodeOrDecodeTags = function encodeOrDecodeTags(action, tag) {
+	      var encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action);
+	      var beginningTagArr = ['<' + tag + '(.*?)>', '<' + tag + '$1>', tag + 'DIAGSA(.*?)DIAGSB' + tag + 'DIAGSC', tag + 'DIAGSA$1DIAGSB' + tag + 'DIAGSC'];
+	      var endingTagReal = '</' + tag + '>';
+	      var endingTagFake = tag + 'ENDREPLACEDDIAGRAMS';
+	      var endingTagArr = [endingTagReal, endingTagReal, endingTagFake, endingTagFake];
+	      var replaceText = function replaceText(from, to) {
+	        text = text.replace(new RegExp(from, 'g'), to);
+	      };
+	
+	      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction);else {
+	        _.each([beginningTagArr, endingTagArr], function (arr) {
+	          if (action === 'encode') replaceText(arr[0], arr[3]);else if (action === 'decode') replaceText(arr[2], arr[1]);
+	        });
+	      }
+	    };
+	
+	    text = utils.replaceCodeFragmentOfText(text, function (_ref2) {
+	      var allMatches = _ref2.allMatches;
+	      var codeBlock = _ref2.codeBlock;
+	      var language = _ref2.language;
+	      var matchStr = _ref2.matchStr;
+	
+	      var lastMatch = matchStr === _.last(allMatches);
+	
+	      return '<pre' + (lastMatch ? ' class="last-code-block" ' : '') + '><code>' + (hljs.highlight(language, codeBlock).value + '</pre></code>');
+	    });
+	
+	    encodeOrDecodeTags('encode', tagsToEncode);
+	    text = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	    encodeOrDecodeTags('decode', tagsToEncode);
+	
+	    return text;
+	  },
+	
+	  generateATextDescriptionStr: function generateATextDescriptionStr(text, description) {
+	    var descriptionText = description ? '<br>' + description : '';
+	
+	    return '<strong>' + text + '</strong>' + descriptionText;
+	  },
+	
 	  getUrlParams: function getUrlParams() {
 	    var query_string = {};
 	    var query = window.location.search.substring(1);
@@ -372,6 +341,37 @@
 	
 	  joinWithLastDifferent: function joinWithLastDifferent(arr, separator, lastSeparator) {
 	    return arr.slice(0, -1).join(separator) + lastSeparator + arr[arr.length - 1];
+	  },
+	
+	  positionFn: function positionFn(props, offset) {
+	    offset = offset || 0;
+	
+	    return utils.d3DefaultReturnFn(props, 0, offset);
+	  },
+	
+	  replaceCodeFragmentOfText: function replaceCodeFragmentOfText(text, predicate) {
+	    var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g;
+	    var allMatches = text.match(codeRegex);
+	
+	    return text.replace(codeRegex, function (matchStr, language, codeBlock) {
+	      return predicate({ allMatches: allMatches, codeBlock: codeBlock, language: language, matchStr: matchStr });
+	    });
+	  },
+	
+	  runIfReady: function runIfReady(fn) {
+	    if (document.readyState === 'complete') fn();else window.onload = fn;
+	  },
+	
+	  textFn: function textFn(props, preffix, suffix) {
+	    preffix = preffix || '';
+	    suffix = suffix || '';
+	
+	    return utils.d3DefaultReturnFn(props, preffix, suffix);
+	  },
+	
+	  // This function is created to be able to reference it in the diagrams
+	  wrapInParagraph: function wrapInParagraph(text) {
+	    return '<p>' + text + '</p>';
 	  }
 	};
 	
@@ -396,6 +396,11 @@
 	
 	    return shared[key];
 	  },
+	
+	  getWithStartingBreakLine: function getWithStartingBreakLine() {
+	    return '<br>' + shared.get.apply(shared, _arguments);
+	  },
+	
 	  set: function set(data) {
 	    shared.throwIfSharedMethodAlreadyExists(data);
 	
@@ -403,9 +408,7 @@
 	      if (data.hasOwnProperty(prop)) shared[prop] = data[prop];
 	    }
 	  },
-	  getWithStartingBreakLine: function getWithStartingBreakLine() {
-	    return '<br>' + shared.get.apply(shared, _arguments);
-	  },
+	
 	  throwIfSharedMethodAlreadyExists: function throwIfSharedMethodAlreadyExists(data) {
 	    var keys = undefined;
 	
@@ -474,9 +477,9 @@
 	
 	var addEllipsis = function addEllipsis(_ref) {
 	  var self = _ref.self;
+	  var text = _ref.text;
 	  var textLength = _ref.textLength;
 	  var width = _ref.width;
-	  var text = _ref.text;
 	
 	  while (textLength > width && text.length > 0) {
 	    text = text.slice(0, -4);
@@ -486,19 +489,19 @@
 	};
 	
 	var appendElsToFilterColor = function appendElsToFilterColor(_ref2) {
-	  var filter = _ref2.filter;
 	  var deviation = _ref2.deviation;
+	  var filter = _ref2.filter;
 	  var slope = _ref2.slope;
 	
 	  filter.append('feOffset').attr({
-	    result: 'offOut',
-	    'in': 'SourceGraphic',
 	    dx: 0.5,
-	    dy: 0.5
+	    dy: 0.5,
+	    'in': 'SourceGraphic',
+	    result: 'offOut'
 	  });
 	  filter.append('feGaussianBlur').attr({
-	    result: 'blurOut',
 	    'in': 'offOut',
+	    result: 'blurOut',
 	    stdDeviation: deviation
 	  });
 	  filter.append('feBlend').attr({
@@ -507,19 +510,41 @@
 	    mode: 'normal'
 	  });
 	  filter.append('feComponentTransfer').append('feFuncA').attr({
-	    type: 'linear',
-	    slope: slope
+	    slope: slope,
+	    type: 'linear'
 	  });
 	};
 	
 	var svg = {
+	  addFilterColor: function addFilterColor(_ref3) {
+	    var container = _ref3.container;
+	    var deviation = _ref3.deviation;
+	    var extra = _ref3.extra;
+	    var id = _ref3.id;
+	    var slope = _ref3.slope;
+	
+	    var defs = container.append('defs');
+	    var filter = defs.append('filter').attr({
+	      id: 'diagrams-drop-shadow-' + id
+	    });
+	
+	    if (extra) filter.attr({
+	      height: '500%',
+	      width: '500%',
+	      x: '-200%',
+	      y: '-200%'
+	    });
+	
+	    appendElsToFilterColor({ deviation: deviation, filter: filter, slope: slope });
+	  },
+	
 	  addVerticalGradientFilter: function addVerticalGradientFilter(container, id, colors) {
 	    var defs = container.append('defs');
 	    var linearGradient = defs.append('linearGradient').attr({
 	      id: id,
 	      x1: '0%',
-	      y1: '0%',
 	      x2: '0%',
+	      y1: '0%',
 	      y2: '100%'
 	    });
 	
@@ -533,52 +558,14 @@
 	    });
 	  },
 	
-	  addFilterColor: function addFilterColor(_ref3) {
-	    var id = _ref3.id;
-	    var container = _ref3.container;
-	    var deviation = _ref3.deviation;
-	    var slope = _ref3.slope;
-	    var extra = _ref3.extra;
-	
-	    var defs = container.append('defs');
-	    var filter = defs.append('filter').attr({
-	      id: 'diagrams-drop-shadow-' + id
-	    });
-	
-	    if (extra) filter.attr({
-	      width: '500%',
-	      height: '500%',
-	      x: '-200%',
-	      y: '-200%'
-	    });
-	
-	    appendElsToFilterColor({ filter: filter, deviation: deviation, slope: slope });
-	  },
-	
 	  generateSvg: function generateSvg(style) {
 	    var selector = svg.getDiagramWrapperStr();
 	    var bodyDims = document.body.getBoundingClientRect();
 	
 	    return d3.select(selector).append('svg').attr({
-	      width: bodyDims.width - 40,
-	      height: 4000
+	      height: 4000,
+	      width: bodyDims.width - 40
 	    }).style(style);
-	  },
-	
-	  textEllipsis: function textEllipsis(width) {
-	    return function () {
-	      var self = d3.select(this);
-	      var textLength = self.node().getComputedTextLength();
-	      var text = self.text();
-	
-	      addEllipsis({ self: self, width: width, textLength: textLength, text: text });
-	    };
-	  },
-	
-	  updateHeigthOfElWithOtherEl: function updateHeigthOfElWithOtherEl(el, otherEl, offset) {
-	    el.attr({
-	      height: otherEl[0][0].getBoundingClientRect().height + (offset || 0)
-	    });
 	  },
 	
 	  insertInBodyBeforeSvg: function insertInBodyBeforeSvg(tag) {
@@ -588,6 +575,22 @@
 	    var el = body.insert(tag, elementAfterName);
 	
 	    return el;
+	  },
+	
+	  textEllipsis: function textEllipsis(width) {
+	    return function () {
+	      var self = d3.select(this);
+	      var textLength = self.node().getComputedTextLength();
+	      var text = self.text();
+	
+	      addEllipsis({ self: self, text: text, textLength: textLength, width: width });
+	    };
+	  },
+	
+	  updateHeigthOfElWithOtherEl: function updateHeigthOfElWithOtherEl(el, otherEl, offset) {
+	    el.attr({
+	      height: otherEl[0][0].getBoundingClientRect().height + (offset || 0)
+	    });
 	  }
 	};
 	
@@ -668,9 +671,10 @@
 	
 	        div.appendButtonToDiv = function (cls, value, onclick) {
 	          div.append('input').attr({
-	            type: 'button',
 	            'class': cls + ' diagrams-diagram-button btn btn-default',
-	            onclick: onclick, value: value
+	            onclick: onclick,
+	            type: 'button',
+	            value: value
 	          });
 	        };
 	
@@ -735,7 +739,7 @@
 	            if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
 	          });
 	        };
-	        var emitContent = { el: el, data: data };
+	        var emitContent = { data: data, el: el };
 	
 	        emitFn('mouseleave');
 	        emitFn('mouseenter');
@@ -850,7 +854,7 @@
 	    }, {
 	      key: 'generateRelationship',
 	      value: function generateRelationship(el, data) {
-	        return { el: el, data: data };
+	        return { data: data, el: el };
 	      }
 	    }, {
 	      key: 'getAllRelatedItemsOfItem',
@@ -919,8 +923,8 @@
 	          _diagrams2['default'].utils.runIfReady(function () {
 	            createdDiagramsMaxId++;
 	            _diagrams2['default'].diagramsRegistry.push({
-	              diagram: diagram,
 	              data: args,
+	              diagram: diagram,
 	              id: createdDiagramsMaxId
 	            });
 	            diagram.diagramId = createdDiagramsMaxId;
@@ -1009,43 +1013,6 @@
 	
 	exports['default'] = function () {
 	  var helpers = {
-	    filterByString: _.debounce(function (opts, creationId) {
-	      var getHiddenValueSetter = function getHiddenValueSetter(value) {
-	        return function (item) {
-	          item.hidden = value;
-	        };
-	      };
-	      var setHiddenToFalse = getHiddenValueSetter(false);
-	
-	      helpers.traverseBodyDataAndRefresh(creationId, null, function (item, parents) {
-	        var anyParentIsShowed = _.any(parents, function (item) {
-	          return item.hidden !== true;
-	        });
-	
-	        if (opts.showChildren === false || anyParentIsShowed === false) {
-	          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);else {
-	            _.each(parents, setHiddenToFalse);
-	            setHiddenToFalse(item);
-	          }
-	        } else setHiddenToFalse(item);
-	      });
-	    }, 500),
-	
-	    generateDefinitionWithSharedGet: function generateDefinitionWithSharedGet() {
-	      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	        args[_key] = arguments[_key];
-	      }
-	
-	      var text = args[0];
-	      var sharedKey = undefined,
-	          preffix = undefined;
-	
-	      preffix = arguments.length > 1 ? args[1] : '';
-	      sharedKey = preffix + text.split('(')[0];
-	
-	      return Box.generateDefinition(text, _diagrams2['default'].shared.get(sharedKey));
-	    },
-	
 	    addButtons: function addButtons(creationId) {
 	      var div = _diagrams2['default'].Diagram.addDivBeforeSvg();
 	
@@ -1053,41 +1020,16 @@
 	      div.appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'diagrams.box.expandAll(' + creationId + ')');
 	    },
 	
-	    expandOrCollapseAll: function expandOrCollapseAll(creationId, collapseOrExpand) {
-	      helpers.traverseBodyDataAndRefresh(creationId, {
-	        withCollapsedItems: true
-	      }, function (item) {
-	        if (item.hasOwnProperty('collapsed')) {
-	          helpers[collapseOrExpand + 'Item'](item);
-	        }
-	      });
-	    },
-	
-	    traverseBodyDataAndRefresh: function traverseBodyDataAndRefresh(creationId, opts, cb) {
-	      var conf = _diagrams2['default'].Diagram.getDataWithCreationId(creationId)[1];
-	      var bodyData = conf.body;
-	      var recursiveFn = function recursiveFn(items, parents) {
-	        _.each(items, function (item) {
-	          if (cb) cb(item, parents);
-	
-	          if (item.items) recursiveFn(item.items, parents.concat(item));
-	
-	          if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
-	        });
-	      };
-	
-	      opts = opts || {};
-	      opts.withCollapsedItems = opts.withCollapsedItems || false;
-	      recursiveFn(bodyData, []);
-	      helpers.addBodyItemsAndUpdateHeights();
-	    },
-	
 	    collapseAll: function collapseAll(creationId) {
 	      helpers.expandOrCollapseAll(creationId, 'collapse');
 	    },
 	
-	    expandAll: function expandAll(creationId) {
-	      helpers.expandOrCollapseAll(creationId, 'expand');
+	    collapseItem: function collapseItem(item) {
+	      if (item.items.length > 0) {
+	        item.collapsedItems = item.items;
+	        item.collapsed = true;
+	        item.items = [];
+	      }
 	    },
 	
 	    convertToGraph: function convertToGraph(origConf) {
@@ -1119,92 +1061,23 @@
 	      var layersData = [];
 	
 	      layersData.push({
-	        text: origConf.name,
-	        items: origConf.body
+	        items: origConf.body,
+	        text: origConf.name
 	      });
 	      convertDataToLayers(layersData[0].items);
 	      createLayers();
 	    },
 	
-	    collapseItem: function collapseItem(item) {
-	      if (item.items.length > 0) {
-	        item.collapsedItems = item.items;
-	        item.collapsed = true;
-	        item.items = [];
-	      }
-	    },
+	    dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+	      var finalData = _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
 	
-	    expandItem: function expandItem(item) {
-	      if (item.collapsedItems) {
-	        item.items = item.collapsedItems;
-	        delete item.collapsedItems;
-	        item.collapsed = false;
-	      }
-	    },
+	      finalData.name = finalData.text;
+	      finalData.body = finalData.items;
 	
-	    parseItemGenerationOptions: function parseItemGenerationOptions(options) {
-	      var parsedOptions = undefined;
+	      delete finalData.items;
+	      delete finalData.text;
 	
-	      if (_.isString(options)) {
-	        options = options.split(' ');
-	        parsedOptions = {};
-	        _.each(options, function (optionsKey) {
-	          var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
-	            return g[1].toUpperCase();
-	          }); // option-one -> optionOne
-	
-	          parsedOptions[newKey] = true;
-	        });
-	      } else parsedOptions = options;
-	
-	      return parsedOptions;
-	    },
-	
-	    generateItem: function generateItem(_ref) {
-	      var text = _ref.text;
-	      var description = _ref.description;
-	      var items = _ref.items;
-	      var options = _ref.options;
-	
-	      var defaultOptions = {
-	        isLink: false,
-	        notCompleted: false
-	      };
-	
-	      options = options || {};
-	      options = helpers.parseItemGenerationOptions(options);
-	
-	      return {
-	        text: text,
-	        description: description || null,
-	        options: _.defaults(options, defaultOptions),
-	        items: items || []
-	      };
-	    },
-	
-	    generateContainer: function generateContainer() {
-	      var text = arguments[0];
-	      var description = arguments[1];
-	      var items = arguments[2];
-	      var options = arguments[3] || null;
-	
-	      if (_.isArray(description)) {
-	        options = items;
-	        items = description;
-	        description = null;
-	      }
-	
-	      return helpers.generateItem({ text: text, description: description, items: items, options: options });
-	    },
-	
-	    generateLink: function generateLink(text, url) {
-	      return helpers.generateItem({ text: text, description: url, items: null, options: {
-	          isLink: true
-	        } });
-	    },
-	
-	    generateDefinition: function generateDefinition(text, description) {
-	      return helpers.generateItem({ text: text, description: description });
+	      return finalData;
 	    },
 	
 	    dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
@@ -1214,14 +1087,14 @@
 	      var recursiveFn = function recursiveFn(items, parentCreatedItem) {
 	        _.each(items, function (item) {
 	          var createdItem = {
-	            name: item.text,
 	            description: item.description,
 	            graphsData: {
 	              box: {
 	                options: item.options
 	              }
 	            },
-	            id: ++maxId
+	            id: ++maxId,
+	            name: item.text
 	          };
 	
 	          finalItems.push(createdItem);
@@ -1243,26 +1116,158 @@
 	      };
 	
 	      finalItems.push({
-	        name: conf.name,
-	        id: ++maxId
+	        id: ++maxId,
+	        name: conf.name
 	      });
 	      recursiveFn(conf.body);
 	
 	      return {
-	        items: finalItems,
-	        connections: connections
+	        connections: connections,
+	        items: finalItems
 	      };
 	    },
-	    dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	      var finalData = _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
 	
-	      finalData.name = finalData.text;
-	      finalData.body = finalData.items;
+	    expandAll: function expandAll(creationId) {
+	      helpers.expandOrCollapseAll(creationId, 'expand');
+	    },
 	
-	      delete finalData.items;
-	      delete finalData.text;
+	    expandItem: function expandItem(item) {
+	      if (item.collapsedItems) {
+	        item.items = item.collapsedItems;
+	        delete item.collapsedItems;
+	        item.collapsed = false;
+	      }
+	    },
 	
-	      return finalData;
+	    expandOrCollapseAll: function expandOrCollapseAll(creationId, collapseOrExpand) {
+	      helpers.traverseBodyDataAndRefresh(creationId, {
+	        withCollapsedItems: true
+	      }, function (item) {
+	        if (item.hasOwnProperty('collapsed')) {
+	          helpers[collapseOrExpand + 'Item'](item);
+	        }
+	      });
+	    },
+	
+	    filterByString: _.debounce(function (opts, creationId) {
+	      var getHiddenValueSetter = function getHiddenValueSetter(value) {
+	        return function (item) {
+	          item.hidden = value;
+	        };
+	      };
+	      var setHiddenToFalse = getHiddenValueSetter(false);
+	
+	      helpers.traverseBodyDataAndRefresh(creationId, null, function (item, parents) {
+	        var anyParentIsShowed = _.any(parents, function (parent) {
+	          return parent.hidden !== true;
+	        });
+	
+	        if (opts.showChildren === false || anyParentIsShowed === false) {
+	          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);else {
+	            _.each(parents, setHiddenToFalse);
+	            setHiddenToFalse(item);
+	          }
+	        } else setHiddenToFalse(item);
+	      });
+	    }, 500),
+	
+	    generateContainer: function generateContainer() {
+	      var text = arguments[0];
+	      var description = arguments[1];
+	      var items = arguments[2];
+	      var options = arguments[3] || null;
+	
+	      if (_.isArray(description)) {
+	        options = items;
+	        items = description;
+	        description = null;
+	      }
+	
+	      return helpers.generateItem({ description: description, items: items, options: options, text: text });
+	    },
+	
+	    generateDefinition: function generateDefinition(text, description) {
+	      return helpers.generateItem({ description: description, text: text });
+	    },
+	
+	    generateDefinitionWithSharedGet: function generateDefinitionWithSharedGet() {
+	      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	        args[_key] = arguments[_key];
+	      }
+	
+	      var text = args[0];
+	      var sharedKey = undefined,
+	          preffix = undefined;
+	
+	      preffix = arguments.length > 1 ? args[1] : '';
+	      sharedKey = preffix + text.split('(')[0];
+	
+	      return Box.generateDefinition(text, _diagrams2['default'].shared.get(sharedKey));
+	    },
+	
+	    generateItem: function generateItem(_ref) {
+	      var description = _ref.description;
+	      var items = _ref.items;
+	      var options = _ref.options;
+	      var text = _ref.text;
+	
+	      var defaultOptions = {
+	        isLink: false,
+	        notCompleted: false
+	      };
+	
+	      options = options || {};
+	      options = helpers.parseItemGenerationOptions(options);
+	
+	      return {
+	        description: description || null,
+	        items: items || [],
+	        options: _.defaults(options, defaultOptions),
+	        text: text
+	      };
+	    },
+	
+	    generateLink: function generateLink(text, url) {
+	      return helpers.generateItem({ description: url, items: null, options: {
+	          isLink: true
+	        }, text: text });
+	    },
+	
+	    parseItemGenerationOptions: function parseItemGenerationOptions(options) {
+	      var parsedOptions = undefined;
+	
+	      if (_.isString(options)) {
+	        options = options.split(' ');
+	        parsedOptions = {};
+	        _.each(options, function (optionsKey) {
+	          var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
+	            return g[1].toUpperCase();
+	          }); // option-one -> optionOne
+	
+	          parsedOptions[newKey] = true;
+	        });
+	      } else parsedOptions = options;
+	
+	      return parsedOptions;
+	    },
+	
+	    traverseBodyDataAndRefresh: function traverseBodyDataAndRefresh(creationId, opts, cb) {
+	      var conf = _diagrams2['default'].Diagram.getDataWithCreationId(creationId)[1];
+	      var bodyData = conf.body;
+	      var recursiveFn = function recursiveFn(items, parents) {
+	        _.each(items, function (item) {
+	          if (cb) cb(item, parents);
+	
+	          if (item.items) recursiveFn(item.items, parents.concat(item));
+	
+	          if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
+	        });
+	      };
+	
+	      opts = opts || {};
+	      opts.withCollapsedItems = opts.withCollapsedItems || false;
+	      recursiveFn(bodyData, []);
+	      helpers.addBodyItemsAndUpdateHeights();
 	    }
 	  };
 	
@@ -1279,15 +1284,13 @@
 	    _createClass(Box, [{
 	      key: 'create',
 	      value: function create(creationId, conf, opts) {
-	        var _this = this;
-	
 	        var diagram = this;
 	        var svg = _diagrams2['default'].svg.generateSvg();
 	        var width = svg.attr('width') - 40;
 	        var nameHeight = 50;
 	        var boxG = svg.append('g').attr({
-	          transform: 'translate(20, 20)',
-	          'class': 'box-diagram'
+	          'class': 'box-diagram',
+	          transform: 'translate(20, 20)'
 	        });
 	        var nameG = boxG.append('g');
 	        var rowHeight = 30;
@@ -1311,8 +1314,8 @@
 	                helpers.addBodyItemsAndUpdateHeights();
 	              };
 	              var triggerTextEl = triggerEl.append('text').attr({
-	                y: Number(yDim) + 5,
-	                x: Number(xDim) - 20
+	                x: Number(xDim) - 20,
+	                y: Number(yDim) + 5
 	              });
 	              var setCollapseTextAndListener = function setCollapseTextAndListener() {
 	                triggerTextEl.text('-').attr('class', 'minus');
@@ -1332,8 +1335,8 @@
 	              triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
 	                height: 15,
 	                width: 20,
-	                y: yDim - 17,
-	                x: xDim - 20
+	                x: xDim - 20,
+	                y: yDim - 17
 	              });
 	              triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
 	
@@ -1382,9 +1385,9 @@
 	                } else item.fullText = item.text;
 	
 	                textEl = newContainer.append('text').text(containerText).attr({
+	                  id: currentTextGId,
 	                  x: depthWidth * depth,
-	                  y: rowHeight * ++bodyPosition,
-	                  id: currentTextGId
+	                  y: rowHeight * ++bodyPosition
 	                });
 	
 	                addBodyItems(item.items, newContainer, depth + 1);
@@ -1392,10 +1395,10 @@
 	                if (item.options && item.options.isLink === true) {
 	                  newContainer = container.append('svg:a').attr("xlink:href", item.description);
 	                  textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
+	                    fill: '#3962B8',
 	                    id: currentTextGId,
 	                    x: depthWidth * depth,
-	                    y: rowHeight * ++bodyPosition,
-	                    fill: '#3962B8'
+	                    y: rowHeight * ++bodyPosition
 	                  });
 	
 	                  item.fullText = item.text + ' (' + item.description + ')';
@@ -1404,9 +1407,9 @@
 	                    id: currentTextGId
 	                  });
 	                  textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
+	                    'class': 'diagrams-box-definition-text',
 	                    x: depthWidth * depth,
-	                    y: rowHeight * ++bodyPosition,
-	                    'class': 'diagrams-box-definition-text'
+	                    y: rowHeight * ++bodyPosition
 	                  });
 	
 	                  if (item.description) {
@@ -1469,8 +1472,7 @@
 	
 	        opts = opts || {};
 	
-	        helpers.addBodyItemsAndUpdateHeights = _.bind(function () {
-	          var diagram = _this;
+	        helpers.addBodyItemsAndUpdateHeights = function () {
 	          var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
 	
 	          svg.attr('height', 10);
@@ -1480,9 +1482,9 @@
 	            transform: 'translate(0, ' + nameHeight + ')'
 	          });
 	          bodyRect = bodyG.append('rect').attr({
-	            width: width,
+	            fill: '#fff',
 	            stroke: '#000',
-	            fill: '#fff'
+	            width: width
 	          }).style({
 	            filter: 'url(#diagrams-drop-shadow-box)'
 	          });
@@ -1494,15 +1496,15 @@
 	
 	          window.scrollTo(0, currentScroll);
 	          diagram.emit('items-rendered');
-	        }, this);
+	        };
 	
-	        _diagrams2['default'].svg.addFilterColor({ id: 'box', container: svg, deviation: 3, slope: 4 });
+	        _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
 	
 	        nameG.append('rect').attr({
+	          fill: '#fff',
 	          height: nameHeight,
-	          width: width,
 	          stroke: '#000',
-	          fill: '#fff'
+	          width: width
 	        }).style({
 	          filter: 'url(#diagrams-drop-shadow-box)'
 	        });
@@ -1545,8 +1547,8 @@
 	  })(_diagrams2['default'].Diagram);
 	
 	  new Box({
-	    name: 'box',
-	    helpers: helpers
+	    helpers: helpers,
+	    name: 'box'
 	  });
 	};
 	
@@ -1582,20 +1584,20 @@
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
+	var SHY_CONNECTIONS = 'Show connections selectively';
+	var GRAPH_ZOOM = 'dia graph zoom';
+	var GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
+	var CURVED_ARROWS = 'All arrows are curved';
+	var graphZoomConfig = {
+	  'private': true,
+	  type: Number,
+	  value: 1
+	};
+	var dPositionFn = _diagrams2['default'].utils.positionFn;
+	var dTextFn = _diagrams2['default'].utils.textFn;
+	
 	exports['default'] = function () {
 	  var _configuration;
-	
-	  var SHY_CONNECTIONS = 'Show connections selectively';
-	  var GRAPH_ZOOM = 'dia graph zoom';
-	  var GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
-	  var CURVED_ARROWS = 'All arrows are curved';
-	  var graphZoomConfig = {
-	    'private': true,
-	    type: Number,
-	    value: 1
-	  };
-	  var dPositionFn = _diagrams2['default'].utils.positionFn;
-	  var dTextFn = _diagrams2['default'].utils.textFn;
 	
 	  var Graph = (function (_d$Diagram) {
 	    _inherits(Graph, _d$Diagram);
@@ -1616,9 +1618,6 @@
 	        var width = svg.attr('width');
 	        var dragNodesConfig = diagram.config(GRAPH_DRAG);
 	        var curvedArrows = diagram.config(CURVED_ARROWS);
-	
-	        _helpers2['default'].resetLinksNumberMap();
-	
 	        var force = undefined,
 	            drag = undefined,
 	            link = undefined,
@@ -1631,18 +1630,20 @@
 	            markers = undefined,
 	            parsedData = undefined;
 	
+	        _helpers2['default'].resetLinksNumberMap();
+	
 	        var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
 	
 	        var tick = function tick() {
 	          var setPathToLink = function setPathToLink(pathClass) {
-	            link.select('path.' + pathClass).attr("d", function (d) {
-	              var linksNumber = _helpers2['default'].getLinksNumberMapItemWithLink(d);
-	              var linkIndex = d.data.linkIndex;
-	              var dx = d.target.x - d.source.x;
-	              var dy = d.target.y - d.source.y;
+	            link.select('path.' + pathClass).attr("d", function (da) {
+	              var linksNumber = _helpers2['default'].getLinksNumberMapItemWithLink(da);
+	              var linkIndex = da.data.linkIndex;
+	              var dx = da.target.x - da.source.x;
+	              var dy = da.target.y - da.source.y;
 	              var dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
 	
-	              return 'M' + d.source.x + ',' + d.source.y + 'A' + (dr + ',' + dr + ' 0 0,1 ') + (d.target.x + ',' + d.target.y);
+	              return 'M' + da.source.x + ',' + da.source.y + 'A' + (dr + ',' + dr + ' 0 0,1 ') + (da.target.x + ',' + da.target.y);
 	            });
 	          };
 	
@@ -1660,17 +1661,17 @@
 	          node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
 	        };
 	        var parseData = function parseData() {
-	          var maxId = _.reduce(data, function (memo, node) {
-	            var id = node.id || 0;
+	          var maxId = _.reduce(data, function (memo, tmpNode) {
+	            var id = tmpNode.id || 0;
 	
 	            return memo > id ? memo : id;
 	          }, 0);
 	          var idsMap = {};
 	          var nodesWithLinkMap = {};
 	          var colors = d3.scale.category20();
-	          var handleConnections = function handleConnections(node, nodeIndex) {
-	            if (node.connections.length > 0) {
-	              _.each(node.connections, function (connection) {
+	          var handleConnections = function handleConnections(tmpNode, nodeIndex) {
+	            if (tmpNode.connections.length > 0) {
+	              _.each(tmpNode.connections, function (connection) {
 	                _.each(connection.nodesIds, function (otherNodeId) {
 	                  otherNode = idsMap[otherNodeId];
 	
@@ -1711,19 +1712,19 @@
 	            nodes: []
 	          };
 	          markers = [];
-	          _.each(data, function (node, nodeIndex) {
-	            nodeId = _.isUndefined(node.id) ? maxId++ : node.id;
+	          _.each(data, function (dataNode, nodeIndex) {
+	            nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id;
 	            color = colors(nodeIndex);
-	            options = node.options || {};
+	            options = dataNode.options || {};
 	
 	            parsedData.nodes.push({
 	              bold: options.bold || false,
 	              color: color,
-	              connections: node.connections || [],
-	              description: node.description || null,
+	              connections: dataNode.connections || [],
+	              description: dataNode.description || null,
 	              id: nodeId,
 	              linkToUrl: options.linkToUrl || null,
-	              name: node.name,
+	              name: dataNode.name,
 	              shape: options.shape || 'circle'
 	            });
 	            idsMap[nodeId] = {
@@ -1743,8 +1744,8 @@
 	          _.each(parsedData.nodes, handleConnections);
 	
 	          if (conf.hideNodesWithoutLinks === true) {
-	            _.each(parsedData.nodes, function (node, nodeIndex) {
-	              if (nodesWithLinkMap[nodeIndex] !== true) node.hidden = true;
+	            _.each(parsedData.nodes, function (pdNode, nodeIndex) {
+	              if (nodesWithLinkMap[nodeIndex] !== true) pdNode.hidden = true;
 	            });
 	          }
 	        };
@@ -1762,8 +1763,8 @@
 	          force.start();
 	        };
 	
-	        var dragged = function dragged(d) {
-	          d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+	        var dragged = function dragged(da) {
+	          d3.select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y);
 	        };
 	
 	        var dragended = function dragended() {
@@ -1772,12 +1773,12 @@
 	
 	        var setRelationships = function setRelationships() {
 	          _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
-	          _.each(parsedData.nodes, function (node) {
-	            diagram.addSelfRelationship(node, node.shapeEl, node);
+	          _.each(parsedData.nodes, function (pdNode) {
+	            diagram.addSelfRelationship(pdNode, pdNode.shapeEl, pdNode);
 	          });
-	          _.each(parsedData.links, function (link) {
-	            diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
-	            diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
+	          _.each(parsedData.links, function (pdLink) {
+	            diagram.addDependencyRelationship(pdLink.source, pdLink.target.shapeEl, pdLink.target);
+	            diagram.addDependantRelationship(pdLink.target, pdLink.source.shapeEl, pdLink.source);
 	          });
 	        };
 	
@@ -1786,32 +1787,32 @@
 	        };
 	
 	        var getLinksWithIsHiding = function getLinksWithIsHiding() {
-	          return getAllLinks().filter(function (d) {
-	            return d.data.hasOwnProperty('shyIsHiding');
+	          return getAllLinks().filter(function (da) {
+	            return da.data.hasOwnProperty('shyIsHiding');
 	          });
 	        };
 	
-	        var setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, link) {
+	        var setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, tmpLink) {
 	          var linksWithIsHiding = undefined;
 	
 	          if (diagram.config(SHY_CONNECTIONS)) {
-	            if (isHiding === false) link.data.shyIsHiding = isHiding;else if (isHiding === true) {
+	            if (isHiding === false) tmpLink.data.shyIsHiding = isHiding;else if (isHiding === true) {
 	              linksWithIsHiding = getLinksWithIsHiding();
-	              linksWithIsHiding.each(function (d) {
-	                d.data.shyIsHiding = true;
+	              linksWithIsHiding.each(function (da) {
+	                da.data.shyIsHiding = true;
 	              });
 	            }
-	            link.data.shyIsHidingChanged = true;
+	            tmpLink.data.shyIsHidingChanged = true;
 	          }
 	        };
 	
-	        var setDisplayOfShyConnections = function setDisplayOfShyConnections(display, node) {
+	        var setDisplayOfShyConnections = function setDisplayOfShyConnections(display, tmpNode) {
 	          var isShowing = display === 'show';
 	          var isHiding = display === 'hide';
-	          var nodeData = node.data;
+	          var nodeData = tmpNode.data;
 	          var linksWithIsHiding = getLinksWithIsHiding();
-	          var nodeLinks = getAllLinks().filter(function (d) {
-	            return d.source.id === nodeData.id || d.target.id === nodeData.id;
+	          var nodeLinks = getAllLinks().filter(function (da) {
+	            return da.source.id === nodeData.id || da.target.id === nodeData.id;
 	          });
 	          var setDisplay = function setDisplay(links, show) {
 	            links.classed('shy-link-hidden', !show);
@@ -1819,20 +1820,20 @@
 	          };
 	          var hideLinks = function hideLinks(links) {
 	            setDisplay(links, false);
-	            links.each(function (d) {
-	              delete d.data.shyIsHiding;
+	            links.each(function (da) {
+	              delete da.data.shyIsHiding;
 	            });
 	          };
 	          var futureConditionalHide = function futureConditionalHide() {
 	            setTimeout(function () {
 	              allAreHiding = true;
 	              shyIsHidingIsSame = true;
-	              nodeLinks.each(function (d) {
-	                allAreHiding = allAreHiding && d.data.shyIsHiding;
+	              nodeLinks.each(function (da) {
+	                allAreHiding = allAreHiding && da.data.shyIsHiding;
 	
-	                if (d.data.shyIsHidingChanged) {
+	                if (da.data.shyIsHidingChanged) {
 	                  shyIsHidingIsSame = false;
-	                  delete d.data.shyIsHidingChanged;
+	                  delete da.data.shyIsHidingChanged;
 	                }
 	              });
 	
@@ -1844,15 +1845,15 @@
 	
 	          if (linksWithIsHiding[0].length === 0) {
 	            if (isShowing) setDisplay(nodeLinks, true);else if (isHiding) {
-	              nodeLinks.each(function (d) {
-	                d.data.shyIsHiding = true;
+	              nodeLinks.each(function (da) {
+	                da.data.shyIsHiding = true;
 	              });
 	              futureConditionalHide();
 	            }
 	          } else {
 	            if (isShowing) {
-	              linksWithIsHiding.each(function (d, index) {
-	                if (index === 0) d.data.shyIsHiding = false;
+	              linksWithIsHiding.each(function (da, index) {
+	                if (index === 0) da.data.shyIsHiding = false;
 	              });
 	            } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
 	          }
@@ -1864,8 +1865,8 @@
 	          item.el.style('stroke-width', '20px');
 	        };
 	        diagram.unmarkAllItems = function () {
-	          _.each(parsedData.nodes, function (node) {
-	            node.shapeEl.style('stroke-width', '1px');
+	          _.each(parsedData.nodes, function (pdNode) {
+	            pdNode.shapeEl.style('stroke-width', '1px');
 	          });
 	        };
 	
@@ -1873,8 +1874,8 @@
 	        parseData();
 	
 	        svg.attr({
-	          height: height,
-	          'class': 'graph-diagram'
+	          'class': 'graph-diagram',
+	          height: height
 	        });
 	
 	        zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
@@ -1889,8 +1890,8 @@
 	
 	        force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
 	
-	        drag = d3.behavior.drag().origin(function (d) {
-	          return d;
+	        drag = d3.behavior.drag().origin(function (da) {
+	          return da;
 	        }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
 	
 	        force.nodes(parsedData.nodes).links(parsedData.links).start();
@@ -1916,34 +1917,34 @@
 	        });
 	        link.append("svg:path").attr({
 	          'class': 'link-path',
-	          "marker-end": function markerEnd(d) {
-	            return 'url(#arrow-head-' + d.source.id + ')';
+	          'marker-end': function markerEnd(da) {
+	            return 'url(#arrow-head-' + da.source.id + ')';
 	          }
 	        }).style({
 	          stroke: dTextFn('color'),
-	          'stroke-dasharray': function strokeDasharray(d) {
-	            if (d.data.line === 'plain') return null;else if (d.data.line === 'dotted') return '5,5';
+	          'stroke-dasharray': function strokeDasharray(da) {
+	            if (da.data.line === 'plain') return null;else if (da.data.line === 'dotted') return '5,5';
 	          }
 	        });
 	
 	        linkOuter = link.append('g');
 	        linkOuter.append('svg:path').attr('class', 'link-path-outer');
-	        linkOuter.each(function (d) {
-	          diagram.addMouseListenersToEl(d3.select(this), d.data, {
-	            mouseenter: function mouseenter(link) {
-	              setLinkIsHidingIfNecessary(false, link);
+	        linkOuter.each(function (da) {
+	          diagram.addMouseListenersToEl(d3.select(this), da.data, {
+	            mouseenter: function mouseenter(eLink) {
+	              setLinkIsHidingIfNecessary(false, eLink);
 	            },
-	            mouseleave: function mouseleave(link) {
-	              setLinkIsHidingIfNecessary(true, link);
+	            mouseleave: function mouseleave(eLink) {
+	              setLinkIsHidingIfNecessary(true, eLink);
 	            }
 	          });
 	        });
 	
 	        node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
-	          'class': function _class(d) {
+	          'class': function _class(da) {
 	            var finalClass = 'node';
 	
-	            if (d.hidden === true) finalClass += ' node-hidden';
+	            if (da.hidden === true) finalClass += ' node-hidden';
 	
 	            return finalClass;
 	          },
@@ -1958,8 +1959,8 @@
 	
 	          if (singleNode.shape === 'circle') {
 	            shapeEl = singleNodeEl.append("circle").attr({
-	              r: 12,
-	              fill: dTextFn('color')
+	              fill: dTextFn('color'),
+	              r: 12
 	            });
 	          } else {
 	            shape = d3.svg.symbol().size(750);
@@ -1986,14 +1987,14 @@
 	
 	          singleNode.shapeEl = shapeEl;
 	          diagram.addMouseListenersToEl(shapeEl, singleNode, {
-	            mouseenter: function mouseenter(data) {
-	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', data);
+	            click: function click(eNode) {
+	              if (eNode.data.linkToUrl) window.open(eNode.data.linkToUrl);
 	            },
-	            mouseleave: function mouseleave(data) {
-	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', data);
+	            mouseenter: function mouseenter(nodeData) {
+	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', nodeData);
 	            },
-	            click: function click(node) {
-	              if (node.data.linkToUrl) window.open(node.data.linkToUrl);
+	            mouseleave: function mouseleave(nodeData) {
+	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', nodeData);
 	            }
 	          });
 	        });
@@ -2002,10 +2003,10 @@
 	
 	        setRelationships();
 	        setReRender(conf);
-	        diagram.listen('configuration-changed', function (conf) {
-	          if (conf.key === SHY_CONNECTIONS || conf.key === GRAPH_DRAG) {
-	            setReRender(conf);
-	            diagram.removePreviousAndCreate(creationId, data, conf);
+	        diagram.listen('configuration-changed', function (config) {
+	          if (config.key === SHY_CONNECTIONS || config.key === GRAPH_DRAG) {
+	            setReRender(config);
+	            diagram.removePreviousAndCreate(creationId, data, config);
 	          }
 	        });
 	      }
@@ -2015,14 +2016,12 @@
 	  })(_diagrams2['default'].Diagram);
 	
 	  new Graph({
-	    name: 'graph',
-	    helpers: _helpers2['default'],
+	    configuration: (_configuration = {}, _defineProperty(_configuration, CURVED_ARROWS, false), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, 'info', null), _configuration),
 	    configurationKeys: {
 	      SHY_CONNECTIONS: SHY_CONNECTIONS
 	    },
-	    configuration: (_configuration = {
-	      info: null
-	    }, _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, CURVED_ARROWS, false), _configuration)
+	    helpers: _helpers2['default'],
+	    name: 'graph'
 	  });
 	};
 	
@@ -2049,19 +2048,22 @@
 	var linksNumberMap = undefined;
 	
 	var helpers = {
-	  resetLinksNumberMap: function resetLinksNumberMap() {
-	    linksNumberMap = {};
-	  },
-	  generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
-	    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
-	      return _.map(nodesIds, function (args) {
-	        return helpers.generateConnectionWithText.apply({}, args);
+	  addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
+	    if (_.isString(info)) info = [info];
+	    var hasDescription = info.length === 2;
+	    var svgWidth = svg[0][0].getBoundingClientRect().width;
+	    var infoText = info[0] + (hasDescription ? ' (...)' : '');
+	    var el = svg.append('g').attr({
+	      'class': 'graph-info',
+	      transform: 'translate(10, 50)'
+	    }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
+	
+	    if (hasDescription) {
+	      diagram.addMouseListenersToEl(el, {
+	        el: el,
+	        fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
 	      });
 	    }
-	
-	    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
-	
-	    return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
 	  },
 	  connectionFnFactory: function connectionFnFactory(baseFn, changedProp, changedVal) {
 	    var _arguments = arguments;
@@ -2077,56 +2079,103 @@
 	      return _.isArray(connection) ? _.map(connection, setVal) : setVal(connection);
 	    };
 	  },
-	  generateNodeOptions: function generateNodeOptions(options) {
-	    var obj = {};
-	    var shape = undefined;
+	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+	    var finalItems = [];
+	    var idToIndexMap = {};
+	    var targetItem = undefined;
 	
-	    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));else if (_.isArray(options)) {
-	      _.each(options, function (opt) {
-	        if (opt.substr(0, 2) === 's-') {
-	          shape = opt.substr(2, opt.length - 2);
-	          obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
-	        } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+	    _.each(generalData.items, function (item, index) {
+	      finalItems.push({
+	        description: item.description,
+	        id: item.id,
+	        name: item.name
 	      });
+	      idToIndexMap[item.id] = index;
+	    });
 	
-	      return obj;
-	    }
+	    _.each(generalData.connections, function (connection) {
+	      targetItem = finalItems[idToIndexMap[connection.to]];
+	      targetItem.connections = targetItem.connections || [];
+	      targetItem.connections.push({
+	        direction: 'in',
+	        nodesIds: [connection.from]
+	      });
+	    });
+	
+	    return finalItems;
 	  },
-	  mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
-	    var defaultConnection = {
-	      direction: 'out',
-	      symbol: 'arrow',
-	      line: 'plain'
+	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
+	    var finalItems = [];
+	    var connections = [];
+	    var setConnection = function setConnection(node, connection) {
+	      _.each(connection.nodesIds, function (otherNodeId) {
+	        newConnection = {};
+	
+	        if (connection.direction === 'out') {
+	          newConnection.from = node.id;
+	          newConnection.to = otherNodeId;
+	        } else if (connection.direction === 'in') {
+	          newConnection.from = otherNodeId;
+	          newConnection.to = node.id;
+	        }
+	
+	        connections.push(newConnection);
+	      });
 	    };
+	    var newConnection = undefined;
 	
-	    return _.defaults(connection, defaultConnection);
+	    _.each(data, function (node) {
+	      finalItems.push({
+	        description: node.description,
+	        id: node.id,
+	        name: node.name
+	      });
+	      _.each(node.connections, function (connection) {
+	        return setConnection(node, connection);
+	      });
+	    });
+	
+	    return {
+	      connections: connections,
+	      items: finalItems
+	    };
 	  },
-	  generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
+	  doWithMinIdAndMaxIdOfLinkNodes: function doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
+	    var getIndex = function getIndex(item) {
+	      return _.isNumber(item) ? item : item.index;
+	    };
+	    var ids = [getIndex(link.source), getIndex(link.target)];
+	    var minIndex = _.min(ids);
+	    var maxIndex = _.max(ids);
+	
+	    return cb(minIndex, maxIndex);
+	  },
+	  generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
+	    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
+	      return _.map(nodesIds, function (args) {
+	        return helpers.generateConnectionWithText.apply({}, args);
+	      });
+	    }
+	
+	    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
+	
+	    return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
+	  },
+	  generateFnNodeWithSharedGetAndBoldIfFile: function generateFnNodeWithSharedGetAndBoldIfFile(file) {
 	    var _arguments2 = arguments;
 	
 	    return function () {
-	      var args = Array.prototype.slice.call(_arguments2);
+	      var opts = '';
+	      var preffix = '';
 	
-	      if (_.isUndefined(args[3])) args[3] = '';else args[3] += ' ';
-	      args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
+	      if (_arguments2[0].split('@')[0] === file) opts = 'b';
 	
-	      return helpers.generateNode.apply({}, args);
+	      if (_arguments2.length > 2) preffix = _arguments2[2];
+	
+	      if (_arguments2.length > 3) opts = _arguments2[3] + ' ' + opts;
+	
+	      return helpers.generateNodeWithSharedGet(_arguments2[0], _arguments2[1], preffix, opts);
 	    };
-	  },
-	  generateNodeWithTextAsTargetLink: function generateNodeWithTextAsTargetLink(file) {
-	    var _arguments3 = arguments;
-	
-	    return function () {
-	      return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments3[0]).apply({}, _arguments3);
-	    };
-	  },
-	  generatePrivateNode: function generatePrivateNode() {
-	    var args = Array.prototype.slice.call(arguments);
-	
-	    args[2] += '<br><strong>PRIVATE</strong>';
-	    args[3] = 's-t';
-	
-	    return helpers.generateNode.apply(helpers, _toConsumableArray(args));
 	  },
 	  generateNode: function generateNode() {
 	    var node = {
@@ -2176,6 +2225,21 @@
 	
 	    return node;
 	  },
+	  generateNodeOptions: function generateNodeOptions(options) {
+	    var obj = {};
+	    var shape = undefined;
+	
+	    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));else if (_.isArray(options)) {
+	      _.each(options, function (opt) {
+	        if (opt.substr(0, 2) === 's-') {
+	          shape = opt.substr(2, opt.length - 2);
+	          obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
+	        } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+	      });
+	
+	      return obj;
+	    }
+	  },
 	  generateNodeWithSharedGet: function generateNodeWithSharedGet() {
 	    var text = arguments[0];
 	    var sharedKey = undefined,
@@ -2188,92 +2252,56 @@
 	
 	    return helpers.generateNode(text, arguments[1], _diagrams2['default'].shared.get(sharedKey), options);
 	  },
-	  generateFnNodeWithSharedGetAndBoldIfFile: function generateFnNodeWithSharedGetAndBoldIfFile(file) {
+	  generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
+	    var _arguments3 = arguments;
+	
+	    return function () {
+	      var args = Array.prototype.slice.call(_arguments3);
+	
+	      if (_.isUndefined(args[3])) args[3] = '';else args[3] += ' ';
+	      args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
+	
+	      return helpers.generateNode.apply({}, args);
+	    };
+	  },
+	  generateNodeWithTextAsTargetLink: function generateNodeWithTextAsTargetLink(file) {
 	    var _arguments4 = arguments;
 	
 	    return function () {
-	      var opts = '';
-	      var preffix = '';
-	
-	      if (_arguments4[0].split('@')[0] === file) opts = 'b';
-	
-	      if (_arguments4.length > 2) preffix = _arguments4[2];
-	
-	      if (_arguments4.length > 3) opts = _arguments4[3] + ' ' + opts;
-	
-	      return helpers.generateNodeWithSharedGet(_arguments4[0], _arguments4[1], preffix, opts);
+	      return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments4[0]).apply({}, _arguments4);
 	    };
 	  },
-	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	    var finalItems = [];
-	    var idToIndexMap = {};
-	    var targetItem = undefined;
+	  generatePrivateNode: function generatePrivateNode() {
+	    var args = Array.prototype.slice.call(arguments);
 	
-	    _.each(generalData.items, function (item, index) {
-	      finalItems.push({
-	        name: item.name,
-	        id: item.id,
-	        description: item.description
-	      });
-	      idToIndexMap[item.id] = index;
-	    });
+	    args[2] += '<br><strong>PRIVATE</strong>';
+	    args[3] = 's-t';
 	
-	    _.each(generalData.connections, function (connection) {
-	      targetItem = finalItems[idToIndexMap[connection.to]];
-	      targetItem.connections = targetItem.connections || [];
-	      targetItem.connections.push({
-	        direction: 'in',
-	        nodesIds: [connection.from]
-	      });
-	    });
-	
-	    return finalItems;
+	    return helpers.generateNode.apply(helpers, _toConsumableArray(args));
 	  },
-	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
-	    var finalItems = [];
-	    var connections = [];
-	    var setConnection = function setConnection(node, connection) {
-	      _.each(connection.nodesIds, function (otherNodeId) {
-	        newConnection = {};
-	
-	        if (connection.direction === 'out') {
-	          newConnection.from = node.id;
-	          newConnection.to = otherNodeId;
-	        } else if (connection.direction === 'in') {
-	          newConnection.from = otherNodeId;
-	          newConnection.to = node.id;
-	        }
-	
-	        connections.push(newConnection);
-	      });
-	    };
-	    var newConnection = undefined;
-	
-	    _.each(data, function (node) {
-	      finalItems.push({
-	        id: node.id,
-	        name: node.name,
-	        description: node.description
-	      });
-	      _.each(node.connections, function (connection) {
-	        return setConnection(node, connection);
-	      });
+	  getLinksNumberMapItemWithLink: function getLinksNumberMapItemWithLink(link) {
+	    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
+	      return linksNumberMap[minIndex][maxIndex];
 	    });
-	
-	    return {
-	      items: finalItems,
-	      connections: connections
-	    };
 	  },
-	  doWithMinIdAndMaxIdOfLinkNodes: function doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
-	    var getIndex = function getIndex(item) {
-	      return _.isNumber(item) ? item : item.index;
+	  mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
+	    var defaultConnection = {
+	      direction: 'out',
+	      line: 'plain',
+	      symbol: 'arrow'
 	    };
-	    var ids = [getIndex(link.source), getIndex(link.target)];
-	    var minIndex = _.min(ids);
-	    var maxIndex = _.max(ids);
 	
-	    return cb(minIndex, maxIndex);
+	    return _.defaults(connection, defaultConnection);
+	  },
+	  resetLinksNumberMap: function resetLinksNumberMap() {
+	    linksNumberMap = {};
+	  },
+	  setReRender: function setReRender(diagram, creationId, data) {
+	    diagram.reRender = function (conf) {
+	      diagram.unlisten('configuration-changed');
+	      diagram.reRender = null;
+	      diagram.removePreviousAndCreate(creationId, data, conf);
+	    };
 	  },
 	  updateLinksNumberMapWithLink: function updateLinksNumberMapWithLink(link) {
 	    helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
@@ -2283,35 +2311,6 @@
 	        linksNumberMap[minIndex][maxIndex] = 1;
 	      } else linksNumberMap[minIndex][maxIndex] += 1;
 	    });
-	  },
-	  getLinksNumberMapItemWithLink: function getLinksNumberMapItemWithLink(link) {
-	    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
-	      return linksNumberMap[minIndex][maxIndex];
-	    });
-	  },
-	  addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
-	    if (_.isString(info)) info = [info];
-	    var hasDescription = info.length === 2;
-	    var svgWidth = svg[0][0].getBoundingClientRect().width;
-	    var infoText = info[0] + (hasDescription ? ' (...)' : '');
-	    var el = svg.append('g').attr({
-	      transform: 'translate(10, 50)',
-	      'class': 'graph-info'
-	    }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
-	
-	    if (hasDescription) {
-	      diagram.addMouseListenersToEl(el, {
-	        el: el,
-	        fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
-	      });
-	    }
-	  },
-	  setReRender: function setReRender(diagram, creationId, data) {
-	    diagram.reRender = function (conf) {
-	      diagram.unlisten('configuration-changed');
-	      diagram.reRender = null;
-	      diagram.removePreviousAndCreate(creationId, data, conf);
-	    };
 	  }
 	};
 	
@@ -2350,10 +2349,9 @@
 	
 	exports['default'] = function () {
 	  var layerGId = 0;
-	  var Layer = undefined;
 	  var dTextFn = _diagrams2['default'].utils.textFn;
 	
-	  Layer = (function (_d$Diagram) {
+	  var Layer = (function (_d$Diagram) {
 	    _inherits(Layer, _d$Diagram);
 	
 	    function Layer() {
@@ -2403,10 +2401,10 @@
 	          };
 	          var getSidesPos = function getSidesPos(layer) {
 	            return {
-	              top: getTopSidePos(layer),
 	              bottom: getBottomSidePos(layer),
 	              left: getLeftSidePos(layer),
-	              right: getRightSidePos(layer)
+	              right: getRightSidePos(layer),
+	              top: getTopSidePos(layer)
 	            };
 	          };
 	          var distance = {
@@ -2512,8 +2510,8 @@
 	
 	            if (connectionCoords.from && connectionCoords.to) {
 	              connectionPath = connectionG.append('path').attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
-	                stroke: '#000',
-	                fill: 'none'
+	                fill: 'none',
+	                stroke: '#000'
 	              });
 	
 	              if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
@@ -2521,8 +2519,8 @@
 	              connectionG.append("circle").attr({
 	                cx: connectionCoords.to.x,
 	                cy: connectionCoords.to.y,
-	                r: 5,
-	                fill: colors[connection.layer.depth - 1]
+	                fill: colors[connection.layer.depth - 1],
+	                r: 5
 	              }).style({
 	                stroke: '#000'
 	              });
@@ -2561,8 +2559,8 @@
 	            });
 	
 	            return {
-	              layer: layer,
-	              connectedTo: layersConnectedTo
+	              connectedTo: layersConnectedTo,
+	              layer: layer
 	            };
 	          }).each(function (connection) {
 	            drawConnection(connection);
@@ -2605,9 +2603,9 @@
 	            var numberG = undefined;
 	
 	            layerG = container.append('g').attr({
-	              transform: 'translate(' + layer.x * widthSize + ', ' + layer.y * heightSize + ')',
 	              'class': 'layer-node',
-	              id: currentLayerId
+	              id: currentLayerId,
+	              transform: 'translate(' + layer.x * widthSize + ', ' + layer.y * heightSize + ')'
 	            });
 	
 	            layer.layerG = layerG;
@@ -2624,16 +2622,16 @@
 	                  width: layerDims.width,
 	                  widthPercent: 97 + Math.abs(3 - layer.depth)
 	                }),
-	                transform: layerDims.transform,
 	                fill: layerDims.fill,
-	                stroke: '#f00'
+	                stroke: '#f00',
+	                transform: layerDims.transform
 	              });
 	            } else {
 	              layerNode.append('rect').attr({
-	                width: layerDims.width,
-	                transform: layerDims.transform,
+	                fill: layerDims.fill,
 	                height: layerDims.height,
-	                fill: layerDims.fill
+	                transform: layerDims.transform,
+	                width: layerDims.width
 	              }).style({
 	                filter: 'url(#diagrams-drop-shadow-layer)'
 	              });
@@ -2658,13 +2656,13 @@
 	                transform: layerDims.numberTransform
 	              });
 	              numberG.append('circle').attr({
-	                r: 10,
 	                cx: 4,
 	                cy: -4,
 	                fill: colors[layer.depth - 1],
-	                'stroke-width': 2,
+	                filter: 'none',
+	                r: 10,
 	                stroke: '#000',
-	                filter: 'none'
+	                'stroke-width': 2
 	              });
 	              numberG.append('text').text(layerIndex + 1).attr('fill', '#000');
 	            }
@@ -2709,7 +2707,7 @@
 	        svg.attr('class', 'layers-diagram');
 	
 	        if (_.isArray(conf) === false) conf = [conf];
-	        _diagrams2['default'].svg.addFilterColor({ id: 'layer', container: svg, deviation: 3, slope: 2 });
+	        _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'layer', slope: 2 });
 	
 	        addItemsPropToBottomItems(conf);
 	        calcMaxUnityWidth();
@@ -2743,9 +2741,11 @@
 	    return Layer;
 	  })(_diagrams2['default'].Diagram);
 	
+	  ;
+	
 	  new Layer({
-	    name: 'layer',
-	    helpers: _helpers2['default']
+	    helpers: _helpers2['default'],
+	    name: 'layer'
 	  });
 	};
 	
@@ -2772,7 +2772,6 @@
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
 	var helpers = {
-	  ids: 0,
 	  Grid: (function () {
 	    function Grid(fixedWidth) {
 	      _classCallCheck(this, Grid);
@@ -2892,57 +2891,14 @@
 	        var rows = this.cells.length;
 	
 	        return {
-	          width: this.width,
-	          height: this.lastRowIsEmpty() ? rows - 1 : rows
+	          height: this.lastRowIsEmpty() ? rows - 1 : rows,
+	          width: this.width
 	        };
 	      }
 	    }]);
 	
 	    return Grid;
 	  })(),
-	
-	  config: {
-	    widthSize: 350,
-	    heightSize: 60,
-	    depthWidthFactor: 4,
-	    depthHeightFactor: 2,
-	    showNumbersAll: false
-	  },
-	
-	  handleConnectedToNextCaseIfNecessary: function handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
-	    var layer = layers[currentIndex];
-	    var nextLayer = layers[currentIndex + 1];
-	    var connectedTo = undefined,
-	        newId = undefined;
-	
-	    if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-	      if (nextLayer.id) newId = nextLayer.id;else {
-	        newId = 'to-next-' + String(++helpers.ids);
-	        nextLayer.id = newId;
-	      }
-	
-	      if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
-	        connectedTo = {
-	          id: newId,
-	          type: layer.connectedWithNext.type
-	        };
-	      } else connectedTo = newId;
-	
-	      if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
-	    }
-	  },
-	
-	  itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
-	    var ret = true;
-	
-	    _.each(itemsArray, function (item) {
-	      if (item.hasOwnProperty('connectedTo')) ret = false;
-	
-	      if (item.hasOwnProperty('connectToNext')) ret = false;
-	    });
-	
-	    return ret;
-	  },
 	
 	  calculateLayerWithChildrenDimensions: function calculateLayerWithChildrenDimensions(layer) {
 	    var itemsOfLayer = undefined,
@@ -3030,6 +2986,106 @@
 	    layer.height = layer.items.length > 0 ? gridSize.height + 1 : gridSize.height;
 	  },
 	
+	  config: {
+	    depthHeightFactor: 2,
+	    depthWidthFactor: 4,
+	    heightSize: 60,
+	    showNumbersAll: false,
+	    widthSize: 350
+	  },
+	
+	  connectWithOpt: function connectWithOpt(ids, result, type) {
+	    var objs = [];
+	
+	    if (_.isNumber(ids)) ids = [ids];
+	    type = type || 'standard';
+	
+	    _.each(ids, function (id) {
+	      objs.push({
+	        id: 'layer-' + id + '-custom',
+	        type: type
+	      });
+	    });
+	
+	    if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;else result.connectedTo = result.connectedTo.concat(objs);
+	  },
+	
+	  connectWithOptAndIdOpt: function connectWithOptAndIdOpt(ids, id) {
+	    var connectWithOpt = _diagrams2['default'].layer.connectWithOpt(ids);
+	    var idOpt = _diagrams2['default'].layer.idOpt(id);
+	
+	    return _.extend(connectWithOpt, idOpt);
+	  },
+	
+	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
+	    return _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+	  },
+	
+	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
+	    var maxId = -1;
+	    var finalItems = [];
+	    var connections = [];
+	    var recursiveFn = function recursiveFn(items, parentCreatedItem) {
+	      _.each(items, function (item) {
+	        var firstOccurrence = /(\. |:)/.exec(item.fullText);
+	        var name = undefined,
+	            description = undefined,
+	            splittedText = undefined,
+	            createdItem = undefined;
+	
+	        if (firstOccurrence) {
+	          splittedText = item.fullText.split(firstOccurrence[0]);
+	          name = splittedText[0];
+	          description = splittedText.slice(1).join(firstOccurrence);
+	        }
+	        createdItem = {
+	          description: description || null,
+	          graphsData: {
+	            layer: {
+	              id: item.id,
+	              relationships: item.options
+	            }
+	          },
+	          id: ++maxId,
+	          name: name || item.fullText
+	        };
+	        finalItems.push(createdItem);
+	
+	        if (parentCreatedItem) {
+	          connections.push({
+	            from: createdItem.id,
+	            to: parentCreatedItem.id
+	          });
+	        }
+	
+	        if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+	      });
+	    };
+	
+	    recursiveFn([conf]);
+	
+	    return {
+	      connections: connections,
+	      items: finalItems
+	    };
+	  },
+	
+	  extendOpts: function extendOpts() {
+	    var result = {};
+	
+	    _.each(arguments, function (arg) {
+	      if (typeof arg === 'string') {
+	        _.each(arg.split(' '), function (opt) {
+	          if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, helpers.staticOptsLetters[opt]);
+	        });
+	      } else if (_.isObject(arg)) {
+	        result = _.extend(result, arg);
+	      }
+	    });
+	
+	    return result;
+	  },
+	
 	  generateLayersData: function generateLayersData(layers, currentDepth) {
 	    var config = helpers.config;
 	    var maxDepth = undefined,
@@ -3065,7 +3121,7 @@
 	    var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
 	    var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
 	    var fill = 'url(#color-' + String(layer.depth - 1) + ')';
-	    var dimensions = { height: height, width: width, transform: transform, fill: fill };
+	    var dimensions = { fill: fill, height: height, transform: transform, width: width };
 	
 	    if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
 	      dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
@@ -3074,57 +3130,47 @@
 	    return dimensions;
 	  },
 	
-	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
-	    var maxId = -1;
-	    var finalItems = [];
-	    var connections = [];
-	    var recursiveFn = function recursiveFn(items, parentCreatedItem) {
-	      _.each(items, function (item) {
-	        var firstOccurrence = /(\. |:)/.exec(item.fullText);
-	        var name = undefined,
-	            description = undefined,
-	            splittedText = undefined,
-	            createdItem = undefined;
+	  handleConnectedToNextCaseIfNecessary: function handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
+	    var layer = layers[currentIndex];
+	    var nextLayer = layers[currentIndex + 1];
+	    var connectedTo = undefined,
+	        newId = undefined;
 	
-	        if (firstOccurrence) {
-	          splittedText = item.fullText.split(firstOccurrence[0]);
-	          name = splittedText[0];
-	          description = splittedText.slice(1).join(firstOccurrence);
-	        }
-	        createdItem = {
-	          name: name || item.fullText,
-	          description: description || null,
-	          graphsData: {
-	            layer: {
-	              relationships: item.options,
-	              id: item.id
-	            }
-	          },
-	          id: ++maxId
+	    if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
+	      if (nextLayer.id) newId = nextLayer.id;else {
+	        newId = 'to-next-' + String(++helpers.ids);
+	        nextLayer.id = newId;
+	      }
+	
+	      if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
+	        connectedTo = {
+	          id: newId,
+	          type: layer.connectedWithNext.type
 	        };
-	        finalItems.push(createdItem);
+	      } else connectedTo = newId;
 	
-	        if (parentCreatedItem) {
-	          connections.push({
-	            from: createdItem.id,
-	            to: parentCreatedItem.id
-	          });
-	        }
+	      if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
+	    }
+	  },
 	
-	        if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
-	      });
-	    };
-	
-	    recursiveFn([conf]);
-	
+	  idOpt: function idOpt(id) {
 	    return {
-	      items: finalItems,
-	      connections: connections
+	      id: 'layer-' + id + '-custom'
 	    };
 	  },
 	
-	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	    return _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+	  ids: 0,
+	
+	  itemsOfLayerShouldBeSorted: function itemsOfLayerShouldBeSorted(itemsArray) {
+	    var ret = true;
+	
+	    _.each(itemsArray, function (item) {
+	      if (item.hasOwnProperty('connectedTo')) ret = false;
+	
+	      if (item.hasOwnProperty('connectToNext')) ret = false;
+	    });
+	
+	    return ret;
 	  },
 	
 	  newLayer: function newLayer(text, opts, items) {
@@ -3153,72 +3199,28 @@
 	  },
 	
 	  staticOptsLetters: {
-	    co: {
-	      conditional: true
-	    },
 	    cn: {
 	      connectedWithNext: true
-	    },
-	    sna: {
-	      showNumbersAll: true
-	    },
-	    sn: {
-	      showNumbers: true
 	    },
 	    cnd: {
 	      connectedWithNext: {
 	        type: 'dashed'
 	      }
 	    },
+	    co: {
+	      conditional: true
+	    },
 	    nr: {
 	      inNewRow: true
+	    },
+	    sn: {
+	      showNumbers: true
+	    },
+	    sna: {
+	      showNumbersAll: true
 	    }
-	  },
-	
-	  idOpt: function idOpt(id) {
-	    return {
-	      id: 'layer-' + id + '-custom'
-	    };
-	  },
-	
-	  extendOpts: function extendOpts() {
-	    var result = {};
-	
-	    _.each(arguments, function (arg) {
-	      if (typeof arg === 'string') {
-	        _.each(arg.split(' '), function (opt) {
-	          if (opt.substr(0, 3) === 'id-') result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');else result = _.extend(result, helpers.staticOptsLetters[opt]);
-	        });
-	      } else if (_.isObject(arg)) {
-	        result = _.extend(result, arg);
-	      }
-	    });
-	
-	    return result;
-	  },
-	
-	  connectWithOpt: function connectWithOpt(ids, result, type) {
-	    var objs = [];
-	
-	    if (_.isNumber(ids)) ids = [ids];
-	    type = type || 'standard';
-	
-	    _.each(ids, function (id) {
-	      objs.push({
-	        id: 'layer-' + id + '-custom',
-	        type: type
-	      });
-	    });
-	
-	    if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;else result.connectedTo = result.connectedTo.concat(objs);
-	  },
-	
-	  connectWithOptAndIdOpt: function connectWithOptAndIdOpt(ids, id) {
-	    var connectWithOpt = _diagrams2['default'].layer.connectWithOpt(ids);
-	    var idOpt = _diagrams2['default'].layer.idOpt(id);
-	
-	    return _.extend(connectWithOpt, idOpt);
 	  }
+	
 	};
 	
 	_.each(['newLayer', 'newLayerConnectedToNext'], function (helpersMethod) {

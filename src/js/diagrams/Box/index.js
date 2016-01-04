@@ -2,37 +2,6 @@ import d from 'diagrams';
 
 export default () => {
   const helpers = {
-    filterByString: _.debounce((opts, creationId) => {
-      const getHiddenValueSetter = (value) => {
-        return (item) => {
-          item.hidden = value;
-        };
-      };
-      const setHiddenToFalse = getHiddenValueSetter(false);
-
-      helpers.traverseBodyDataAndRefresh(creationId, null, (item, parents) => {
-        const anyParentIsShowed = _.any(parents, item => item.hidden !== true);
-
-        if (opts.showChildren === false || anyParentIsShowed === false) {
-          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);
-          else {
-            _.each(parents, setHiddenToFalse);
-            setHiddenToFalse(item);
-          }
-        } else setHiddenToFalse(item);
-      });
-    }, 500),
-
-    generateDefinitionWithSharedGet(...args) {
-      const text = args[0];
-      let sharedKey, preffix;
-
-      preffix = (arguments.length > 1) ? args[1] : '';
-      sharedKey = preffix + text.split('(')[0];
-
-      return Box.generateDefinition(text, d.shared.get(sharedKey));
-    },
-
     addButtons(creationId) {
       const div = d.Diagram.addDivBeforeSvg();
 
@@ -42,42 +11,16 @@ export default () => {
         `diagrams.box.expandAll(${creationId})`);
     },
 
-    expandOrCollapseAll(creationId, collapseOrExpand) {
-      helpers.traverseBodyDataAndRefresh(creationId, {
-        withCollapsedItems: true,
-      }, (item) => {
-        if (item.hasOwnProperty('collapsed')) {
-          helpers[`${collapseOrExpand}Item`](item);
-        }
-      });
-    },
-
-    traverseBodyDataAndRefresh(creationId, opts, cb) {
-      const conf = d.Diagram.getDataWithCreationId(creationId)[1];
-      const bodyData = conf.body;
-      const recursiveFn = (items, parents) => {
-        _.each(items, (item) => {
-          if (cb) cb(item, parents);
-
-          if (item.items) recursiveFn(item.items, parents.concat(item));
-
-          if (opts.withCollapsedItems && item.collapsedItems)
-            recursiveFn(item.collapsedItems, parents.concat(item));
-        });
-      };
-
-      opts = opts || {};
-      opts.withCollapsedItems = opts.withCollapsedItems || false;
-      recursiveFn(bodyData, []);
-      helpers.addBodyItemsAndUpdateHeights();
-    },
-
     collapseAll(creationId) {
       helpers.expandOrCollapseAll(creationId, 'collapse');
     },
 
-    expandAll(creationId) {
-      helpers.expandOrCollapseAll(creationId, 'expand');
+    collapseItem(item) {
+      if (item.items.length > 0) {
+        item.collapsedItems = item.items;
+        item.collapsed = true;
+        item.items = [];
+      }
     },
 
     convertToGraph(origConf) {
@@ -110,86 +53,23 @@ export default () => {
       const layersData = [];
 
       layersData.push({
-        text: origConf.name,
         items: origConf.body,
+        text: origConf.name,
       });
       convertDataToLayers(layersData[0].items);
       createLayers();
     },
 
-    collapseItem(item) {
-      if (item.items.length > 0) {
-        item.collapsedItems = item.items;
-        item.collapsed = true;
-        item.items = [];
-      }
-    },
+    dataFromGeneralToSpecific(generalData) {
+      const finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
 
-    expandItem(item) {
-      if (item.collapsedItems) {
-        item.items = item.collapsedItems;
-        delete item.collapsedItems;
-        item.collapsed = false;
-      }
-    },
+      finalData.name = finalData.text;
+      finalData.body = finalData.items;
 
-    parseItemGenerationOptions(options) {
-      let parsedOptions;
+      delete finalData.items;
+      delete finalData.text;
 
-      if (_.isString(options)) {
-        options = options.split(' ');
-        parsedOptions = {};
-        _.each(options, (optionsKey) => {
-          const newKey = optionsKey
-            .replace(/-([a-z])/g, g => g[1].toUpperCase()); // option-one -> optionOne
-
-          parsedOptions[newKey] = true;
-        });
-      } else parsedOptions = options;
-
-      return parsedOptions;
-    },
-
-    generateItem({ text, description, items, options }) {
-      const defaultOptions = {
-        isLink: false,
-        notCompleted: false,
-      };
-
-      options = options || {};
-      options = helpers.parseItemGenerationOptions(options);
-
-      return {
-        text,
-        description: description || null,
-        options: _.defaults(options, defaultOptions),
-        items: items || [],
-      };
-    },
-
-    generateContainer(...args) {
-      const text = args[0];
-      let description = args[1];
-      let items = args[2];
-      let options  = args[3] || null;
-
-      if (_.isArray(description)) {
-        options = items;
-        items = description;
-        description = null;
-      }
-
-      return helpers.generateItem({ text, description, items, options });
-    },
-
-    generateLink(text, url) {
-      return helpers.generateItem({ text, description: url, items: null, options: {
-        isLink: true,
-      } });
-    },
-
-    generateDefinition(text, description) {
-      return helpers.generateItem({ text, description });
+      return finalData;
     },
 
     dataFromSpecificToGeneral(conf) {
@@ -199,7 +79,6 @@ export default () => {
       const recursiveFn = (items, parentCreatedItem) => {
         _.each(items, (item) => {
           const createdItem = {
-            name: item.text,
             description: item.description,
             graphsData: {
               box: {
@@ -207,6 +86,7 @@ export default () => {
               },
             },
             id: ++maxId,
+            name: item.text,
           };
 
           finalItems.push(createdItem);
@@ -228,26 +108,147 @@ export default () => {
       };
 
       finalItems.push({
-        name: conf.name,
         id: ++maxId,
+        name: conf.name,
       });
       recursiveFn(conf.body);
 
       return {
-        items: finalItems,
         connections,
+        items: finalItems,
       };
     },
-    dataFromGeneralToSpecific(generalData) {
-      const finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
 
-      finalData.name = finalData.text;
-      finalData.body = finalData.items;
+    expandAll(creationId) {
+      helpers.expandOrCollapseAll(creationId, 'expand');
+    },
 
-      delete finalData.items;
-      delete finalData.text;
+    expandItem(item) {
+      if (item.collapsedItems) {
+        item.items = item.collapsedItems;
+        delete item.collapsedItems;
+        item.collapsed = false;
+      }
+    },
 
-      return finalData;
+    expandOrCollapseAll(creationId, collapseOrExpand) {
+      helpers.traverseBodyDataAndRefresh(creationId, {
+        withCollapsedItems: true,
+      }, (item) => {
+        if (item.hasOwnProperty('collapsed')) {
+          helpers[`${collapseOrExpand}Item`](item);
+        }
+      });
+    },
+
+    filterByString: _.debounce((opts, creationId) => {
+      const getHiddenValueSetter = (value) => {
+        return (item) => {
+          item.hidden = value;
+        };
+      };
+      const setHiddenToFalse = getHiddenValueSetter(false);
+
+      helpers.traverseBodyDataAndRefresh(creationId, null, (item, parents) => {
+        const anyParentIsShowed = _.any(parents, parent => parent.hidden !== true);
+
+        if (opts.showChildren === false || anyParentIsShowed === false) {
+          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);
+          else {
+            _.each(parents, setHiddenToFalse);
+            setHiddenToFalse(item);
+          }
+        } else setHiddenToFalse(item);
+      });
+    }, 500),
+
+    generateContainer(...args) {
+      const text = args[0];
+      let description = args[1];
+      let items = args[2];
+      let options  = args[3] || null;
+
+      if (_.isArray(description)) {
+        options = items;
+        items = description;
+        description = null;
+      }
+
+      return helpers.generateItem({ description, items, options, text });
+    },
+
+    generateDefinition(text, description) {
+      return helpers.generateItem({ description, text });
+    },
+
+    generateDefinitionWithSharedGet(...args) {
+      const text = args[0];
+      let sharedKey, preffix;
+
+      preffix = (arguments.length > 1) ? args[1] : '';
+      sharedKey = preffix + text.split('(')[0];
+
+      return Box.generateDefinition(text, d.shared.get(sharedKey));
+    },
+
+    generateItem({ description, items, options, text }) {
+      const defaultOptions = {
+        isLink: false,
+        notCompleted: false,
+      };
+
+      options = options || {};
+      options = helpers.parseItemGenerationOptions(options);
+
+      return {
+        description: description || null,
+        items: items || [],
+        options: _.defaults(options, defaultOptions),
+        text,
+      };
+    },
+
+    generateLink(text, url) {
+      return helpers.generateItem({ description: url, items: null, options: {
+        isLink: true,
+      }, text });
+    },
+
+    parseItemGenerationOptions(options) {
+      let parsedOptions;
+
+      if (_.isString(options)) {
+        options = options.split(' ');
+        parsedOptions = {};
+        _.each(options, (optionsKey) => {
+          const newKey = optionsKey
+            .replace(/-([a-z])/g, g => g[1].toUpperCase()); // option-one -> optionOne
+
+          parsedOptions[newKey] = true;
+        });
+      } else parsedOptions = options;
+
+      return parsedOptions;
+    },
+
+    traverseBodyDataAndRefresh(creationId, opts, cb) {
+      const conf = d.Diagram.getDataWithCreationId(creationId)[1];
+      const bodyData = conf.body;
+      const recursiveFn = (items, parents) => {
+        _.each(items, (item) => {
+          if (cb) cb(item, parents);
+
+          if (item.items) recursiveFn(item.items, parents.concat(item));
+
+          if (opts.withCollapsedItems && item.collapsedItems)
+            recursiveFn(item.collapsedItems, parents.concat(item));
+        });
+      };
+
+      opts = opts || {};
+      opts.withCollapsedItems = opts.withCollapsedItems || false;
+      recursiveFn(bodyData, []);
+      helpers.addBodyItemsAndUpdateHeights();
     },
   };
 
@@ -259,8 +260,8 @@ export default () => {
       const width = svg.attr('width') - 40;
       const nameHeight = 50;
       const boxG = svg.append('g').attr({
-        transform: 'translate(20, 20)',
         class: 'box-diagram',
+        transform: 'translate(20, 20)',
       });
       const nameG = boxG.append('g');
       const rowHeight = 30;
@@ -283,8 +284,8 @@ export default () => {
             helpers.addBodyItemsAndUpdateHeights();
           };
           const triggerTextEl = triggerEl.append('text').attr({
-            y: Number(yDim) + 5,
             x: Number(xDim) - 20,
+            y: Number(yDim) + 5,
           });
           const setCollapseTextAndListener = () => {
             triggerTextEl.text('-').attr('class', 'minus');
@@ -304,8 +305,8 @@ export default () => {
           triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
             height: 15,
             width: 20,
-            y: yDim - 17,
             x: xDim - 20,
+            y: yDim - 17,
           });
           triggerTextEl.attr('clip-path', `url(#${clipPathId})`);
 
@@ -350,9 +351,9 @@ export default () => {
               } else item.fullText = item.text;
 
               textEl = newContainer.append('text').text(containerText).attr({
+                id: currentTextGId,
                 x: depthWidth * depth,
                 y: rowHeight * ++bodyPosition,
-                id: currentTextGId,
               });
 
               addBodyItems(item.items, newContainer, depth + 1);
@@ -361,10 +362,10 @@ export default () => {
                 newContainer = container.append('svg:a').attr("xlink:href", item.description);
                 textEl = newContainer.append('text')
                   .text(d.utils.formatShortDescription(item.text)).attr({
+                    fill: '#3962B8',
                     id: currentTextGId,
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition,
-                    fill: '#3962B8',
                   });
 
                 item.fullText = `${item.text} (${item.description})`;
@@ -374,9 +375,9 @@ export default () => {
                 });
                 textEl = newContainer.append('text')
                   .text(d.utils.formatShortDescription(item.text)).attr({
+                    class: 'diagrams-box-definition-text',
                     x: depthWidth * depth,
                     y: rowHeight * ++bodyPosition,
-                    class: 'diagrams-box-definition-text',
                   });
 
                 if (item.description) {
@@ -441,8 +442,7 @@ export default () => {
 
       opts = opts || {};
 
-      helpers.addBodyItemsAndUpdateHeights = _.bind(() => {
-        const diagram = this;
+      helpers.addBodyItemsAndUpdateHeights = () => {
         const currentScroll = (window.pageYOffset || document.documentElement.scrollTop)
           - (document.documentElement.clientTop || 0);
 
@@ -453,9 +453,9 @@ export default () => {
           transform: `translate(0, ${nameHeight})`,
         });
         bodyRect = bodyG.append('rect').attr({
-          width,
-          stroke: '#000',
           fill: '#fff',
+          stroke: '#000',
+          width,
         }).style({
           filter: 'url(#diagrams-drop-shadow-box)',
         });
@@ -467,15 +467,15 @@ export default () => {
 
         window.scrollTo(0, currentScroll);
         diagram.emit('items-rendered');
-      }, this);
+      };
 
-      d.svg.addFilterColor({ id: 'box', container: svg, deviation: 3, slope: 4 });
+      d.svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
 
       nameG.append('rect').attr({
-        height: nameHeight,
-        width,
-        stroke: '#000',
         fill: '#fff',
+        height: nameHeight,
+        stroke: '#000',
+        width,
       }).style({
         filter: 'url(#diagrams-drop-shadow-box)',
       });
@@ -514,7 +514,7 @@ export default () => {
   };
 
   new Box({
-    name: 'box',
     helpers,
+    name: 'box',
   });
 };

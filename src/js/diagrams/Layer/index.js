@@ -3,10 +3,9 @@ import helpers from './helpers';
 
 export default () => {
   let layerGId = 0;
-  let Layer;
   const dTextFn = d.utils.textFn;
 
-  Layer = class Layer extends d.Diagram {
+  class Layer extends d.Diagram {
     create(creationId, conf) {
       const diagram = this;
       const config = helpers.config;
@@ -52,10 +51,10 @@ export default () => {
         };
         const getSidesPos = (layer) => {
           return {
-            top: getTopSidePos(layer),
             bottom: getBottomSidePos(layer),
             left: getLeftSidePos(layer),
             right: getRightSidePos(layer),
+            top: getTopSidePos(layer),
           };
         };
         const distance = {
@@ -162,9 +161,10 @@ export default () => {
 
           if (connectionCoords.from && connectionCoords.to) {
             connectionPath = connectionG.append('path')
-              .attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
-                stroke: '#000',
+              .attr('d', linkLine([connectionCoords.from, connectionCoords.to]))
+              .style({
                 fill: 'none',
+                stroke: '#000',
               });
 
             if (connectedToLayer.type === 'dashed')
@@ -173,8 +173,8 @@ export default () => {
             connectionG.append("circle").attr({
               cx: connectionCoords.to.x,
               cy: connectionCoords.to.y,
-              r: 5,
               fill: colors[connection.layer.depth - 1],
+              r: 5,
             }).style({
               stroke: '#000',
             });
@@ -212,8 +212,8 @@ export default () => {
           });
 
           return {
-            layer,
             connectedTo: layersConnectedTo,
+            layer,
           };
         }).each((connection) => {
           drawConnection(connection);
@@ -253,9 +253,9 @@ export default () => {
           let numberG;
 
           layerG = container.append('g').attr({
-            transform: `translate(${layer.x * widthSize}, ${layer.y * heightSize})`,
             class: 'layer-node',
             id: currentLayerId,
+            transform: `translate(${layer.x * widthSize}, ${layer.y * heightSize})`,
           });
 
           layer.layerG = layerG;
@@ -272,16 +272,16 @@ export default () => {
                 width: layerDims.width,
                 widthPercent: 97 + Math.abs(3 - layer.depth),
               }),
-              transform: layerDims.transform,
               fill: layerDims.fill,
               stroke: '#f00',
+              transform: layerDims.transform,
             });
           } else {
             layerNode.append('rect').attr({
-              width: layerDims.width,
-              transform: layerDims.transform,
-              height: layerDims.height,
               fill: layerDims.fill,
+              height: layerDims.height,
+              transform: layerDims.transform,
+              width: layerDims.width,
             }).style({
               filter: 'url(#diagrams-drop-shadow-layer)',
             });
@@ -307,13 +307,13 @@ export default () => {
               transform: layerDims.numberTransform,
             });
             numberG.append('circle').attr({
-              r: 10,
               cx: 4,
               cy: -4,
               fill: colors[layer.depth - 1],
-              'stroke-width': 2,
-              stroke: '#000',
               filter: 'none',
+              r: 10,
+              stroke: '#000',
+              'stroke-width': 2,
             });
             numberG.append('text').text(layerIndex + 1)
               .attr('fill', '#000');
@@ -359,7 +359,7 @@ export default () => {
       svg.attr('class', 'layers-diagram');
 
       if (_.isArray(conf) === false) conf = [conf];
-      d.svg.addFilterColor({ id: 'layer', container: svg, deviation: 3, slope: 2 });
+      d.svg.addFilterColor({ container: svg, deviation: 3, id: 'layer', slope: 2 });
 
       addItemsPropToBottomItems(conf);
       calcMaxUnityWidth();
@@ -390,7 +390,7 @@ export default () => {
   };
 
   new Layer({
-    name: 'layer',
     helpers,
+    name: 'layer',
   });
 };

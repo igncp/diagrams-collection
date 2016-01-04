@@ -1,7 +1,6 @@
 import d from 'diagrams';
 
 const helpers = {
-  ids: 0,
   Grid: class Grid {
     constructor(fixedWidth) {
       this.position = {
@@ -98,54 +97,10 @@ const helpers = {
       const rows = this.cells.length;
 
       return {
-        width: this.width,
         height: (this.lastRowIsEmpty()) ? rows - 1 : rows,
+        width: this.width,
       };
     }
-  },
-
-  config: {
-    widthSize: 350,
-    heightSize: 60,
-    depthWidthFactor: 4,
-    depthHeightFactor: 2,
-    showNumbersAll: false,
-  },
-
-  handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
-    const layer = layers[currentIndex];
-    const nextLayer = layers[currentIndex + 1];
-    let connectedTo, newId;
-
-    if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-      if (nextLayer.id) newId = nextLayer.id;
-      else {
-        newId = `to-next-${String(++helpers.ids)}`;
-        nextLayer.id = newId;
-      }
-
-      if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
-        connectedTo = {
-          id: newId,
-          type: layer.connectedWithNext.type,
-        };
-      } else connectedTo = newId;
-
-      if (layer.connectedTo) layer.connectedTo.push(connectedTo);
-      else layer.connectedTo = [connectedTo];
-    }
-  },
-
-  itemsOfLayerShouldBeSorted(itemsArray) {
-    let ret = true;
-
-    _.each(itemsArray, (item) => {
-      if (item.hasOwnProperty('connectedTo')) ret = false;
-
-      if (item.hasOwnProperty('connectToNext')) ret = false;
-    });
-
-    return ret;
   },
 
   calculateLayerWithChildrenDimensions(layer) {
@@ -230,6 +185,110 @@ const helpers = {
     layer.height = (layer.items.length > 0) ? gridSize.height + 1 : gridSize.height;
   },
 
+  config: {
+    depthHeightFactor: 2,
+    depthWidthFactor: 4,
+    heightSize: 60,
+    showNumbersAll: false,
+    widthSize: 350,
+  },
+
+  connectWithOpt(ids, result, type) {
+    const objs = [];
+
+    if (_.isNumber(ids)) ids = [ids];
+    type = type || 'standard';
+
+    _.each(ids, (id) => {
+      objs.push({
+        id: `layer-${id}-custom`,
+        type,
+      });
+    });
+
+    if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;
+    else result.connectedTo = result.connectedTo.concat(objs);
+  },
+
+  connectWithOptAndIdOpt(ids, id) {
+    const connectWithOpt = d.layer.connectWithOpt(ids);
+    const idOpt = d.layer.idOpt(id);
+
+    return _.extend(connectWithOpt, idOpt);
+  },
+
+  dataFromGeneralToSpecific(generalData) {
+    return d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+  },
+
+  dataFromSpecificToGeneral(conf) {
+    let maxId = -1;
+    const finalItems = [];
+    const connections = [];
+    const recursiveFn = (items, parentCreatedItem) => {
+      _.each(items, (item) => {
+        const firstOccurrence = /(\. |:)/.exec(item.fullText);
+        let name, description, splittedText, createdItem;
+
+        if (firstOccurrence) {
+          splittedText = item.fullText.split(firstOccurrence[0]);
+          name = splittedText[0];
+          description = splittedText.slice(1).join(firstOccurrence);
+        }
+        createdItem = {
+          description: description || null,
+          graphsData: {
+            layer: {
+              id: item.id,
+              relationships: item.options,
+            },
+          },
+          id: ++maxId,
+          name: name || item.fullText,
+        };
+        finalItems.push(createdItem);
+
+        if (parentCreatedItem) {
+          connections.push({
+            from: createdItem.id,
+            to: parentCreatedItem.id,
+          });
+        }
+
+        if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
+      });
+    };
+
+    recursiveFn([conf]);
+
+    return {
+      connections,
+      items: finalItems,
+    };
+  },
+
+  extendOpts() {
+    let result = {};
+
+    _.each(arguments, (arg) => {
+      if (typeof(arg) === 'string') {
+        _.each(arg.split(' '), (opt) => {
+          if (opt.substr(0, 3) === 'id-')
+            result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));
+          else if (opt.substr(0, 3) === 'ct-')
+            helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);
+          else if (opt.substr(0, 4) === 'ctd-')
+            helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');
+          else result = _.extend(result, helpers.staticOptsLetters[opt]);
+        });
+      } else if (_.isObject(arg)) {
+        result = _.extend(result, arg);
+      }
+    });
+
+    return result;
+  },
+
   generateLayersData(layers, currentDepth) {
     const config = helpers.config;
     let maxDepth, itemsDepth;
@@ -265,7 +324,7 @@ const helpers = {
     const transform = `translate(${config.depthWidthFactor * layer.depth},`
       + `${config.depthHeightFactor * layer.depth})`;
     const fill = `url(#color-${String(layer.depth - 1)})`;
-    const dimensions = { height, width, transform, fill };
+    const dimensions = { fill, height, transform, width };
 
     if (config.showNumbersAll === true || (layer.containerData
       && layer.containerData.showNumbers === true)) {
@@ -277,54 +336,48 @@ const helpers = {
     return dimensions;
   },
 
-  dataFromSpecificToGeneral(conf) {
-    let maxId = -1;
-    const finalItems = [];
-    const connections = [];
-    const recursiveFn = (items, parentCreatedItem) => {
-      _.each(items, (item) => {
-        const firstOccurrence = /(\. |:)/.exec(item.fullText);
-        let name, description, splittedText, createdItem;
+  handleConnectedToNextCaseIfNecessary(layers, currentIndex) {
+    const layer = layers[currentIndex];
+    const nextLayer = layers[currentIndex + 1];
+    let connectedTo, newId;
 
-        if (firstOccurrence) {
-          splittedText = item.fullText.split(firstOccurrence[0]);
-          name = splittedText[0];
-          description = splittedText.slice(1).join(firstOccurrence);
-        }
-        createdItem = {
-          name: name || item.fullText,
-          description: description || null,
-          graphsData: {
-            layer: {
-              relationships: item.options,
-              id: item.id,
-            },
-          },
-          id: ++maxId,
+    if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
+      if (nextLayer.id) newId = nextLayer.id;
+      else {
+        newId = `to-next-${String(++helpers.ids)}`;
+        nextLayer.id = newId;
+      }
+
+      if (_.isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
+        connectedTo = {
+          id: newId,
+          type: layer.connectedWithNext.type,
         };
-        finalItems.push(createdItem);
+      } else connectedTo = newId;
 
-        if (parentCreatedItem) {
-          connections.push({
-            from: createdItem.id,
-            to: parentCreatedItem.id,
-          });
-        }
+      if (layer.connectedTo) layer.connectedTo.push(connectedTo);
+      else layer.connectedTo = [connectedTo];
+    }
+  },
 
-        if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
-      });
-    };
-
-    recursiveFn([conf]);
-
+  idOpt(id) {
     return {
-      items: finalItems,
-      connections,
+      id: `layer-${id}-custom`,
     };
   },
 
-  dataFromGeneralToSpecific(generalData) {
-    return d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+  ids: 0,
+
+  itemsOfLayerShouldBeSorted(itemsArray) {
+    let ret = true;
+
+    _.each(itemsArray, (item) => {
+      if (item.hasOwnProperty('connectedTo')) ret = false;
+
+      if (item.hasOwnProperty('connectToNext')) ret = false;
+    });
+
+    return ret;
   },
 
   newLayer(text, opts, items) {
@@ -359,79 +412,28 @@ const helpers = {
   },
 
   staticOptsLetters: {
-    co: {
-      conditional: true,
-    },
     cn: {
       connectedWithNext: true,
-    },
-    sna: {
-      showNumbersAll: true,
-    },
-    sn: {
-      showNumbers: true,
     },
     cnd: {
       connectedWithNext: {
         type: 'dashed',
       },
     },
+    co: {
+      conditional: true,
+    },
     nr: {
       inNewRow: true,
     },
+    sn: {
+      showNumbers: true,
+    },
+    sna: {
+      showNumbersAll: true,
+    },
   },
 
-  idOpt(id) {
-    return {
-      id: `layer-${id}-custom`,
-    };
-  },
-
-  extendOpts() {
-    let result = {};
-
-    _.each(arguments, (arg) => {
-      if (typeof(arg) === 'string') {
-        _.each(arg.split(' '), (opt) => {
-          if (opt.substr(0, 3) === 'id-')
-            result = _.extend(result, helpers.idOpt(opt.substr(3, opt.length)));
-          else if (opt.substr(0, 3) === 'ct-')
-            helpers.connectWithOpt(Number(opt.substr(3, opt.length)), result);
-          else if (opt.substr(0, 4) === 'ctd-')
-            helpers.connectWithOpt(Number(opt.substr(4, opt.length)), result, 'dashed');
-          else result = _.extend(result, helpers.staticOptsLetters[opt]);
-        });
-      } else if (_.isObject(arg)) {
-        result = _.extend(result, arg);
-      }
-    });
-
-    return result;
-  },
-
-  connectWithOpt(ids, result, type) {
-    const objs = [];
-
-    if (_.isNumber(ids)) ids = [ids];
-    type = type || 'standard';
-
-    _.each(ids, (id) => {
-      objs.push({
-        id: `layer-${id}-custom`,
-        type,
-      });
-    });
-
-    if (_.isUndefined(result.connectedTo) === true) result.connectedTo = objs;
-    else result.connectedTo = result.connectedTo.concat(objs);
-  },
-
-  connectWithOptAndIdOpt(ids, id) {
-    const connectWithOpt = d.layer.connectWithOpt(ids);
-    const idOpt = d.layer.idOpt(id);
-
-    return _.extend(connectWithOpt, idOpt);
-  },
 };
 
 _.each([

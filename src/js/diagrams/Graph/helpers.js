@@ -3,20 +3,22 @@ import d from 'diagrams';
 let linksNumberMap;
 
 const helpers = {
-  resetLinksNumberMap() {
-    linksNumberMap = {};
-  },
-  generateConnectionWithText(nodesIds, text) {
-    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
-      return _.map(nodesIds, (args) => {
-        return helpers.generateConnectionWithText.apply({}, args);
+  addDiagramInfo(diagram, svg, info) {
+    if (_.isString(info)) info = [info];
+    const hasDescription = info.length === 2;
+    const svgWidth = svg[0][0].getBoundingClientRect().width;
+    const infoText = info[0] + (hasDescription ? ' (...)' : '');
+    const el = svg.append('g').attr({
+      class: 'graph-info',
+      transform: 'translate(10, 50)',
+    }).append('text').text(infoText).each(d.svg.textEllipsis(svgWidth));
+
+    if (hasDescription) {
+      diagram.addMouseListenersToEl(el, {
+        el,
+        fullText: d.utils.generateATextDescriptionStr(info[0], info[1]),
       });
     }
-
-    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);
-    else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
-
-    return d.graph.mergeWithDefaultConnection({ nodesIds, text });
   },
   connectionFnFactory(baseFn, changedProp, changedVal) {
     return () => {
@@ -30,57 +32,100 @@ const helpers = {
       return (_.isArray(connection)) ? _.map(connection, setVal) : setVal(connection);
     };
   },
-  generateNodeOptions: (options) => {
-    const obj = {};
-    let shape;
+  dataFromGeneralToSpecific(generalData) {
+    const finalItems = [];
+    const idToIndexMap = {};
+    let targetItem;
 
-    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));
-    else if (_.isArray(options)) {
-      _.each(options, (opt) => {
-        if (opt.substr(0, 2) === 's-') {
-          shape = opt.substr(2, opt.length - 2);
-          obj.shape = (shape === 't') ? 'triangle' :
-            (shape === 's') ? 'square' :
-            'circle';
-        } else if (opt === 'b') obj.bold = true;
-        else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+    _.each(generalData.items, (item, index) => {
+      finalItems.push({
+        description: item.description,
+        id: item.id,
+        name: item.name,
       });
+      idToIndexMap[item.id] = index;
+    });
 
-      return obj;
+    _.each(generalData.connections, (connection) => {
+      targetItem = finalItems[idToIndexMap[connection.to]];
+      targetItem.connections = targetItem.connections || [];
+      targetItem.connections.push({
+        direction: 'in',
+        nodesIds: [connection.from],
+      });
+    });
+
+    return finalItems;
+  },
+  dataFromSpecificToGeneral(data) {
+    const finalItems = [];
+    const connections = [];
+    const setConnection = (node, connection) => {
+      _.each(connection.nodesIds, (otherNodeId) => {
+        newConnection = {};
+
+        if (connection.direction === 'out') {
+          newConnection.from = node.id;
+          newConnection.to = otherNodeId;
+        } else if (connection.direction === 'in') {
+          newConnection.from = otherNodeId;
+          newConnection.to = node.id;
+        }
+
+        connections.push(newConnection);
+      });
+    };
+    let newConnection;
+
+    _.each(data, (node) => {
+      finalItems.push({
+        description: node.description,
+        id: node.id,
+        name: node.name,
+      });
+      _.each(node.connections, (connection) => setConnection(node, connection));
+    });
+
+    return {
+      connections,
+      items: finalItems,
+    };
+  },
+  doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
+    const getIndex = (item) => {
+      return (_.isNumber(item)) ? item : item.index;
+    };
+    const ids = [getIndex(link.source), getIndex(link.target)];
+    const minIndex = _.min(ids);
+    const maxIndex = _.max(ids);
+
+    return cb(minIndex, maxIndex);
+  },
+  generateConnectionWithText(nodesIds, text) {
+    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
+      return _.map(nodesIds, (args) => {
+        return helpers.generateConnectionWithText.apply({}, args);
+      });
     }
-  },
-  mergeWithDefaultConnection(connection) {
-    const defaultConnection = {
-      direction: 'out',
-      symbol: 'arrow',
-      line: 'plain',
-    };
 
-    return _.defaults(connection, defaultConnection);
+    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);
+    else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
+
+    return d.graph.mergeWithDefaultConnection({ nodesIds, text });
   },
-  generateNodeWithTargetLink(file, target) {
+  generateFnNodeWithSharedGetAndBoldIfFile(file) {
     return () => {
-      const args = Array.prototype.slice.call(arguments);
+      let opts = '';
+      let preffix = '';
 
-      if (_.isUndefined(args[3])) args[3] = '';
-      else args[3] += ' ';
-      args[3] += `l~${file}?target=${encodeURIComponent(target)}`;
+      if (arguments[0].split('@')[0] === file) opts = 'b';
 
-      return helpers.generateNode.apply({}, args);
+      if (arguments.length > 2) preffix = arguments[2];
+
+      if (arguments.length > 3) opts = `${arguments[3]} ${opts}`;
+
+      return helpers.generateNodeWithSharedGet(arguments[0], arguments[1], preffix, opts);
     };
-  },
-  generateNodeWithTextAsTargetLink(file) {
-    return () => {
-      return d.graph.generateNodeWithTargetLink(file, arguments[0]).apply({}, arguments);
-    };
-  },
-  generatePrivateNode() {
-    const args = Array.prototype.slice.call(arguments);
-
-    args[2] += '<br><strong>PRIVATE</strong>';
-    args[3] = 's-t';
-
-    return helpers.generateNode(...args);
   },
   generateNode() {
     const node = {
@@ -133,6 +178,25 @@ const helpers = {
 
     return node;
   },
+  generateNodeOptions: (options) => {
+    const obj = {};
+    let shape;
+
+    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));
+    else if (_.isArray(options)) {
+      _.each(options, (opt) => {
+        if (opt.substr(0, 2) === 's-') {
+          shape = opt.substr(2, opt.length - 2);
+          obj.shape = (shape === 't') ? 'triangle' :
+            (shape === 's') ? 'square' :
+            'circle';
+        } else if (opt === 'b') obj.bold = true;
+        else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+      });
+
+      return obj;
+    }
+  },
   generateNodeWithSharedGet() {
     const text = arguments[0];
     let sharedKey, preffix, options;
@@ -143,88 +207,53 @@ const helpers = {
 
     return helpers.generateNode(text, arguments[1], d.shared.get(sharedKey), options);
   },
-  generateFnNodeWithSharedGetAndBoldIfFile(file) {
+  generateNodeWithTargetLink(file, target) {
     return () => {
-      let opts = '';
-      let preffix = '';
+      const args = Array.prototype.slice.call(arguments);
 
-      if (arguments[0].split('@')[0] === file) opts = 'b';
+      if (_.isUndefined(args[3])) args[3] = '';
+      else args[3] += ' ';
+      args[3] += `l~${file}?target=${encodeURIComponent(target)}`;
 
-      if (arguments.length > 2) preffix = arguments[2];
-
-      if (arguments.length > 3) opts = `${arguments[3]} ${opts}`;
-
-      return helpers.generateNodeWithSharedGet(arguments[0], arguments[1], preffix, opts);
+      return helpers.generateNode.apply({}, args);
     };
   },
-  dataFromGeneralToSpecific(generalData) {
-    const finalItems = [];
-    const idToIndexMap = {};
-    let targetItem;
-
-    _.each(generalData.items, (item, index) => {
-      finalItems.push({
-        name: item.name,
-        id: item.id,
-        description: item.description,
-      });
-      idToIndexMap[item.id] = index;
-    });
-
-    _.each(generalData.connections, (connection) => {
-      targetItem = finalItems[idToIndexMap[connection.to]];
-      targetItem.connections = targetItem.connections || [];
-      targetItem.connections.push({
-        direction: 'in',
-        nodesIds: [connection.from],
-      });
-    });
-
-    return finalItems;
-  },
-  dataFromSpecificToGeneral(data) {
-    const finalItems = [];
-    const connections = [];
-    const setConnection = (node, connection) => {
-      _.each(connection.nodesIds, (otherNodeId) => {
-        newConnection = {};
-
-        if (connection.direction === 'out') {
-          newConnection.from = node.id;
-          newConnection.to = otherNodeId;
-        } else if (connection.direction === 'in') {
-          newConnection.from = otherNodeId;
-          newConnection.to = node.id;
-        }
-
-        connections.push(newConnection);
-      });
-    };
-    let newConnection;
-
-    _.each(data, (node) => {
-      finalItems.push({
-        id: node.id,
-        name: node.name,
-        description: node.description,
-      });
-      _.each(node.connections, (connection) => setConnection(node, connection));
-    });
-
-    return {
-      items: finalItems,
-      connections,
+  generateNodeWithTextAsTargetLink(file) {
+    return () => {
+      return d.graph.generateNodeWithTargetLink(file, arguments[0]).apply({}, arguments);
     };
   },
-  doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
-    const getIndex = (item) => {
-      return (_.isNumber(item)) ? item : item.index;
-    };
-    const ids = [getIndex(link.source), getIndex(link.target)];
-    const minIndex = _.min(ids);
-    const maxIndex = _.max(ids);
+  generatePrivateNode() {
+    const args = Array.prototype.slice.call(arguments);
 
-    return cb(minIndex, maxIndex);
+    args[2] += '<br><strong>PRIVATE</strong>';
+    args[3] = 's-t';
+
+    return helpers.generateNode(...args);
+  },
+  getLinksNumberMapItemWithLink(link) {
+    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, (minIndex, maxIndex) => {
+      return linksNumberMap[minIndex][maxIndex];
+    });
+  },
+  mergeWithDefaultConnection(connection) {
+    const defaultConnection = {
+      direction: 'out',
+      line: 'plain',
+      symbol: 'arrow',
+    };
+
+    return _.defaults(connection, defaultConnection);
+  },
+  resetLinksNumberMap() {
+    linksNumberMap = {};
+  },
+  setReRender(diagram, creationId, data) {
+    diagram.reRender = (conf) => {
+      diagram.unlisten('configuration-changed');
+      diagram.reRender = null;
+      diagram.removePreviousAndCreate(creationId, data, conf);
+    };
   },
   updateLinksNumberMapWithLink(link) {
     helpers.doWithMinIdAndMaxIdOfLinkNodes(link, (minIndex, maxIndex) => {
@@ -234,35 +263,6 @@ const helpers = {
         linksNumberMap[minIndex][maxIndex] = 1;
       } else linksNumberMap[minIndex][maxIndex] += 1;
     });
-  },
-  getLinksNumberMapItemWithLink(link) {
-    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, (minIndex, maxIndex) => {
-      return linksNumberMap[minIndex][maxIndex];
-    });
-  },
-  addDiagramInfo(diagram, svg, info) {
-    if (_.isString(info)) info = [info];
-    const hasDescription = info.length === 2;
-    const svgWidth = svg[0][0].getBoundingClientRect().width;
-    const infoText = info[0] + (hasDescription ? ' (...)' : '');
-    const el = svg.append('g').attr({
-      transform: 'translate(10, 50)',
-      class: 'graph-info',
-    }).append('text').text(infoText).each(d.svg.textEllipsis(svgWidth));
-
-    if (hasDescription) {
-      diagram.addMouseListenersToEl(el, {
-        el,
-        fullText: d.utils.generateATextDescriptionStr(info[0], info[1]),
-      });
-    }
-  },
-  setReRender(diagram, creationId, data) {
-    diagram.reRender = (conf) => {
-      diagram.unlisten('configuration-changed');
-      diagram.reRender = null;
-      diagram.removePreviousAndCreate(creationId, data, conf);
-    };
   },
 };
 

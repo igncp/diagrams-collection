@@ -1,19 +1,19 @@
 import d from 'diagrams';
 import helpers from './helpers';
 
-export default () => {
-  const SHY_CONNECTIONS = 'Show connections selectively';
-  const GRAPH_ZOOM = 'dia graph zoom';
-  const GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
-  const CURVED_ARROWS = 'All arrows are curved';
-  const graphZoomConfig = {
-    private: true,
-    type: Number,
-    value: 1,
-  };
-  const dPositionFn = d.utils.positionFn;
-  const dTextFn = d.utils.textFn;
+const SHY_CONNECTIONS = 'Show connections selectively';
+const GRAPH_ZOOM = 'dia graph zoom';
+const GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
+const CURVED_ARROWS = 'All arrows are curved';
+const graphZoomConfig = {
+  private: true,
+  type: Number,
+  value: 1,
+};
+const dPositionFn = d.utils.positionFn;
+const dTextFn = d.utils.textFn;
 
+export default () => {
   const Graph = class Graph extends d.Diagram {
     create(creationId, data, conf) {
       const diagram = this;
@@ -23,27 +23,26 @@ export default () => {
       const width = svg.attr('width');
       const dragNodesConfig = diagram.config(GRAPH_DRAG);
       const curvedArrows = diagram.config(CURVED_ARROWS);
-
-      helpers.resetLinksNumberMap();
-
       let force, drag, link, linkOuter, node, zoom,
         singleNodeEl, shape, shapeEl, markers, parsedData;
+
+      helpers.resetLinksNumberMap();
 
       const height = d.svg.selectScreenHeightOrHeight(bodyHeight - 250);
 
       const tick = () => {
         const setPathToLink = (pathClass) => {
-          link.select(`path.${pathClass}`).attr("d", (d) => {
-            const linksNumber = helpers.getLinksNumberMapItemWithLink(d);
-            const linkIndex = d.data.linkIndex;
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
+          link.select(`path.${pathClass}`).attr("d", (da) => {
+            const linksNumber = helpers.getLinksNumberMapItemWithLink(da);
+            const linkIndex = da.data.linkIndex;
+            const dx = da.target.x - da.source.x;
+            const dy = da.target.y - da.source.y;
             const dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1)
               * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
 
-            return `M${d.source.x},${d.source.y}A`
+            return `M${da.source.x},${da.source.y}A`
               + `${dr},${dr} 0 0,1 `
-              + `${d.target.x},${d.target.y}`;
+              + `${da.target.x},${da.target.y}`;
           });
         };
 
@@ -62,17 +61,17 @@ export default () => {
         node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
       };
       const parseData = () => {
-        let maxId = _.reduce(data, (memo, node) => {
-          const id = node.id || 0;
+        let maxId = _.reduce(data, (memo, tmpNode) => {
+          const id = tmpNode.id || 0;
 
           return (memo > id) ? memo : id;
         }, 0);
         const idsMap = {};
         const nodesWithLinkMap = {};
         const colors = d3.scale.category20();
-        const handleConnections = (node, nodeIndex) => {
-          if (node.connections.length > 0) {
-            _.each(node.connections, (connection) => {
+        const handleConnections = (tmpNode, nodeIndex) => {
+          if (tmpNode.connections.length > 0) {
+            _.each(tmpNode.connections, (connection) => {
               _.each(connection.nodesIds, (otherNodeId) => {
                 otherNode = idsMap[otherNodeId];
 
@@ -109,19 +108,19 @@ export default () => {
           nodes: [],
         };
         markers = [];
-        _.each(data, (node, nodeIndex) => {
-          nodeId = _.isUndefined(node.id) ? maxId++ : node.id;
+        _.each(data, (dataNode, nodeIndex) => {
+          nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id;
           color = colors(nodeIndex);
-          options = node.options || {};
+          options = dataNode.options || {};
 
           parsedData.nodes.push({
             bold: options.bold || false,
             color,
-            connections: node.connections || [],
-            description: node.description || null,
+            connections: dataNode.connections || [],
+            description: dataNode.description || null,
             id: nodeId,
             linkToUrl: options.linkToUrl || null,
-            name: node.name,
+            name: dataNode.name,
             shape: options.shape || 'circle',
           });
           idsMap[nodeId] = {
@@ -142,8 +141,8 @@ export default () => {
         _.each(parsedData.nodes, handleConnections);
 
         if (conf.hideNodesWithoutLinks === true) {
-          _.each(parsedData.nodes, (node, nodeIndex) => {
-            if (nodesWithLinkMap[nodeIndex] !== true) node.hidden = true;
+          _.each(parsedData.nodes, (pdNode, nodeIndex) => {
+            if (nodesWithLinkMap[nodeIndex] !== true) pdNode.hidden = true;
           });
         }
       };
@@ -161,8 +160,8 @@ export default () => {
         force.start();
       };
 
-      const dragged = function(d) {
-        d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+      const dragged = function(da) {
+        d3.select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y);
       };
 
       const dragended = function() {
@@ -171,47 +170,42 @@ export default () => {
 
       const setRelationships = () => {
         _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
-        _.each(parsedData.nodes, (node) => {
-          diagram.addSelfRelationship(node, node.shapeEl, node);
+        _.each(parsedData.nodes, (pdNode) => {
+          diagram.addSelfRelationship(pdNode, pdNode.shapeEl, pdNode);
         });
-        _.each(parsedData.links, (link) => {
-          diagram.addDependencyRelationship(link.source, link.target.shapeEl, link.target);
-          diagram.addDependantRelationship(link.target, link.source.shapeEl, link.source);
-        });
-      };
-
-      const getAllLinks = () => {
-        return container.selectAll(".link");
-      };
-
-      const getLinksWithIsHiding = () => {
-        return getAllLinks().filter((d) => {
-          return d.data.hasOwnProperty('shyIsHiding');
+        _.each(parsedData.links, (pdLink) => {
+          diagram.addDependencyRelationship(pdLink.source, pdLink.target.shapeEl, pdLink.target);
+          diagram.addDependantRelationship(pdLink.target, pdLink.source.shapeEl, pdLink.source);
         });
       };
 
-      const setLinkIsHidingIfNecessary = (isHiding, link) => {
+      const getAllLinks = () => container.selectAll(".link");
+
+      const getLinksWithIsHiding = () =>
+        getAllLinks().filter((da) => da.data.hasOwnProperty('shyIsHiding'));
+
+      const setLinkIsHidingIfNecessary = (isHiding, tmpLink) => {
         let linksWithIsHiding;
 
         if (diagram.config(SHY_CONNECTIONS)) {
-          if (isHiding === false) link.data.shyIsHiding = isHiding;
+          if (isHiding === false) tmpLink.data.shyIsHiding = isHiding;
           else if (isHiding === true) {
             linksWithIsHiding = getLinksWithIsHiding();
-            linksWithIsHiding.each((d) => {
-              d.data.shyIsHiding = true;
+            linksWithIsHiding.each((da) => {
+              da.data.shyIsHiding = true;
             });
           }
-          link.data.shyIsHidingChanged = true;
+          tmpLink.data.shyIsHidingChanged = true;
         }
       };
 
-      const setDisplayOfShyConnections = (display, node) => {
+      const setDisplayOfShyConnections = (display, tmpNode) => {
         const isShowing = display === 'show';
         const isHiding = display === 'hide';
-        const nodeData = node.data;
+        const nodeData = tmpNode.data;
         const linksWithIsHiding = getLinksWithIsHiding();
-        const nodeLinks = getAllLinks().filter((d) => {
-          return d.source.id === nodeData.id || d.target.id === nodeData.id;
+        const nodeLinks = getAllLinks().filter((da) => {
+          return da.source.id === nodeData.id || da.target.id === nodeData.id;
         });
         const setDisplay = (links, show) => {
           links.classed('shy-link-hidden', !show);
@@ -219,20 +213,20 @@ export default () => {
         };
         const hideLinks = (links) => {
           setDisplay(links, false);
-          links.each((d) => {
-            delete d.data.shyIsHiding;
+          links.each((da) => {
+            delete da.data.shyIsHiding;
           });
         };
         const futureConditionalHide = () => {
           setTimeout(() => {
             allAreHiding = true;
             shyIsHidingIsSame = true;
-            nodeLinks.each((d) => {
-              allAreHiding = allAreHiding && d.data.shyIsHiding;
+            nodeLinks.each((da) => {
+              allAreHiding = allAreHiding && da.data.shyIsHiding;
 
-              if (d.data.shyIsHidingChanged) {
+              if (da.data.shyIsHidingChanged) {
                 shyIsHidingIsSame = false;
-                delete d.data.shyIsHidingChanged;
+                delete da.data.shyIsHidingChanged;
               }
             });
 
@@ -245,15 +239,15 @@ export default () => {
         if (linksWithIsHiding[0].length === 0) {
           if (isShowing) setDisplay(nodeLinks, true);
           else if (isHiding) {
-            nodeLinks.each((d) => {
-              d.data.shyIsHiding = true;
+            nodeLinks.each((da) => {
+              da.data.shyIsHiding = true;
             });
             futureConditionalHide();
           }
         } else {
           if (isShowing) {
-            linksWithIsHiding.each((d, index) => {
-              if (index === 0) d.data.shyIsHiding = false;
+            linksWithIsHiding.each((da, index) => {
+              if (index === 0) da.data.shyIsHiding = false;
             });
           } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
         }
@@ -265,8 +259,8 @@ export default () => {
         item.el.style('stroke-width', '20px');
       };
       diagram.unmarkAllItems = () => {
-        _.each(parsedData.nodes, (node) => {
-          node.shapeEl.style('stroke-width', '1px');
+        _.each(parsedData.nodes, (pdNode) => {
+          pdNode.shapeEl.style('stroke-width', '1px');
         });
       };
 
@@ -274,8 +268,8 @@ export default () => {
       parseData();
 
       svg.attr({
-        height,
         class: 'graph-diagram',
+        height,
       });
 
       zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", () => {
@@ -295,9 +289,8 @@ export default () => {
         .linkDistance(conf.linkDistance || 140)
         .on("tick", tick);
 
-      drag = d3.behavior.drag().origin((d) => {
-        return d;
-      }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
+      drag = d3.behavior.drag().origin(da => da)
+        .on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
 
       force.nodes(parsedData.nodes).links(parsedData.links).start();
 
@@ -326,35 +319,33 @@ export default () => {
         });
       link.append("svg:path").attr({
         class: 'link-path',
-        "marker-end": (d) => {
-          return `url(#arrow-head-${d.source.id})`;
-        },
+        'marker-end': da => `url(#arrow-head-${da.source.id})`,
       }).style({
         stroke: dTextFn('color'),
-        'stroke-dasharray': (d) => {
-          if (d.data.line === 'plain') return null;
-          else if (d.data.line === 'dotted') return '5,5';
+        'stroke-dasharray': (da) => {
+          if (da.data.line === 'plain') return null;
+          else if (da.data.line === 'dotted') return '5,5';
         },
       });
 
       linkOuter = link.append('g');
       linkOuter.append('svg:path').attr('class', 'link-path-outer');
-      linkOuter.each(function(d) {
-        diagram.addMouseListenersToEl(d3.select(this), d.data, {
-          mouseenter(link) {
-            setLinkIsHidingIfNecessary(false, link);
+      linkOuter.each(function(da) {
+        diagram.addMouseListenersToEl(d3.select(this), da.data, {
+          mouseenter(eLink) {
+            setLinkIsHidingIfNecessary(false, eLink);
           },
-          mouseleave(link) {
-            setLinkIsHidingIfNecessary(true, link);
+          mouseleave(eLink) {
+            setLinkIsHidingIfNecessary(true, eLink);
           },
         });
       });
 
       node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
-        class(d) {
+        class(da) {
           let finalClass = 'node';
 
-          if (d.hidden === true) finalClass += ' node-hidden';
+          if (da.hidden === true) finalClass += ' node-hidden';
 
           return finalClass;
         },
@@ -370,8 +361,8 @@ export default () => {
 
         if (singleNode.shape === 'circle') {
           shapeEl = singleNodeEl.append("circle").attr({
-            r: 12,
             fill: dTextFn('color'),
+            r: 12,
           });
         } else {
           shape = d3.svg.symbol().size(750);
@@ -399,14 +390,14 @@ export default () => {
 
         singleNode.shapeEl = shapeEl;
         diagram.addMouseListenersToEl(shapeEl, singleNode, {
-          mouseenter(data) {
-            if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', data);
+          click(eNode) {
+            if (eNode.data.linkToUrl) window.open(eNode.data.linkToUrl);
           },
-          mouseleave(data) {
-            if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', data);
+          mouseenter(nodeData) {
+            if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', nodeData);
           },
-          click(node) {
-            if (node.data.linkToUrl) window.open(node.data.linkToUrl);
+          mouseleave(nodeData) {
+            if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', nodeData);
           },
         });
       });
@@ -415,27 +406,27 @@ export default () => {
 
       setRelationships();
       setReRender(conf);
-      diagram.listen('configuration-changed', (conf) => {
-        if (conf.key === SHY_CONNECTIONS || conf.key === GRAPH_DRAG) {
-          setReRender(conf);
-          diagram.removePreviousAndCreate(creationId, data, conf);
+      diagram.listen('configuration-changed', (config) => {
+        if (config.key === SHY_CONNECTIONS || config.key === GRAPH_DRAG) {
+          setReRender(config);
+          diagram.removePreviousAndCreate(creationId, data, config);
         }
       });
     }
   };
 
   new Graph({
-    name: 'graph',
-    helpers,
+    configuration: {
+      [CURVED_ARROWS]: false,
+      [GRAPH_DRAG]: false,
+      [GRAPH_ZOOM]: graphZoomConfig,
+      [SHY_CONNECTIONS]: true,
+      info: null,
+    },
     configurationKeys: {
       SHY_CONNECTIONS,
     },
-    configuration: {
-      info: null,
-      [SHY_CONNECTIONS]: true,
-      [GRAPH_ZOOM]: graphZoomConfig,
-      [GRAPH_DRAG]: false,
-      [CURVED_ARROWS]: false,
-    },
+    helpers,
+    name: 'graph',
   });
 };

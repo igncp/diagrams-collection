@@ -32,9 +32,10 @@ const getDiagramClass = () => {
 
       div.appendButtonToDiv = function(cls, value, onclick) {
         div.append('input').attr({
-          type: 'button',
           class: `${cls} diagrams-diagram-button btn btn-default`,
-          onclick, value,
+          onclick,
+          type: 'button',
+          value,
         });
       };
 
@@ -91,7 +92,7 @@ const getDiagramClass = () => {
           if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
         });
       };
-      const emitContent = { el, data };
+      const emitContent = { data, el };
 
       emitFn('mouseleave');
       emitFn('mouseenter');
@@ -201,7 +202,7 @@ const getDiagramClass = () => {
     }
 
     generateRelationship(el, data) {
-      return { el, data };
+      return { data, el };
     }
 
     getAllRelatedItemsOfItem(item, relationshipType) {
@@ -272,8 +273,8 @@ const getDiagramClass = () => {
         d.utils.runIfReady(() => {
           createdDiagramsMaxId++;
           d.diagramsRegistry.push({
-            diagram,
             data: args,
+            diagram,
             id: createdDiagramsMaxId,
           });
           diagram.diagramId = createdDiagramsMaxId;

@@ -4,6 +4,9 @@ const shared = {
 
     return shared[key];
   },
+
+  getWithStartingBreakLine: () => `<br>${shared.get(...arguments)}`,
+
   set(data) {
     shared.throwIfSharedMethodAlreadyExists(data);
 
@@ -11,7 +14,7 @@ const shared = {
       if (data.hasOwnProperty(prop)) shared[prop] = data[prop];
     }
   },
-  getWithStartingBreakLine: () => `<br>${shared.get(...arguments)}`,
+
   throwIfSharedMethodAlreadyExists(data) {
     let keys;
 

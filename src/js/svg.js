@@ -1,6 +1,6 @@
 import d from 'diagrams';
 
-const addEllipsis = ({ self, textLength, width, text }) => {
+const addEllipsis = ({ self, text, textLength, width }) => {
   while (textLength > width && text.length > 0) {
     text = text.slice(0, -4);
     self.text(`${text}...`);
@@ -8,16 +8,16 @@ const addEllipsis = ({ self, textLength, width, text }) => {
   }
 };
 
-const appendElsToFilterColor = ({ filter, deviation, slope }) => {
+const appendElsToFilterColor = ({ deviation, filter, slope }) => {
   filter.append('feOffset').attr({
-    result: 'offOut',
-    in: 'SourceGraphic',
     dx: 0.5,
     dy: 0.5,
+    in: 'SourceGraphic',
+    result: 'offOut',
   });
   filter.append('feGaussianBlur').attr({
-    result: 'blurOut',
     in: 'offOut',
+    result: 'blurOut',
     stdDeviation: deviation,
   });
   filter.append('feBlend').attr({
@@ -26,19 +26,35 @@ const appendElsToFilterColor = ({ filter, deviation, slope }) => {
     mode: 'normal',
   });
   filter.append('feComponentTransfer').append('feFuncA').attr({
-    type: 'linear',
     slope,
+    type: 'linear',
   });
 };
 
 const svg = {
+  addFilterColor({ container, deviation, extra, id, slope }) {
+    const defs = container.append('defs');
+    const filter = defs.append('filter').attr({
+      id: `diagrams-drop-shadow-${id}`,
+    });
+
+    if (extra) filter.attr({
+      height: '500%',
+      width: '500%',
+      x: '-200%',
+      y: '-200%',
+    });
+
+    appendElsToFilterColor({ deviation, filter, slope });
+  },
+
   addVerticalGradientFilter(container, id, colors) {
     const defs = container.append('defs');
     const linearGradient = defs.append('linearGradient').attr({
       id,
       x1: '0%',
-      y1: '0%',
       x2: '0%',
+      y1: '0%',
       y2: '100%',
     });
 
@@ -52,46 +68,14 @@ const svg = {
     });
   },
 
-  addFilterColor({ id, container, deviation, slope, extra }) {
-    const defs = container.append('defs');
-    const filter = defs.append('filter').attr({
-      id: `diagrams-drop-shadow-${id}`,
-    });
-
-    if (extra) filter.attr({
-      width: '500%',
-      height: '500%',
-      x: '-200%',
-      y: '-200%',
-    });
-
-    appendElsToFilterColor({ filter, deviation, slope });
-  },
-
   generateSvg(style) {
     const selector = svg.getDiagramWrapperStr();
     const bodyDims = document.body.getBoundingClientRect();
 
     return d3.select(selector).append('svg').attr({
-      width: bodyDims.width - 40,
       height: 4000,
+      width: bodyDims.width - 40,
     }).style(style);
-  },
-
-  textEllipsis(width) {
-    return function() {
-      const self = d3.select(this);
-      const textLength = self.node().getComputedTextLength();
-      const text = self.text();
-
-      addEllipsis({ self, width, textLength, text });
-    };
-  },
-
-  updateHeigthOfElWithOtherEl(el, otherEl, offset) {
-    el.attr({
-      height: otherEl[0][0].getBoundingClientRect().height + (offset || 0),
-    });
   },
 
   insertInBodyBeforeSvg(tag) {
@@ -101,6 +85,22 @@ const svg = {
     const el = body.insert(tag, elementAfterName);
 
     return el;
+  },
+
+  textEllipsis(width) {
+    return function() {
+      const self = d3.select(this);
+      const textLength = self.node().getComputedTextLength();
+      const text = self.text();
+
+      addEllipsis({ self, text, textLength, width });
+    };
+  },
+
+  updateHeigthOfElWithOtherEl(el, otherEl, offset) {
+    el.attr({
+      height: otherEl[0][0].getBoundingClientRect().height + (offset || 0),
+    });
   },
 };
 
