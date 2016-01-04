@@ -216,9 +216,9 @@
         "yoda": 0, // require or disallow Yoda conditions
         // "igncp-extras/object-properties-sorted": 2,
     },
-    "plugins": [
-        "igncp-extras"
-    ],
+    // "plugins": [
+    //     "igncp-extras"
+    // ],
     "env": {
         "browser": true,
         "node": true
