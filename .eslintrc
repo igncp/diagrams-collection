@@ -214,11 +214,11 @@
         "wrap-iife": 0, // require immediate function invocation to be wrapped in parentheses
         "wrap-regex": 0, // require regex literals to be wrapped in parentheses
         "yoda": 0, // require or disallow Yoda conditions
-        // "igncp-extras/object-properties-sorted": 2,
+        "igncp-extras/object-properties-sorted": 2,
     },
-    // "plugins": [
-    //     "igncp-extras"
-    // ],
+    "plugins": [
+        "igncp-extras"
+    ],
     "env": {
         "browser": true,
         "node": true
