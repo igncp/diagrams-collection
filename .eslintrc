@@ -79,9 +79,9 @@
         "no-case-declarations": 0, // disallow lexical declarations in case clauses
         "no-catch-shadow": 0, // disallow the catch clause parameter name being the same as a variable in the outer scope
         "no-class-assign": 0, // disallow modifying variables of class declarations
-        "no-cond-assign": 0, // disallow assignment in conditional expressions (recommended)
+        "no-cond-assign": 2, // disallow assignment in conditional expressions (recommended)
         "no-console": 0, // disallow use of console in the node environment (recommended)
-        "no-const-assign": 0, // disallow modifying variables that are declared using const
+        "no-const-assign": 2, // disallow modifying variables that are declared using const
         "no-constant-condition": 0, // disallow use of constant expressions in conditions (recommended)
         "no-continue": 0, // disallow use of the continue statement
         "no-control-regex": 0, // disallow control characters in regular expressions (recommended)
@@ -104,19 +104,19 @@
         "no-extra-bind": 0, // disallow unnecessary function binding
         "no-extra-boolean-cast": 0, // disallow double-negation boolean casts in a boolean context (recommended)
         "no-extra-parens": 0, // disallow unnecessary parentheses
-        "no-extra-semi": 0, // disallow unnecessary semicolons (recommended) (fixable)
+        "no-extra-semi": 2, // disallow unnecessary semicolons (recommended) (fixable)
         "no-fallthrough": 0, // disallow fallthrough of case statements (recommended)
         "no-floating-decimal": 0, // disallow the use of leading or trailing decimal points in numeric literals
-        "no-func-assign": 0, // disallow overwriting functions written as function declarations (recommended)
-        "no-implicit-coercion": 0, // disallow the type conversions with shorter notations
+        "no-func-assign": 2, // disallow overwriting functions written as function declarations (recommended)
+        "no-implicit-coercion": 2, // disallow the type conversions with shorter notations
         "no-implied-eval": 0, // disallow use of eval()-like methods
-        "no-inline-comments": 0, // disallow comments inline after code
+        "no-inline-comments": 2, // disallow comments inline after code
         "no-inner-declarations": 0, // disallow function or variable declarations in nested blocks (recommended)
         "no-invalid-regexp": 0, // disallow invalid regular expression strings in the RegExp constructor (recommended)
         "no-invalid-this": 0, // disallow this keywords outside of classes or class-like objects
         "no-irregular-whitespace": 0, // disallow irregular whitespace outside of strings and comments (recommended)
         "no-iterator": 0, // disallow usage of __iterator__ property
-        "no-label-var": 0, // disallow labels that share a name with a variable
+        "no-label-var": 2, // disallow labels that share a name with a variable
         "no-labels": 0, // disallow use of labeled statements
         "no-lone-blocks": 0, // disallow unnecessary nested blocks
         "no-lonely-if": 0, // disallow if as the only statement in an else block
@@ -124,7 +124,7 @@
         "no-magic-numbers": 0, // disallow the use of magic numbers
         "no-mixed-requires": 0, // disallow mixing regular variable and require declarations
         "no-mixed-spaces-and-tabs": 0, // disallow mixed spaces and tabs for indentation (recommended)
-        "no-multi-spaces": 0, // disallow use of multiple spaces (fixable)
+        "no-multi-spaces": 2, // disallow use of multiple spaces (fixable)
         "no-multi-str": 0, // disallow use of multiline strings
         "no-multiple-empty-lines": 0, // disallow multiple empty lines
         "no-native-reassign": 0, // disallow reassignments of native objects
@@ -194,7 +194,7 @@
         "radix": 0, // require use of the second argument for parseInt()
         "require-jsdoc": 0, // Require JSDoc comment
         "require-yield": 0, // disallow generator functions that do not have yield
-        "semi": 2, // require or disallow use of semicolons instead of ASI (fixable)
+        "semi": [2, 'never'], // require or disallow use of semicolons instead of ASI (fixable)
         "semi-spacing": 2, // enforce spacing before and after semicolons
         "sort-vars": 0, // sort variables within the same declaration block
         "space-after-keywords": 2, // require a space after certain keywords (fixable)
@@ -207,10 +207,10 @@
         "space-unary-ops": 0, // require or disallow spaces before/after unary operators (fixable)
         "spaced-comment": 2, // require or disallow a space immediately following the // or /* in a comment
         "strict": 0, // controls location of Use Strict Directives
-        "use-isnan": 0, // disallow comparisons with the value NaN (recommended)
+        "use-isnan": 2, // disallow comparisons with the value NaN (recommended)
         "valid-jsdoc": 0, // Ensure JSDoc comments are valid
         "valid-typeof": 0, // Ensure that the results of typeof are compared against a valid string (recommended)accessor-pairs - Enforces getter/setter pairs in objects
-        "vars-on-top": 0, // require declaration of all vars at the top of their containing scope
+        "vars-on-top": 2, // require declaration of all vars at the top of their containing scope
         "wrap-iife": 0, // require immediate function invocation to be wrapped in parentheses
         "wrap-regex": 0, // require regex literals to be wrapped in parentheses
         "yoda": 0, // require or disallow Yoda conditions
