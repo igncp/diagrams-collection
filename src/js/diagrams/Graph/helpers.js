@@ -187,9 +187,10 @@ const helpers = {
       _.each(options, (opt) => {
         if (opt.substr(0, 2) === 's-') {
           shape = opt.substr(2, opt.length - 2)
-          obj.shape = (shape === 't') ? 'triangle' :
-            (shape === 's') ? 'square' :
-            'circle'
+          if (shape === 't') obj.shape = 'triangle'
+          else if (shape === 's') obj.shape = 'square'
+          else obj.shape = 'circle'
+
         } else if (opt === 'b') obj.bold = true
         else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2)
       })

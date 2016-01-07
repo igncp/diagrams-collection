@@ -16,6 +16,7 @@ The project uses [webpack](https://webpack.github.io/) to create the final `diag
 
 The library has the following dependencies, which are installed automatically if installed with Bower:
 - d3.js
+- ramda.js
 - lodash.js
 - rx.js
 - highlight.js (if you need code highlighting)

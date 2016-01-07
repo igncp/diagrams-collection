@@ -3,9 +3,7 @@ const utils = {
     el.attr('transform', d => `translate(${d.x},${d.y})`)
   },
 
-  codeBlockOfLanguageFn(language, commentsSymbol) {
-    commentsSymbol = commentsSymbol || ''
-
+  codeBlockOfLanguageFn(language, commentsSymbol = '') {
     return function(codeBlock, where, withInlineStrs) {
       if (withInlineStrs === true) {
         codeBlock = `${commentsSymbol} ...\n${codeBlock}\n${commentsSymbol} ...`
@@ -20,7 +18,7 @@ const utils = {
   composeWithEventEmitter(constructor) {
     let _subjects = {}
     const createName = name => `$${name}`
-    const dispose = function(prop) {
+    const dispose = (prop) => {
       if ({}.hasOwnProperty.call(_subjects, prop)) {
         _subjects[prop].dispose()
         _subjects[prop] = null

@@ -93,8 +93,8 @@
 	    });
 	  },
 	
-	  codeBlockOfLanguageFn: function codeBlockOfLanguageFn(language, commentsSymbol) {
-	    commentsSymbol = commentsSymbol || '';
+	  codeBlockOfLanguageFn: function codeBlockOfLanguageFn(language) {
+	    var commentsSymbol = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
 	
 	    return function (codeBlock, where, withInlineStrs) {
 	      if (withInlineStrs === true) {
@@ -168,7 +168,8 @@
 	  },
 	
 	  dataFromGeneralToSpecificForATreeStructureType: function dataFromGeneralToSpecificForATreeStructureType(generalData) {
-	    var FPNRecursiveFailed = false; // FPN: Find Parent Node
+	    // FPN: Find Parent Node
+	    var FPNRecursiveFailed = false;
 	    var itemsIdToItemsMap = {};
 	    var nodesData = {};
 	    var findParentNodeFn = function findParentNodeFn() {
@@ -861,9 +862,10 @@
 	      value: function getAllRelatedItemsOfItem(item, relationshipType) {
 	        var diagram = this;
 	        var relatedItems = [];
+	        var depthThresold = 100;
 	        var recursiveFn = function recursiveFn(relatedItemData, depth) {
 	          _.each(relatedItemData.relationships[relationshipType], function (relatedItemChild) {
-	            if (depth < 100) {
+	            if (depth < depthThresold) {
 	              // Handle circular loops
 	              if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) {
 	                relatedItems.push(relatedItemChild);
@@ -1240,9 +1242,10 @@
 	        options = options.split(' ');
 	        parsedOptions = {};
 	        _.each(options, function (optionsKey) {
+	          // option-one -> optionOne
 	          var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
 	            return g[1].toUpperCase();
-	          }); // option-one -> optionOne
+	          });
 	
 	          parsedOptions[newKey] = true;
 	        });
@@ -2233,7 +2236,7 @@
 	      _.each(options, function (opt) {
 	        if (opt.substr(0, 2) === 's-') {
 	          shape = opt.substr(2, opt.length - 2);
-	          obj.shape = shape === 't' ? 'triangle' : shape === 's' ? 'square' : 'circle';
+	          if (shape === 't') obj.shape = 'triangle';else if (shape === 's') obj.shape = 'square';else obj.shape = 'circle';
 	        } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
 	      });
 	
@@ -2740,8 +2743,6 @@
 	
 	    return Layer;
 	  })(_diagrams2['default'].Diagram);
-	
-	  ;
 	
 	  new Layer({
 	    helpers: _helpers2['default'],
