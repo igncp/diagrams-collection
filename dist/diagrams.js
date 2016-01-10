@@ -971,9 +971,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./Box/index": 8,
-		"./Graph/index": 9,
-		"./Layer/index": 11
+		"./Box/helpers/index": 8,
+		"./Box/index": 28,
+		"./Graph/index": 29,
+		"./Layer/index": 31
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -999,6 +1000,749 @@
 	  value: true
 	});
 	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _addBodyItemsAndUpdateHeights = __webpack_require__(9);
+	
+	var _addBodyItemsAndUpdateHeights2 = _interopRequireDefault(_addBodyItemsAndUpdateHeights);
+	
+	var _addButtons = __webpack_require__(10);
+	
+	var _addButtons2 = _interopRequireDefault(_addButtons);
+	
+	var _collapseAll = __webpack_require__(11);
+	
+	var _collapseAll2 = _interopRequireDefault(_collapseAll);
+	
+	var _collapseItem = __webpack_require__(14);
+	
+	var _collapseItem2 = _interopRequireDefault(_collapseItem);
+	
+	var _convertToGraph = __webpack_require__(16);
+	
+	var _convertToGraph2 = _interopRequireDefault(_convertToGraph);
+	
+	var _convertToLayer = __webpack_require__(17);
+	
+	var _convertToLayer2 = _interopRequireDefault(_convertToLayer);
+	
+	var _dataFromGeneralToSpecific = __webpack_require__(18);
+	
+	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
+	
+	var _dataFromSpecificToGeneral = __webpack_require__(19);
+	
+	var _dataFromSpecificToGeneral2 = _interopRequireDefault(_dataFromSpecificToGeneral);
+	
+	var _expandAll = __webpack_require__(20);
+	
+	var _expandAll2 = _interopRequireDefault(_expandAll);
+	
+	var _expandItem = __webpack_require__(15);
+	
+	var _expandItem2 = _interopRequireDefault(_expandItem);
+	
+	var _expandOrCollapseAll = __webpack_require__(12);
+	
+	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
+	
+	var _filterByString = __webpack_require__(21);
+	
+	var _filterByString2 = _interopRequireDefault(_filterByString);
+	
+	var _generateContainer = __webpack_require__(22);
+	
+	var _generateContainer2 = _interopRequireDefault(_generateContainer);
+	
+	var _generateDefinition = __webpack_require__(25);
+	
+	var _generateDefinition2 = _interopRequireDefault(_generateDefinition);
+	
+	var _generateDefinitionWithSharedGet = __webpack_require__(26);
+	
+	var _generateDefinitionWithSharedGet2 = _interopRequireDefault(_generateDefinitionWithSharedGet);
+	
+	var _generateItem = __webpack_require__(23);
+	
+	var _generateItem2 = _interopRequireDefault(_generateItem);
+	
+	var _generateLink = __webpack_require__(27);
+	
+	var _generateLink2 = _interopRequireDefault(_generateLink);
+	
+	var _parseItemGenerationOptions = __webpack_require__(24);
+	
+	var _parseItemGenerationOptions2 = _interopRequireDefault(_parseItemGenerationOptions);
+	
+	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	
+	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
+	
+	var helpers = {
+	  addBodyItemsAndUpdateHeights: _addBodyItemsAndUpdateHeights2['default'],
+	  addButtons: _addButtons2['default'],
+	  collapseAll: _collapseAll2['default'],
+	  collapseItem: _collapseItem2['default'],
+	  convertToGraph: _convertToGraph2['default'],
+	  convertToLayer: _convertToLayer2['default'],
+	  dataFromGeneralToSpecific: _dataFromGeneralToSpecific2['default'],
+	  dataFromSpecificToGeneral: _dataFromSpecificToGeneral2['default'],
+	  expandAll: _expandAll2['default'],
+	  expandItem: _expandItem2['default'],
+	  expandOrCollapseAll: _expandOrCollapseAll2['default'],
+	  filterByString: _filterByString2['default'],
+	  generateContainer: _generateContainer2['default'],
+	  generateDefinition: _generateDefinition2['default'],
+	  generateDefinitionWithSharedGet: _generateDefinitionWithSharedGet2['default'],
+	  generateItem: _generateItem2['default'],
+	  generateLink: _generateLink2['default'],
+	  parseItemGenerationOptions: _parseItemGenerationOptions2['default'],
+	  traverseBodyDataAndRefresh: _traverseBodyDataAndRefresh2['default']
+	};
+	
+	exports['default'] = helpers;
+	module.exports = exports['default'];
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var fn = null;
+	
+	/**
+	 * Provides a placeholder to set the refresh function of the diagram
+	 */
+	exports["default"] = {
+	  get: function get() {
+	    return fn;
+	  },
+	  set: function set(newFn) {
+	    return fn = newFn;
+	  }
+	};
+	module.exports = exports["default"];
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	exports['default'] = function (creationId) {
+	  var div = _diagrams2['default'].Diagram.addDivBeforeSvg();
+	
+	  div.appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'diagrams.box.collapseAll(' + creationId + ')');
+	  div.appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'diagrams.box.expandAll(' + creationId + ')');
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _expandOrCollapseAll = __webpack_require__(12);
+	
+	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
+	
+	exports['default'] = function (creationId) {
+	  helpers.expandOrCollapseAll(creationId, 'collapse');
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	
+	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
+	
+	var _collapseItem = __webpack_require__(14);
+	
+	var _collapseItem2 = _interopRequireDefault(_collapseItem);
+	
+	var _expandItem = __webpack_require__(15);
+	
+	var _expandItem2 = _interopRequireDefault(_expandItem);
+	
+	var _ref = _;
+	var partial = _ref.partial;
+	
+	var methods = {
+	  collapseItem: _collapseItem2['default'],
+	  expandItem: _expandItem2['default']
+	};
+	
+	var traverseBodyOpts = {
+	  withCollapsedItems: true
+	};
+	
+	var itemCanBeCollapsedOrExpanded = function itemCanBeCollapsedOrExpanded(item) {
+	  return item.hasOwnProperty('collapsed');
+	};
+	
+	var expandOrCollapseItem = function expandOrCollapseItem(collapseOrExpand, item) {
+	  if (itemCanBeCollapsedOrExpanded(item)) {
+	    methods[collapseOrExpand + 'Item'](item);
+	  }
+	};
+	
+	exports['default'] = function (creationId, collapseOrExpand) {
+	  (0, _traverseBodyDataAndRefresh2['default'])(creationId, traverseBodyOpts, partial(expandOrCollapseItem, collapseOrExpand));
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _addBodyItemsAndUpdateHeights = __webpack_require__(9);
+	
+	var _addBodyItemsAndUpdateHeights2 = _interopRequireDefault(_addBodyItemsAndUpdateHeights);
+	
+	var _ref = _;
+	var each = _ref.each;
+	
+	exports['default'] = function (creationId, opts, cb) {
+	  if (opts === undefined) opts = {};
+	
+	  var conf = _diagrams2['default'].Diagram.getDataWithCreationId(creationId)[1];
+	  var bodyData = conf.body;
+	  var recursiveFn = function recursiveFn(items, parents) {
+	    each(items, function (item) {
+	      if (cb) cb(item, parents);
+	
+	      if (item.items) recursiveFn(item.items, parents.concat(item));
+	
+	      if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
+	    });
+	  };
+	
+	  opts.withCollapsedItems = opts.withCollapsedItems || false;
+	  recursiveFn(bodyData, []);
+	  _addBodyItemsAndUpdateHeights2['default'].get()();
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	exports["default"] = function (item) {
+	  if (item.items.length > 0) {
+	    item.collapsedItems = item.items;
+	    item.collapsed = true;
+	    item.items = [];
+	  }
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 15 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	exports["default"] = function (item) {
+	  if (item.collapsedItems) {
+	    item.items = item.collapsedItems;
+	    delete item.collapsedItems;
+	    item.collapsed = false;
+	  }
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 16 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	exports["default"] = function (origConf) {
+	  console.log("origConf", origConf);
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 17 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	exports['default'] = function (origConf) {
+	  var convertDataToLayers = function convertDataToLayers(items) {
+	    _.each(items, function (item, index) {
+	      if (_.isString(item)) {
+	        item = items[index] = {
+	          text: item
+	        };
+	      }
+	
+	      if (item.description) item.text += ': ' + item.description;
+	
+	      if (item.items) convertDataToLayers(item.items);else item.items = [];
+	    });
+	  };
+	  var createLayers = function createLayers() {
+	    var svg = d3.select('svg');
+	
+	    d3.selectAll('input.diagrams-diagram-button').remove();
+	
+	    svg.remove();
+	    d.layer(layersData);
+	  };
+	  var layersData = [];
+	
+	  layersData.push({
+	    items: origConf.body,
+	    text: origConf.name
+	  });
+	  convertDataToLayers(layersData[0].items);
+	  createLayers();
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 18 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	exports["default"] = function (generalData) {
+	  var finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+	
+	  finalData.name = finalData.text;
+	  finalData.body = finalData.items;
+	
+	  delete finalData.items;
+	  delete finalData.text;
+	
+	  return finalData;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 19 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var _ref = _;
+	var each = _ref.each;
+	
+	var recursiveFn = function recursiveFn(items, parentCreatedItem, context) {
+	  each(items, function (item) {
+	    var createdItem = {
+	      description: item.description,
+	      graphsData: {
+	        box: {
+	          options: item.options
+	        }
+	      },
+	      id: ++context.maxId,
+	      name: item.text
+	    };
+	
+	    context.finalItems.push(createdItem);
+	
+	    if (parentCreatedItem) {
+	      context.connections.push({
+	        from: createdItem.id,
+	        to: parentCreatedItem.id
+	      });
+	    } else {
+	      context.connections.push({
+	        from: createdItem.id,
+	        to: 0
+	      });
+	    }
+	
+	    if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem, context);
+	  });
+	};
+	
+	exports["default"] = function (conf) {
+	  var context = {
+	    connections: [],
+	    finalItems: [],
+	    maxId: -1
+	  };
+	
+	  context.finalItems.push({
+	    id: ++context.maxId,
+	    name: conf.name
+	  });
+	
+	  recursiveFn(conf.body, null, context);
+	
+	  return {
+	    connections: context.connections,
+	    items: context.finalItems
+	  };
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _expandOrCollapseAll = __webpack_require__(12);
+	
+	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
+	
+	exports['default'] = function (creationId) {
+	  (0, _expandOrCollapseAll2['default'])(creationId, 'expand');
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	
+	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
+	
+	var _ref = _;
+	var any = _ref.any;
+	var debounce = _ref.debounce;
+	var each = _ref.each;
+	var partial = _ref.partial;
+	
+	var setItemVisibility = function setItemVisibility(_ref2, item) {
+	  var isHidden = _ref2.isHidden;
+	  return item.hidden = isHidden;
+	};
+	var showItem = partial(setItemVisibility, { isHidden: false });
+	var hideItem = partial(setItemVisibility, { isHidden: true });
+	
+	var anyParentIsShown = function anyParentIsShown(parents) {
+	  return any(parents, function (parent) {
+	    return parent.hidden !== true;
+	  });
+	};
+	
+	var handleDisplayOfItem = function handleDisplayOfItem(opts, item, parents) {
+	  var shouldShowItemBecauseOtherReasonsThanAMatch = opts.showChildren === true && anyParentIsShown(parents) === true;
+	
+	  if (shouldShowItemBecauseOtherReasonsThanAMatch) showItem(item);else handleDisplayOfItemDependingOnAMatch(opts, item, parents);
+	};
+	
+	var handleDisplayOfItemDependingOnAMatch = function handleDisplayOfItemDependingOnAMatch(opts, item, parents) {
+	  var isThereAMatch = new RegExp(opts.str, 'i').test(item.text);
+	
+	  if (isThereAMatch === false) hideItem(item);else {
+	    each(parents, showItem);
+	    showItem(item);
+	  }
+	};
+	
+	exports['default'] = debounce(function (opts, creationId) {
+	  (0, _traverseBodyDataAndRefresh2['default'])(creationId, null, partial(handleDisplayOfItem, opts));
+	}, 500);
+	module.exports = exports['default'];
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateItem = __webpack_require__(23);
+	
+	var _generateItem2 = _interopRequireDefault(_generateItem);
+	
+	/**
+	 * Signatures:
+	 * (text, description, items, options)
+	 * (text, items, options)
+	 */
+	var _ref = _;
+	var isArray = _ref.isArray;
+	
+	exports['default'] = function () {
+	  var text = arguments[0];
+	  var description = arguments[1];
+	  var items = arguments[2];
+	  var options = arguments[3] || null;
+	
+	  if (isArray(description)) {
+	    options = items;
+	    items = description;
+	    description = null;
+	  }
+	
+	  return (0, _generateItem2['default'])({ description: description, items: items, options: options, text: text });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _parseItemGenerationOptions = __webpack_require__(24);
+	
+	var _parseItemGenerationOptions2 = _interopRequireDefault(_parseItemGenerationOptions);
+	
+	var _ref = _;
+	var defaults = _ref.defaults;
+	
+	var defaultOptions = {
+	  isLink: false,
+	  notCompleted: false
+	};
+	
+	exports['default'] = function (_ref2) {
+	  var _ref2$description = _ref2.description;
+	  var description = _ref2$description === undefined ? null : _ref2$description;
+	  var _ref2$items = _ref2.items;
+	  var items = _ref2$items === undefined ? [] : _ref2$items;
+	  var _ref2$options = _ref2.options;
+	  var options = _ref2$options === undefined ? {} : _ref2$options;
+	  var text = _ref2.text;
+	
+	  options = (0, _parseItemGenerationOptions2['default'])(options);
+	
+	  return {
+	    description: description,
+	    items: items,
+	    options: defaults(options, defaultOptions),
+	    text: text
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 24 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _ref = _;
+	var each = _ref.each;
+	var isString = _ref.isString;
+	
+	exports['default'] = function (options) {
+	  var parsedOptions = undefined;
+	
+	  if (isString(options)) {
+	    options = options.split(' ');
+	    parsedOptions = {};
+	    each(options, function (optionsKey) {
+	      // option-one -> optionOne
+	      var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
+	        return g[1].toUpperCase();
+	      });
+	
+	      parsedOptions[newKey] = true;
+	    });
+	  } else parsedOptions = options;
+	
+	  return parsedOptions;
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateItem = __webpack_require__(23);
+	
+	var _generateItem2 = _interopRequireDefault(_generateItem);
+	
+	exports['default'] = function (text, description) {
+	  return (0, _generateItem2['default'])({ description: description, text: text });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _generateDefinition = __webpack_require__(25);
+	
+	var _generateDefinition2 = _interopRequireDefault(_generateDefinition);
+	
+	exports['default'] = function (text) {
+	  var preffix = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+	
+	  var sharedKey = preffix + text.split('(')[0];
+	
+	  return (0, _generateDefinition2['default'])(text, _diagrams2['default'].shared.get(sharedKey));
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateItem = __webpack_require__(23);
+	
+	var _generateItem2 = _interopRequireDefault(_generateItem);
+	
+	exports['default'] = function (text, url) {
+	  return (0, _generateItem2['default'])({ description: url, items: null, options: {
+	      isLink: true
+	    }, text: text });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 28 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 	
 	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
@@ -1013,267 +1757,11 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
+	var _helpers = __webpack_require__(8);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
 	exports['default'] = function () {
-	  var helpers = {
-	    addButtons: function addButtons(creationId) {
-	      var div = _diagrams2['default'].Diagram.addDivBeforeSvg();
-	
-	      div.appendButtonToDiv('diagrams-box-collapse-all-button', 'Collapse all', 'diagrams.box.collapseAll(' + creationId + ')');
-	      div.appendButtonToDiv('diagrams-box-expand-all-button', 'Expand all', 'diagrams.box.expandAll(' + creationId + ')');
-	    },
-	
-	    collapseAll: function collapseAll(creationId) {
-	      helpers.expandOrCollapseAll(creationId, 'collapse');
-	    },
-	
-	    collapseItem: function collapseItem(item) {
-	      if (item.items.length > 0) {
-	        item.collapsedItems = item.items;
-	        item.collapsed = true;
-	        item.items = [];
-	      }
-	    },
-	
-	    convertToGraph: function convertToGraph(origConf) {
-	      console.log("origConf", origConf);
-	    },
-	
-	    convertToLayer: function convertToLayer(origConf) {
-	      var convertDataToLayers = function convertDataToLayers(items) {
-	        _.each(items, function (item, index) {
-	          if (_.isString(item)) {
-	            item = items[index] = {
-	              text: item
-	            };
-	          }
-	
-	          if (item.description) item.text += ': ' + item.description;
-	
-	          if (item.items) convertDataToLayers(item.items);else item.items = [];
-	        });
-	      };
-	      var createLayers = function createLayers() {
-	        var svg = d3.select('svg');
-	
-	        d3.selectAll('input.diagrams-diagram-button').remove();
-	
-	        svg.remove();
-	        _diagrams2['default'].layer(layersData);
-	      };
-	      var layersData = [];
-	
-	      layersData.push({
-	        items: origConf.body,
-	        text: origConf.name
-	      });
-	      convertDataToLayers(layersData[0].items);
-	      createLayers();
-	    },
-	
-	    dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	      var finalData = _diagrams2['default'].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
-	
-	      finalData.name = finalData.text;
-	      finalData.body = finalData.items;
-	
-	      delete finalData.items;
-	      delete finalData.text;
-	
-	      return finalData;
-	    },
-	
-	    dataFromSpecificToGeneral: function dataFromSpecificToGeneral(conf) {
-	      var maxId = -1;
-	      var finalItems = [];
-	      var connections = [];
-	      var recursiveFn = function recursiveFn(items, parentCreatedItem) {
-	        _.each(items, function (item) {
-	          var createdItem = {
-	            description: item.description,
-	            graphsData: {
-	              box: {
-	                options: item.options
-	              }
-	            },
-	            id: ++maxId,
-	            name: item.text
-	          };
-	
-	          finalItems.push(createdItem);
-	
-	          if (parentCreatedItem) {
-	            connections.push({
-	              from: createdItem.id,
-	              to: parentCreatedItem.id
-	            });
-	          } else {
-	            connections.push({
-	              from: createdItem.id,
-	              to: 0
-	            });
-	          }
-	
-	          if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
-	        });
-	      };
-	
-	      finalItems.push({
-	        id: ++maxId,
-	        name: conf.name
-	      });
-	      recursiveFn(conf.body);
-	
-	      return {
-	        connections: connections,
-	        items: finalItems
-	      };
-	    },
-	
-	    expandAll: function expandAll(creationId) {
-	      helpers.expandOrCollapseAll(creationId, 'expand');
-	    },
-	
-	    expandItem: function expandItem(item) {
-	      if (item.collapsedItems) {
-	        item.items = item.collapsedItems;
-	        delete item.collapsedItems;
-	        item.collapsed = false;
-	      }
-	    },
-	
-	    expandOrCollapseAll: function expandOrCollapseAll(creationId, collapseOrExpand) {
-	      helpers.traverseBodyDataAndRefresh(creationId, {
-	        withCollapsedItems: true
-	      }, function (item) {
-	        if (item.hasOwnProperty('collapsed')) {
-	          helpers[collapseOrExpand + 'Item'](item);
-	        }
-	      });
-	    },
-	
-	    filterByString: _.debounce(function (opts, creationId) {
-	      var getHiddenValueSetter = function getHiddenValueSetter(value) {
-	        return function (item) {
-	          item.hidden = value;
-	        };
-	      };
-	      var setHiddenToFalse = getHiddenValueSetter(false);
-	
-	      helpers.traverseBodyDataAndRefresh(creationId, null, function (item, parents) {
-	        var anyParentIsShowed = _.any(parents, function (parent) {
-	          return parent.hidden !== true;
-	        });
-	
-	        if (opts.showChildren === false || anyParentIsShowed === false) {
-	          if (new RegExp(opts.str, 'i').test(item.text) === false) getHiddenValueSetter(true)(item);else {
-	            _.each(parents, setHiddenToFalse);
-	            setHiddenToFalse(item);
-	          }
-	        } else setHiddenToFalse(item);
-	      });
-	    }, 500),
-	
-	    generateContainer: function generateContainer() {
-	      var text = arguments[0];
-	      var description = arguments[1];
-	      var items = arguments[2];
-	      var options = arguments[3] || null;
-	
-	      if (_.isArray(description)) {
-	        options = items;
-	        items = description;
-	        description = null;
-	      }
-	
-	      return helpers.generateItem({ description: description, items: items, options: options, text: text });
-	    },
-	
-	    generateDefinition: function generateDefinition(text, description) {
-	      return helpers.generateItem({ description: description, text: text });
-	    },
-	
-	    generateDefinitionWithSharedGet: function generateDefinitionWithSharedGet() {
-	      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	        args[_key] = arguments[_key];
-	      }
-	
-	      var text = args[0];
-	      var sharedKey = undefined,
-	          preffix = undefined;
-	
-	      preffix = arguments.length > 1 ? args[1] : '';
-	      sharedKey = preffix + text.split('(')[0];
-	
-	      return Box.generateDefinition(text, _diagrams2['default'].shared.get(sharedKey));
-	    },
-	
-	    generateItem: function generateItem(_ref) {
-	      var description = _ref.description;
-	      var items = _ref.items;
-	      var options = _ref.options;
-	      var text = _ref.text;
-	
-	      var defaultOptions = {
-	        isLink: false,
-	        notCompleted: false
-	      };
-	
-	      options = options || {};
-	      options = helpers.parseItemGenerationOptions(options);
-	
-	      return {
-	        description: description || null,
-	        items: items || [],
-	        options: _.defaults(options, defaultOptions),
-	        text: text
-	      };
-	    },
-	
-	    generateLink: function generateLink(text, url) {
-	      return helpers.generateItem({ description: url, items: null, options: {
-	          isLink: true
-	        }, text: text });
-	    },
-	
-	    parseItemGenerationOptions: function parseItemGenerationOptions(options) {
-	      var parsedOptions = undefined;
-	
-	      if (_.isString(options)) {
-	        options = options.split(' ');
-	        parsedOptions = {};
-	        _.each(options, function (optionsKey) {
-	          // option-one -> optionOne
-	          var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
-	            return g[1].toUpperCase();
-	          });
-	
-	          parsedOptions[newKey] = true;
-	        });
-	      } else parsedOptions = options;
-	
-	      return parsedOptions;
-	    },
-	
-	    traverseBodyDataAndRefresh: function traverseBodyDataAndRefresh(creationId, opts, cb) {
-	      var conf = _diagrams2['default'].Diagram.getDataWithCreationId(creationId)[1];
-	      var bodyData = conf.body;
-	      var recursiveFn = function recursiveFn(items, parents) {
-	        _.each(items, function (item) {
-	          if (cb) cb(item, parents);
-	
-	          if (item.items) recursiveFn(item.items, parents.concat(item));
-	
-	          if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
-	        });
-	      };
-	
-	      opts = opts || {};
-	      opts.withCollapsedItems = opts.withCollapsedItems || false;
-	      recursiveFn(bodyData, []);
-	      helpers.addBodyItemsAndUpdateHeights();
-	    }
-	  };
-	
 	  var textGId = 0;
 	  var Box = (function (_d$Diagram) {
 	    _inherits(Box, _d$Diagram);
@@ -1309,12 +1797,12 @@
 	                'class': 'collapsible-trigger'
 	              });
 	              var collapseListener = function collapseListener() {
-	                helpers.collapseItem(item);
-	                helpers.addBodyItemsAndUpdateHeights();
+	                _helpers2['default'].collapseItem(item);
+	                _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
 	              };
 	              var expandListener = function expandListener() {
-	                helpers.expandItem(item);
-	                helpers.addBodyItemsAndUpdateHeights();
+	                _helpers2['default'].expandItem(item);
+	                _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
 	              };
 	              var triggerTextEl = triggerEl.append('text').attr({
 	                x: Number(xDim) - 20,
@@ -1371,7 +1859,7 @@
 	              var currentTextGId = 'diagrams-box-text-' + textGId++;
 	
 	              if (_.isString(item)) {
-	                item = helpers.generateItem({ text: item });
+	                item = _helpers2['default'].generateItem({ text: item });
 	                items[itemIndex] = item;
 	              }
 	              item.items = item.items || [];
@@ -1475,7 +1963,7 @@
 	
 	        opts = opts || {};
 	
-	        helpers.addBodyItemsAndUpdateHeights = function () {
+	        _helpers2['default'].addBodyItemsAndUpdateHeights.set(function () {
 	          var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
 	
 	          svg.attr('height', 10);
@@ -1499,7 +1987,7 @@
 	
 	          window.scrollTo(0, currentScroll);
 	          diagram.emit('items-rendered');
-	        };
+	        });
 	
 	        _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
 	
@@ -1520,10 +2008,10 @@
 	        });
 	
 	        d3.select(document.body).style('opacity', 0);
-	        helpers.addBodyItemsAndUpdateHeights();
+	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
 	
-	        if (opts.allCollapsed === true) helpers.collapseAll(creationId);
-	        helpers.addButtons(creationId);
+	        if (opts.allCollapsed === true) _helpers2['default'].collapseAll(creationId);
+	        _helpers2['default'].addButtons(creationId);
 	        d3.select(document.body).style('opacity', 1);
 	
 	        if (urlParams.target) scrollToTarget(urlParams.target);
@@ -1550,7 +2038,7 @@
 	  })(_diagrams2['default'].Diagram);
 	
 	  new Box({
-	    helpers: helpers,
+	    helpers: _helpers2['default'],
 	    name: 'box'
 	  });
 	};
@@ -1558,7 +2046,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 9 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1583,7 +2071,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(10);
+	var _helpers = __webpack_require__(30);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
@@ -2031,7 +2519,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 10 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2323,7 +2811,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 11 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2346,7 +2834,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(12);
+	var _helpers = __webpack_require__(32);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
@@ -2753,7 +3241,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 12 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
