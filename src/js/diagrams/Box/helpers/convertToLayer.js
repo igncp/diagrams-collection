@@ -1,3 +1,5 @@
+import d from "diagrams"
+
 export default (origConf) => {
   const convertDataToLayers = (items) => {
     _.each(items, (item, index) => {

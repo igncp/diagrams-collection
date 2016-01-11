@@ -1,18 +1,24 @@
-const { each, isString } = _
+const { isString, reduce } = _
+
+const getParsedOptionsOfStrCase = (optionsStr) => {
+  const options = optionsStr.split(' ')
+
+  return reduce(options, (parsedOptions, optionsKey) => {
+    // option-one -> optionOne
+    const newKey = optionsKey
+      .replace(/-([a-z])/g, g => g[1].toUpperCase())
+
+    parsedOptions[newKey] = true
+  }, {})
+}
 
 export default (options) => {
   let parsedOptions
 
-  if (isString(options)) {
-    options = options.split(' ')
-    parsedOptions = {}
-    each(options, (optionsKey) => {
-      // option-one -> optionOne
-      const newKey = optionsKey
-        .replace(/-([a-z])/g, g => g[1].toUpperCase())
+  options = options || {}
 
-      parsedOptions[newKey] = true
-    })
+  if (isString(options)) {
+    parsedOptions = getParsedOptionsOfStrCase(options)
   } else parsedOptions = options
 
   return parsedOptions

@@ -7,17 +7,10 @@ import generateItem from './generateItem'
  * (text, description, items, options)
  * (text, items, options)
  */
-export default (...args) => {
-  const text = args[0]
-  let description = args[1]
-  let items = args[2]
-  let options = args[3] || null
+const generateContainer = (...args) => {
+  if (isArray(args[1])) return generateContainer(args[0], null, args[1], args[2])
 
-  if (isArray(description)) {
-    options = items
-    items = description
-    description = null
-  }
-
-  return generateItem({ description, items, options, text })
+  return generateItem({ description: args[1], items: args[2], options: args[3], text: args[0] })
 }
+
+export default generateContainer

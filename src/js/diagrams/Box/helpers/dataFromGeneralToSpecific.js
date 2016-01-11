@@ -1,3 +1,5 @@
+import d from "diagrams"
+
 export default (generalData) => {
   const finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData)
 

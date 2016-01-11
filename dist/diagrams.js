@@ -1169,7 +1169,7 @@
 	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
 	
 	exports['default'] = function (creationId) {
-	  helpers.expandOrCollapseAll(creationId, 'collapse');
+	  (0, _expandOrCollapseAll2['default'])(creationId, 'collapse');
 	};
 	
 	module.exports = exports['default'];
@@ -1249,23 +1249,29 @@
 	var _ref = _;
 	var each = _ref.each;
 	
-	exports['default'] = function (creationId, opts, cb) {
-	  if (opts === undefined) opts = {};
+	var recursiveFn = function recursiveFn(_ref2) {
+	  var cb = _ref2.cb;
+	  var items = _ref2.items;
+	  var opts = _ref2.opts;
+	  var parents = _ref2.parents;
 	
+	  each(items, function (item) {
+	    if (cb) cb(item, parents);
+	
+	    if (item.items) recursiveFn({ cb: cb, items: item.items, opts: opts, parents: parents.concat(item) });
+	
+	    if (opts.withCollapsedItems && item.collapsedItems) recursiveFn({ cb: cb, items: item.collapsedItems, opts: opts, parents: parents.concat(item) });
+	  });
+	};
+	
+	exports['default'] = function (creationId, opts, cb) {
 	  var conf = _diagrams2['default'].Diagram.getDataWithCreationId(creationId)[1];
 	  var bodyData = conf.body;
-	  var recursiveFn = function recursiveFn(items, parents) {
-	    each(items, function (item) {
-	      if (cb) cb(item, parents);
 	
-	      if (item.items) recursiveFn(item.items, parents.concat(item));
-	
-	      if (opts.withCollapsedItems && item.collapsedItems) recursiveFn(item.collapsedItems, parents.concat(item));
-	    });
-	  };
+	  opts = opts || {};
 	
 	  opts.withCollapsedItems = opts.withCollapsedItems || false;
-	  recursiveFn(bodyData, []);
+	  recursiveFn({ cb: cb, items: bodyData, opts: opts, parents: [] });
 	  _addBodyItemsAndUpdateHeights2['default'].get()();
 	};
 	
@@ -1329,13 +1335,19 @@
 
 /***/ },
 /* 17 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
 	exports['default'] = function (origConf) {
 	  var convertDataToLayers = function convertDataToLayers(items) {
@@ -1357,7 +1369,7 @@
 	    d3.selectAll('input.diagrams-diagram-button').remove();
 	
 	    svg.remove();
-	    d.layer(layersData);
+	    _diagrams2['default'].layer(layersData);
 	  };
 	  var layersData = [];
 	
@@ -1373,7 +1385,7 @@
 
 /***/ },
 /* 18 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
@@ -1381,8 +1393,14 @@
 	  value: true
 	});
 	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
 	exports["default"] = function (generalData) {
-	  var finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
+	  var finalData = _diagrams2["default"].utils.dataFromGeneralToSpecificForATreeStructureType(generalData);
 	
 	  finalData.name = finalData.text;
 	  finalData.body = finalData.items;
@@ -1560,22 +1578,24 @@
 	 */
 	var _ref = _;
 	var isArray = _ref.isArray;
+	var generateContainer = function generateContainer() {
+	  var _arguments = arguments;
+	  var _again = true;
 	
-	exports['default'] = function () {
-	  var text = arguments[0];
-	  var description = arguments[1];
-	  var items = arguments[2];
-	  var options = arguments[3] || null;
+	  _function: while (_again) {
+	    _again = false;
 	
-	  if (isArray(description)) {
-	    options = items;
-	    items = description;
-	    description = null;
+	    if (isArray(_arguments[1])) {
+	      _arguments = [_arguments[0], null, _arguments[1], _arguments[2]];
+	      _again = true;
+	      continue _function;
+	    }
+	
+	    return (0, _generateItem2['default'])({ description: _arguments[1], items: _arguments[2], options: _arguments[3], text: _arguments[0] });
 	  }
-	
-	  return (0, _generateItem2['default'])({ description: description, items: items, options: options, text: text });
 	};
 	
+	exports['default'] = generateContainer;
 	module.exports = exports['default'];
 
 /***/ },
@@ -1633,23 +1653,29 @@
 	  value: true
 	});
 	var _ref = _;
-	var each = _ref.each;
 	var isString = _ref.isString;
+	var reduce = _ref.reduce;
+	
+	var getParsedOptionsOfStrCase = function getParsedOptionsOfStrCase(optionsStr) {
+	  var options = optionsStr.split(' ');
+	
+	  return reduce(options, function (parsedOptions, optionsKey) {
+	    // option-one -> optionOne
+	    var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
+	      return g[1].toUpperCase();
+	    });
+	
+	    parsedOptions[newKey] = true;
+	  }, {});
+	};
 	
 	exports['default'] = function (options) {
 	  var parsedOptions = undefined;
 	
-	  if (isString(options)) {
-	    options = options.split(' ');
-	    parsedOptions = {};
-	    each(options, function (optionsKey) {
-	      // option-one -> optionOne
-	      var newKey = optionsKey.replace(/-([a-z])/g, function (g) {
-	        return g[1].toUpperCase();
-	      });
+	  options = options || {};
 	
-	      parsedOptions[newKey] = true;
-	    });
+	  if (isString(options)) {
+	    parsedOptions = getParsedOptionsOfStrCase(options);
 	  } else parsedOptions = options;
 	
 	  return parsedOptions;
