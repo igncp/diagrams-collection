@@ -26,7 +26,7 @@ export default () => {
       let force, drag, link, linkOuter, node, zoom,
         singleNodeEl, shape, shapeEl, markers, parsedData
 
-      helpers.resetLinksNumberMap()
+      helpers.linksNumberMapHandler().reset()
 
       const height = d.svg.selectScreenHeightOrHeight(bodyHeight - 250)
 
@@ -112,7 +112,6 @@ export default () => {
           nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id
           color = colors(nodeIndex)
           options = dataNode.options || {}
-
           parsedData.nodes.push({
             bold: options.bold || false,
             color,

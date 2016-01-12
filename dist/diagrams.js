@@ -636,328 +636,353 @@
 	
 	var _svg2 = _interopRequireDefault(_svg);
 	
+	var _ref = _;
+	var bind = _ref.bind;
+	var defaults = _ref.defaults;
+	var each = _ref.each;
+	var isFunction = _ref.isFunction;
+	var isObject = _ref.isObject;
+	var isString = _ref.isString;
+	var merge = _ref.merge;
+	var where = _ref.where;
+	
 	var defaultDiagramConfiguration = {};
 	var createdDiagramsMaxId = 0;
 	
 	_diagrams2['default'].diagramsRegistry = [];
 	
-	var getDiagramClass = function getDiagramClass() {
-	  var Diagram = (function () {
-	    _createClass(Diagram, null, [{
-	      key: 'convertDiagram',
-	      value: function convertDiagram(creationId, toDiagramType) {
-	        var item = Diagram.getRegistryItemWithCreationId(creationId);
-	        var newArgs = item.data.slice(1);
-	        var generalData = undefined,
-	            specificData = undefined;
+	var Diagram = (function () {
+	  _createClass(Diagram, null, [{
+	    key: 'convertDiagram',
+	    value: function convertDiagram(creationId, toDiagramType) {
+	      var item = Diagram.getRegistryItemWithCreationId(creationId);
+	      var newArgs = item.data.slice(1);
+	      var generalData = undefined,
+	          specificData = undefined;
 	
-	        generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
-	        specificData = _diagrams2['default'][toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
+	      generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
+	      specificData = _diagrams2['default'][toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
 	
-	        _diagrams2['default'].events.emit('diagram-to-transform', item.diagram);
+	      _diagrams2['default'].events.emit('diagram-to-transform', item.diagram);
 	
-	        Diagram.removePreviousDiagrams();
-	        _diagrams2['default'][toDiagramType].apply(item.diagram, [specificData]);
+	      Diagram.removePreviousDiagrams();
+	      _diagrams2['default'][toDiagramType].apply(item.diagram, [specificData]);
+	    }
+	  }, {
+	    key: 'removePreviousDiagrams',
+	    value: function removePreviousDiagrams() {
+	      d3.selectAll('input.diagrams-diagram-button').remove();
+	      d3.select('svg').remove();
+	    }
+	  }, {
+	    key: 'addDivBeforeSvg',
+	    value: function addDivBeforeSvg() {
+	      var div = _svg2['default'].insertInBodyBeforeSvg('div');
+	
+	      div.appendButtonToDiv = function (cls, value, onclick) {
+	        div.append('input').attr({
+	          'class': cls + ' diagrams-diagram-button btn btn-default',
+	          onclick: onclick,
+	          type: 'button',
+	          value: value
+	        });
+	      };
+	
+	      return div;
+	    }
+	  }, {
+	    key: 'getRegistryItemWithCreationId',
+	    value: function getRegistryItemWithCreationId(creationId) {
+	      var items = where(_diagrams2['default'].diagramsRegistry, {
+	        id: creationId
+	      });
+	
+	      return items.length === 1 ? items[0] : null;
+	    }
+	  }, {
+	    key: 'getDataWithCreationId',
+	    value: function getDataWithCreationId(creationId) {
+	      var item = Diagram.getRegistryItemWithCreationId(creationId);
+	
+	      return item ? item.data : null;
+	    }
+	  }]);
+	
+	  function Diagram(opts) {
+	    _classCallCheck(this, Diagram);
+	
+	    var diagram = this;
+	    var prototype = Object.getPrototypeOf(diagram);
+	
+	    diagram.name = opts.name;
+	    diagram._configuration = opts.configuration || {};
+	
+	    prototype.configurationKeys = opts.configurationKeys || {};
+	
+	    each(Object.keys(opts.helpers), function (helperName) {
+	      if (isFunction(opts.helpers[helperName])) {
+	        opts.helpers[helperName] = bind(opts.helpers[helperName], diagram);
 	      }
-	    }, {
-	      key: 'removePreviousDiagrams',
-	      value: function removePreviousDiagrams() {
-	        d3.selectAll('input.diagrams-diagram-button').remove();
-	        d3.select('svg').remove();
-	      }
-	    }, {
-	      key: 'addDivBeforeSvg',
-	      value: function addDivBeforeSvg() {
-	        var div = _svg2['default'].insertInBodyBeforeSvg('div');
+	    });
+	    merge(diagram._configuration, defaultDiagramConfiguration);
+	    each(Object.keys(diagram._configuration), function (confKey) {
+	      diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
+	    });
+	    defaults(prototype, opts.helpers);
+	    diagram.register();
+	  }
 	
-	        div.appendButtonToDiv = function (cls, value, onclick) {
-	          div.append('input').attr({
-	            'class': cls + ' diagrams-diagram-button btn btn-default',
-	            onclick: onclick,
-	            type: 'button',
-	            value: value
-	          });
-	        };
+	  _createClass(Diagram, [{
+	    key: 'reRender',
+	    value: function reRender() {
+	      return null;
+	    }
+	  }, {
+	    key: 'addMouseListenersToEl',
+	    value: function addMouseListenersToEl(el, data, callbacks) {
+	      var diagram = this;
+	      var emitFn = function emitFn(d3Event, emitedEvent) {
+	        emitedEvent = emitedEvent || d3Event;
+	        el.on(d3Event, function () {
+	          diagram.emit(emitedEvent, emitContent);
 	
-	        return div;
-	      }
-	    }, {
-	      key: 'getRegistryItemWithCreationId',
-	      value: function getRegistryItemWithCreationId(creationId) {
-	        var items = _.where(_diagrams2['default'].diagramsRegistry, {
-	          id: creationId
+	          if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
+	        });
+	      };
+	      var emitContent = { data: data, el: el };
+	
+	      emitFn('mouseleave');
+	      emitFn('mouseenter');
+	      emitFn('click', 'itemclick');
+	    }
+	  }, {
+	    key: 'removePreviousAndCreate',
+	    value: function removePreviousAndCreate() {
+	      var diagram = this;
+	
+	      Diagram.removePreviousDiagrams();
+	      diagram.addConversionButtons();
+	      diagram.create.apply(diagram, arguments);
+	    }
+	  }, {
+	    key: 'config',
+	    value: function config(opts, optValue) {
+	      var argsLength = arguments.length;
+	      var optsType = typeof opts;
+	      var optsKey = undefined;
+	
+	      if (argsLength === 0) return this._configuration;else if (argsLength === 1) {
+	        if (isFunction(optsType)) optsKey = opts();else if (isString(opts)) optsKey = opts;else if (isObject(opts)) {
+	          for (var key in opts) {
+	            if (opts.hasOwnProperty(key)) this.config(key, opts[key]);
+	          }
+	
+	          return opts;
+	        }
+	
+	        return this._configuration[optsKey];
+	      } else if (argsLength === 2) {
+	        this._configuration[opts] = optValue;
+	
+	        if (isObject(optValue)) this.setToLocalStorage(opts, optValue.value);else this.setToLocalStorage(opts, optValue);
+	
+	        this.emit('configuration-changed', {
+	          key: opts,
+	          value: optValue
 	        });
 	
-	        return items.length === 1 ? items[0] : null;
+	        return optValue;
 	      }
-	    }, {
-	      key: 'getDataWithCreationId',
-	      value: function getDataWithCreationId(creationId) {
-	        var item = Diagram.getRegistryItemWithCreationId(creationId);
+	    }
+	  }, {
+	    key: 'configCheckingLocalStorage',
+	    value: function configCheckingLocalStorage(key, defaultValue) {
+	      var diagram = this;
+	      var finalValue = diagram.getFromLocalStorage(key, defaultValue);
 	
-	        return item ? item.data : null;
+	      diagram.config(key, finalValue);
+	    }
+	  }, {
+	    key: 'generateLocalStorageKeyPreffix',
+	    value: function generateLocalStorageKeyPreffix(originalKey) {
+	      return 'diagramsjs-' + originalKey;
+	    }
+	  }, {
+	    key: 'getFromLocalStorage',
+	    value: function getFromLocalStorage(originalKey, defaultItem) {
+	      var diagram = this;
+	      var getAndConvertStrBoolean = function getAndConvertStrBoolean(defaultValue) {
+	        var rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
+	
+	        if (rv === 'false') rv = false;else if (rv === 'true') rv = true;
+	
+	        return rv;
+	      };
+	      var finalValue = defaultItem;
+	
+	      if (localStorage && localStorage.getItem) {
+	        if (isObject(finalValue)) {
+	          finalValue.value = getAndConvertStrBoolean(finalValue.value);
+	
+	          if (finalValue.type) finalValue.value = finalValue.type(finalValue.value);
+	        } else finalValue = getAndConvertStrBoolean(finalValue);
 	      }
-	    }]);
 	
-	    function Diagram(opts) {
-	      _classCallCheck(this, Diagram);
+	      return finalValue;
+	    }
+	  }, {
+	    key: 'setToLocalStorage',
+	    value: function setToLocalStorage(originalKey, value) {
+	      var diagram = this;
+	
+	      if (localStorage && localStorage.setItem) {
+	        return localStorage.setItem(diagram.generateLocalStorageKeyPreffix(originalKey), value);
+	      }
+	    }
+	  }, {
+	    key: 'generateEmptyRelationships',
+	    value: function generateEmptyRelationships(item) {
+	      item.relationships = {};
+	      item.relationships.dependants = [];
+	      item.relationships.dependencies = [];
+	    }
+	  }, {
+	    key: 'addDependantRelationship',
+	    value: function addDependantRelationship(item, el, data) {
+	      item.relationships.dependants.push(this.generateRelationship(el, data));
+	    }
+	  }, {
+	    key: 'addSelfRelationship',
+	    value: function addSelfRelationship(item, el, data) {
+	      item.relationships.self = this.generateRelationship(el, data);
+	    }
+	  }, {
+	    key: 'addDependencyRelationship',
+	    value: function addDependencyRelationship(item, el, data) {
+	      item.relationships.dependencies.push(this.generateRelationship(el, data));
+	    }
+	  }, {
+	    key: 'generateRelationship',
+	    value: function generateRelationship(el, data) {
+	      return { data: data, el: el };
+	    }
+	  }, {
+	    key: 'getAllRelatedItemsOfItem',
+	    value: function getAllRelatedItemsOfItem(item, relationshipType) {
+	      var diagram = this;
+	      var relatedItems = [];
+	      var depthThresold = 100;
+	      var recursiveFn = function recursiveFn(relatedItemData, depth) {
+	        each(relatedItemData.relationships[relationshipType], function (relatedItemChild) {
+	          if (depth < depthThresold) {
+	            // Handle circular loops
+	            if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) {
+	              relatedItems.push(relatedItemChild);
+	              recursiveFn(relatedItemChild.data, depth + 1);
+	            }
+	          }
+	        });
+	      };
+	      var returnObj = undefined;
+	
+	      if (relationshipType) {
+	        recursiveFn(item, 0);
+	
+	        return relatedItems;
+	      } else {
+	        returnObj = {};
+	        each(['dependants', 'dependencies'], function (relationshipName) {
+	          returnObj[relationshipName] = diagram.getAllRelatedItemsOfItem(item, relationshipName);
+	        });
+	
+	        return returnObj;
+	      }
+	    }
+	  }, {
+	    key: 'markRelatedItems',
+	    value: function markRelatedItems(item, opts) {
+	      var relatedItemsGroup = undefined;
+	      var diagram = this;
+	      var pushToRelatedItemsGroup = function pushToRelatedItemsGroup(args) {
+	        relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem.apply(diagram, _toConsumableArray([item].concat(args))));
+	      };
+	
+	      opts = opts || {};
+	
+	      if (diagram.markRelatedFn && item.relationships) {
+	        relatedItemsGroup = [];
+	
+	        if (opts.filter) pushToRelatedItemsGroup([opts.filter]);else each([['dependants'], ['dependencies']], pushToRelatedItemsGroup);
+	
+	        each(relatedItemsGroup, function (relatedItems) {
+	          each(relatedItems, diagram.markRelatedFn);
+	        });
+	
+	        diagram.markRelatedFn(item.relationships.self);
+	      }
+	    }
+	  }, {
+	    key: 'handleDiagramId',
+	    value: function handleDiagramId() {
+	      createdDiagramsMaxId++;
+	      this.diagramId = createdDiagramsMaxId;
+	    }
+	  }, {
+	    key: 'addToDiagramsRegistry',
+	    value: function addToDiagramsRegistry(creationArgs) {
+	      _diagrams2['default'].diagramsRegistry.push({
+	        data: creationArgs,
+	        diagram: this,
+	        id: createdDiagramsMaxId
+	      });
+	    }
+	  }, {
+	    key: 'register',
+	    value: function register() {
+	      var _this = this;
 	
 	      var diagram = this;
-	      var prototype = Object.getPrototypeOf(diagram);
 	
-	      diagram.name = opts.name;
-	      diagram._configuration = opts.configuration || {};
-	
-	      prototype.configurationKeys = opts.configurationKeys || {};
-	
-	      _.each(Object.keys(opts.helpers), function (helperName) {
-	        if (_.isFunction(opts.helpers[helperName])) {
-	          opts.helpers[helperName] = _.bind(opts.helpers[helperName], diagram);
-	        }
-	      });
-	      _.merge(diagram._configuration, defaultDiagramConfiguration);
-	      _.each(Object.keys(diagram._configuration), function (confKey) {
-	        diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
-	      });
-	      _.defaults(prototype, opts.helpers);
-	      diagram.register();
-	    }
-	
-	    _createClass(Diagram, [{
-	      key: 'reRender',
-	      value: function reRender() {
-	        return null;
-	      }
-	    }, {
-	      key: 'addMouseListenersToEl',
-	      value: function addMouseListenersToEl(el, data, callbacks) {
-	        var diagram = this;
-	        var emitFn = function emitFn(d3Event, emitedEvent) {
-	          emitedEvent = emitedEvent || d3Event;
-	          el.on(d3Event, function () {
-	            diagram.emit(emitedEvent, emitContent);
-	
-	            if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent);
-	          });
-	        };
-	        var emitContent = { data: data, el: el };
-	
-	        emitFn('mouseleave');
-	        emitFn('mouseenter');
-	        emitFn('click', 'itemclick');
-	      }
-	    }, {
-	      key: 'removePreviousAndCreate',
-	      value: function removePreviousAndCreate() {
-	        var diagram = this;
-	
-	        Diagram.removePreviousDiagrams();
-	        diagram.addConversionButtons();
-	        diagram.create.apply(diagram, arguments);
-	      }
-	    }, {
-	      key: 'config',
-	      value: function config(opts, optValue) {
-	        var argsLength = arguments.length;
-	        var optsType = typeof opts;
-	        var optsKey = undefined;
-	
-	        if (argsLength === 0) return this._configuration;else if (argsLength === 1) {
-	          if (_.isFunction(optsType)) optsKey = opts();else if (_.isString(opts)) optsKey = opts;else if (_.isObject(opts)) {
-	            for (var key in opts) {
-	              if (opts.hasOwnProperty(key)) this.config(key, opts[key]);
-	            }
-	
-	            return opts;
-	          }
-	
-	          return this._configuration[optsKey];
-	        } else if (argsLength === 2) {
-	          this._configuration[opts] = optValue;
-	
-	          if (_.isObject(optValue)) this.setToLocalStorage(opts, optValue.value);else this.setToLocalStorage(opts, optValue);
-	
-	          this.emit('configuration-changed', {
-	            key: opts,
-	            value: optValue
-	          });
-	
-	          return optValue;
-	        }
-	      }
-	    }, {
-	      key: 'configCheckingLocalStorage',
-	      value: function configCheckingLocalStorage(key, defaultValue) {
-	        var diagram = this;
-	        var finalValue = diagram.getFromLocalStorage(key, defaultValue);
-	
-	        diagram.config(key, finalValue);
-	      }
-	    }, {
-	      key: 'generateLocalStorageKeyPreffix',
-	      value: function generateLocalStorageKeyPreffix(originalKey) {
-	        return 'diagramsjs-' + originalKey;
-	      }
-	    }, {
-	      key: 'getFromLocalStorage',
-	      value: function getFromLocalStorage(originalKey, defaultItem) {
-	        var diagram = this;
-	        var getAndConvertStrBoolean = function getAndConvertStrBoolean(defaultValue) {
-	          var rv = localStorage.getItem(diagram.generateLocalStorageKeyPreffix(originalKey)) || defaultValue;
-	
-	          if (rv === 'false') rv = false;else if (rv === 'true') rv = true;
-	
-	          return rv;
-	        };
-	        var finalValue = defaultItem;
-	
-	        if (localStorage && localStorage.getItem) {
-	          if (_.isObject(finalValue)) {
-	            finalValue.value = getAndConvertStrBoolean(finalValue.value);
-	
-	            if (finalValue.type) finalValue.value = finalValue.type(finalValue.value);
-	          } else finalValue = getAndConvertStrBoolean(finalValue);
+	      _diagrams2['default'].diagramTypes = _diagrams2['default'].diagramTypes || [];
+	      _diagrams2['default'].diagramTypes.push(diagram.name);
+	      _diagrams2['default'][diagram.name] = function () {
+	        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	          args[_key] = arguments[_key];
 	        }
 	
-	        return finalValue;
-	      }
-	    }, {
-	      key: 'setToLocalStorage',
-	      value: function setToLocalStorage(originalKey, value) {
-	        var diagram = this;
+	        _diagrams2['default'].utils.runIfReady(function () {
+	          var creationArgs = [createdDiagramsMaxId].concat(args);
 	
-	        if (localStorage && localStorage.setItem) {
-	          return localStorage.setItem(diagram.generateLocalStorageKeyPreffix(originalKey), value);
-	        }
-	      }
-	    }, {
-	      key: 'generateEmptyRelationships',
-	      value: function generateEmptyRelationships(item) {
-	        item.relationships = {};
-	        item.relationships.dependants = [];
-	        item.relationships.dependencies = [];
-	      }
-	    }, {
-	      key: 'addDependantRelationship',
-	      value: function addDependantRelationship(item, el, data) {
-	        item.relationships.dependants.push(this.generateRelationship(el, data));
-	      }
-	    }, {
-	      key: 'addSelfRelationship',
-	      value: function addSelfRelationship(item, el, data) {
-	        item.relationships.self = this.generateRelationship(el, data);
-	      }
-	    }, {
-	      key: 'addDependencyRelationship',
-	      value: function addDependencyRelationship(item, el, data) {
-	        item.relationships.dependencies.push(this.generateRelationship(el, data));
-	      }
-	    }, {
-	      key: 'generateRelationship',
-	      value: function generateRelationship(el, data) {
-	        return { data: data, el: el };
-	      }
-	    }, {
-	      key: 'getAllRelatedItemsOfItem',
-	      value: function getAllRelatedItemsOfItem(item, relationshipType) {
-	        var diagram = this;
-	        var relatedItems = [];
-	        var depthThresold = 100;
-	        var recursiveFn = function recursiveFn(relatedItemData, depth) {
-	          _.each(relatedItemData.relationships[relationshipType], function (relatedItemChild) {
-	            if (depth < depthThresold) {
-	              // Handle circular loops
-	              if (relatedItems.indexOf(relatedItemChild) < 0 && relatedItemChild.data !== relatedItemData) {
-	                relatedItems.push(relatedItemChild);
-	                recursiveFn(relatedItemChild.data, depth + 1);
-	              }
-	            }
-	          });
-	        };
-	        var returnObj = undefined;
-	
-	        if (relationshipType) {
-	          recursiveFn(item, 0);
-	
-	          return relatedItems;
-	        } else {
-	          returnObj = {};
-	          _.each(['dependants', 'dependencies'], function (relationshipName) {
-	            returnObj[relationshipName] = diagram.getAllRelatedItemsOfItem(item, relationshipName);
-	          });
-	
-	          return returnObj;
-	        }
-	      }
-	    }, {
-	      key: 'markRelatedItems',
-	      value: function markRelatedItems(item, opts) {
-	        var relatedItemsGroup = undefined;
-	        var diagram = this;
-	        var pushToRelatedItemsGroup = function pushToRelatedItemsGroup(args) {
-	          relatedItemsGroup.push(diagram.getAllRelatedItemsOfItem.apply(diagram, _toConsumableArray([item].concat(args))));
-	        };
-	
-	        opts = opts || {};
-	
-	        if (diagram.markRelatedFn && item.relationships) {
-	          relatedItemsGroup = [];
-	
-	          if (opts.filter) pushToRelatedItemsGroup([opts.filter]);else _.each([['dependants'], ['dependencies']], pushToRelatedItemsGroup);
-	
-	          _.each(relatedItemsGroup, function (relatedItems) {
-	            _.each(relatedItems, diagram.markRelatedFn);
-	          });
-	
-	          diagram.markRelatedFn(item.relationships.self);
-	        }
-	      }
-	    }, {
-	      key: 'register',
-	      value: function register() {
-	        var diagram = this;
-	
-	        _diagrams2['default'].diagramTypes = _diagrams2['default'].diagramTypes || [];
-	        _diagrams2['default'].diagramTypes.push(diagram.name);
-	        _diagrams2['default'][diagram.name] = function () {
-	          var args = Array.prototype.slice.call(arguments);
-	
-	          _diagrams2['default'].utils.runIfReady(function () {
-	            createdDiagramsMaxId++;
-	            _diagrams2['default'].diagramsRegistry.push({
-	              data: args,
-	              diagram: diagram,
-	              id: createdDiagramsMaxId
-	            });
-	            diagram.diagramId = createdDiagramsMaxId;
-	            diagram.addConversionButtons();
-	            args.unshift(createdDiagramsMaxId);
-	            diagram.create.apply(diagram, _toConsumableArray(args));
-	            _diagrams2['default'].events.emit('diagram-created', diagram);
-	          });
-	        };
-	
-	        _.defaults(_diagrams2['default'][diagram.name], Object.getPrototypeOf(diagram));
-	      }
-	    }, {
-	      key: 'addConversionButtons',
-	      value: function addConversionButtons() {
-	        var diagram = this;
-	        var div = Diagram.addDivBeforeSvg();
-	        var onClickFn = undefined;
-	
-	        _.each(_diagrams2['default'].diagramTypes, function (diagramType) {
-	          if (diagramType !== diagram.name) {
-	            onClickFn = 'diagrams.Diagram.convertDiagram(' + diagram.diagramId + ', \'' + diagramType + '\')';
-	            div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
-	          }
+	          _this.handleDiagramId();
+	          _this.addToDiagramsRegistry(creationArgs);
+	          diagram.addConversionButtons();
+	          diagram.create.apply(diagram, _toConsumableArray(creationArgs));
+	          _diagrams2['default'].events.emit('diagram-created', diagram);
 	        });
-	      }
-	    }]);
+	      };
 	
-	    return Diagram;
-	  })();
+	      defaults(_diagrams2['default'][diagram.name], Object.getPrototypeOf(diagram));
+	    }
+	  }, {
+	    key: 'addConversionButtons',
+	    value: function addConversionButtons() {
+	      var diagram = this;
+	      var div = Diagram.addDivBeforeSvg();
+	      var onClickFn = undefined;
 	
+	      each(_diagrams2['default'].diagramTypes, function (diagramType) {
+	        if (diagramType !== diagram.name) {
+	          onClickFn = 'diagrams.Diagram.convertDiagram(' + diagram.diagramId + ', \'' + diagramType + '\')';
+	          div.appendButtonToDiv('diagrams-box-conversion-button', 'To ' + diagramType + ' diagram', onClickFn);
+	        }
+	      });
+	    }
+	  }]);
+	
+	  return Diagram;
+	})();
+	
+	var getDiagramClass = function getDiagramClass() {
 	  _diagrams2['default'].utils.composeWithEventEmitter(Diagram);
 	
 	  return Diagram;
@@ -973,8 +998,9 @@
 	var map = {
 		"./Box/helpers/index": 8,
 		"./Box/index": 28,
-		"./Graph/index": 29,
-		"./Layer/index": 31
+		"./Graph/helpers/index": 29,
+		"./Graph/index": 47,
+		"./Layer/index": 48
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -1787,282 +1813,317 @@
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
-	exports['default'] = function () {
-	  var textGId = 0;
-	  var Box = (function (_d$Diagram) {
-	    _inherits(Box, _d$Diagram);
+	var _ref = _;
+	var defer = _ref.defer;
+	var each = _ref.each;
+	var isNull = _ref.isNull;
+	var isString = _ref.isString;
+	var isUndefined = _ref.isUndefined;
 	
-	    function Box() {
-	      _classCallCheck(this, Box);
+	var textGId = 0;
+	var triggerElId = 0;
+	var bodyG = undefined;
 	
-	      _get(Object.getPrototypeOf(Box.prototype), 'constructor', this).apply(this, arguments);
-	    }
+	var fixedValues = {
+	  depthWidth: 35,
+	  nameHeight: 50,
+	  rowHeight: 30
+	};
 	
-	    _createClass(Box, [{
-	      key: 'create',
-	      value: function create(creationId, conf, opts) {
-	        var diagram = this;
-	        var svg = _diagrams2['default'].svg.generateSvg();
-	        var width = svg.attr('width') - 40;
-	        var nameHeight = 50;
-	        var boxG = svg.append('g').attr({
-	          'class': 'box-diagram',
-	          transform: 'translate(20, 20)'
-	        });
-	        var nameG = boxG.append('g');
-	        var rowHeight = 30;
-	        var depthWidth = 35;
-	        var urlParams = _diagrams2['default'].utils.getUrlParams();
-	        var collapseIfNecessary = function collapseIfNecessary(el, item) {
-	          if (item.items.length > 0 || item.collapsedItems) {
-	            (function () {
-	              var textEl = el.select('text');
-	              var yDim = textEl.attr('y');
-	              var xDim = textEl.attr('x');
-	              var triggerEl = el.append('g').attr({
-	                'class': 'collapsible-trigger'
-	              });
-	              var collapseListener = function collapseListener() {
-	                _helpers2['default'].collapseItem(item);
-	                _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
-	              };
-	              var expandListener = function expandListener() {
-	                _helpers2['default'].expandItem(item);
-	                _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
-	              };
-	              var triggerTextEl = triggerEl.append('text').attr({
-	                x: Number(xDim) - 20,
-	                y: Number(yDim) + 5
-	              });
-	              var setCollapseTextAndListener = function setCollapseTextAndListener() {
-	                triggerTextEl.text('-').attr('class', 'minus');
-	                triggerEl.on('click', collapseListener);
-	              };
-	              var setExpandTextAndListener = function setExpandTextAndListener() {
-	                triggerTextEl.text('+').attr({
-	                  'class': 'plus',
-	                  y: yDim
-	                });
-	                triggerEl.on('click', expandListener);
-	              };
-	              var clipPathId = undefined;
-	
-	              triggerElId += 1;
-	              clipPathId = 'clippath-' + triggerElId;
-	              triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
-	                height: 15,
-	                width: 20,
-	                x: xDim - 20,
-	                y: yDim - 17
-	              });
-	              triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
-	
-	              if (_.isUndefined(item.collapsed)) {
-	                item.collapsed = false;
-	                setCollapseTextAndListener();
-	              } else {
-	                if (item.collapsed === true) setExpandTextAndListener();else if (item.collapsed === false) setCollapseTextAndListener();
-	              }
-	            })();
-	          }
-	        };
-	        var addBodyItems = function addBodyItems(items, container, depth) {
-	          var newContainer = undefined,
-	              textEl = undefined,
-	              textWidth = undefined,
-	              descriptionWidth = undefined,
-	              containerText = undefined,
-	              textElValue = undefined;
-	
-	          items = items || conf.body;
-	          container = container || bodyG;
-	          depth = depth || 1;
-	
-	          if (items === conf.body) bodyPosition = 1;
-	
-	          _.each(items, function (item, itemIndex) {
-	            if (item.hidden !== true) {
-	              var currentTextGId = 'diagrams-box-text-' + textGId++;
-	
-	              if (_.isString(item)) {
-	                item = _helpers2['default'].generateItem({ text: item });
-	                items[itemIndex] = item;
-	              }
-	              item.items = item.items || [];
-	
-	              if (item.items.length > 0) {
-	                newContainer = container.append('g');
-	                containerText = _diagrams2['default'].utils.formatShortDescription(item.text);
-	
-	                if (item.items && item.items.length > 0) containerText += ':';
-	
-	                if (item.description) {
-	                  item.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(containerText, item.description);
-	                  containerText += ' (...)';
-	                } else item.fullText = item.text;
-	
-	                textEl = newContainer.append('text').text(containerText).attr({
-	                  id: currentTextGId,
-	                  x: depthWidth * depth,
-	                  y: rowHeight * ++bodyPosition
-	                });
-	
-	                addBodyItems(item.items, newContainer, depth + 1);
-	              } else {
-	                if (item.options && item.options.isLink === true) {
-	                  newContainer = container.append('svg:a').attr("xlink:href", item.description);
-	                  textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
-	                    fill: '#3962B8',
-	                    id: currentTextGId,
-	                    x: depthWidth * depth,
-	                    y: rowHeight * ++bodyPosition
-	                  });
-	
-	                  item.fullText = item.text + ' (' + item.description + ')';
-	                } else {
-	                  newContainer = container.append('g').attr({
-	                    id: currentTextGId
-	                  });
-	                  textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
-	                    'class': 'diagrams-box-definition-text',
-	                    x: depthWidth * depth,
-	                    y: rowHeight * ++bodyPosition
-	                  });
-	
-	                  if (item.description) {
-	                    textWidth = textEl[0][0].getBoundingClientRect().width;
-	                    descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - depthWidth * depth - 30;
-	
-	                    newContainer.append('text').text('- ' + _diagrams2['default'].utils.formatShortDescription(item.description)).attr({
-	                      x: depthWidth * depth + textWidth + 5,
-	                      y: rowHeight * bodyPosition - 1
-	                    }).each(_diagrams2['default'].svg.textEllipsis(descriptionWidth));
-	                  }
-	
-	                  item.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(item.text, item.description);
-	                }
-	              }
-	
-	              collapseIfNecessary(newContainer, item);
-	              item.textG = newContainer;
-	              item.textEl = textEl;
-	
-	              if (item.options.notCompleted === true) {
-	                item.textG.attr('class', '' + (item.textG.attr('class') || '') + ' diagrams-box-not-completed-block');
-	                textElValue = item.textEl.text();
-	                item.textEl.text('');
-	                item.textEl.append('tspan').text(textElValue + ' ');
-	                item.textEl.append('tspan').text('[NOT COMPLETED]').attr('class', 'diagrams-box-not-completed-tag');
-	              }
-	
-	              diagram.addMouseListenersToEl(textEl, item);
-	            }
-	          });
-	        };
-	        var scrollToTarget = function scrollToTarget(target) {
-	          var targetFound = null;
-	          var recursiveFindTarget = function recursiveFindTarget(items) {
-	            _.each(items, function (item) {
-	              if (_.isNull(targetFound)) {
-	                if (_.isString(item.text) && item.text.indexOf(target) > -1) targetFound = item;else if (item.items) recursiveFindTarget(item.items);
-	              }
-	            });
-	          };
-	          var currentScroll = undefined,
-	              scrollElTop = undefined;
-	
-	          recursiveFindTarget(conf.body);
-	
-	          if (targetFound) {
-	            currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
-	            scrollElTop = targetFound.textG[0][0].getBoundingClientRect().top;
-	            _.defer(function () {
-	              window.scrollTo(0, scrollElTop + currentScroll);
-	            });
-	          }
-	          console.log("targetFound", targetFound);
-	        };
-	        var triggerElId = undefined,
-	            bodyG = undefined,
-	            bodyPosition = undefined,
-	            bodyRect = undefined;
-	
-	        opts = opts || {};
-	
-	        _helpers2['default'].addBodyItemsAndUpdateHeights.set(function () {
-	          var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
-	
-	          svg.attr('height', 10);
-	
-	          if (bodyG) bodyG.remove();
-	          bodyG = boxG.append('g').attr({
-	            transform: 'translate(0, ' + nameHeight + ')'
-	          });
-	          bodyRect = bodyG.append('rect').attr({
-	            fill: '#fff',
-	            stroke: '#000',
-	            width: width
-	          }).style({
-	            filter: 'url(#diagrams-drop-shadow-box)'
-	          });
-	          triggerElId = 0;
-	          addBodyItems();
-	          diagram.setRelationships(conf.body);
-	          _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
-	          _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - nameHeight);
-	
-	          window.scrollTo(0, currentScroll);
-	          diagram.emit('items-rendered');
-	        });
-	
-	        _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
-	
-	        nameG.append('rect').attr({
-	          fill: '#fff',
-	          height: nameHeight,
-	          stroke: '#000',
-	          width: width
-	        }).style({
-	          filter: 'url(#diagrams-drop-shadow-box)'
-	        });
-	        nameG.append('text').attr({
-	          x: width / 2,
-	          y: 30
-	        }).text(conf.name).style({
-	          'font-weight': 'bold',
-	          'text-anchor': 'middle'
-	        });
-	
-	        d3.select(document.body).style('opacity', 0);
+	var collapseIfNecessary = function collapseIfNecessary(el, item) {
+	  if (item.items.length > 0 || item.collapsedItems) {
+	    (function () {
+	      var textEl = el.select('text');
+	      var yDim = textEl.attr('y');
+	      var xDim = textEl.attr('x');
+	      var triggerEl = el.append('g').attr({
+	        'class': 'collapsible-trigger'
+	      });
+	      var collapseListener = function collapseListener() {
+	        _helpers2['default'].collapseItem(item);
 	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	      };
+	      var expandListener = function expandListener() {
+	        _helpers2['default'].expandItem(item);
+	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	      };
+	      var triggerTextEl = triggerEl.append('text').attr({
+	        x: Number(xDim) - 20,
+	        y: Number(yDim) + 5
+	      });
+	      var setCollapseTextAndListener = function setCollapseTextAndListener() {
+	        triggerTextEl.text('-').attr('class', 'minus');
+	        triggerEl.on('click', collapseListener);
+	      };
+	      var setExpandTextAndListener = function setExpandTextAndListener() {
+	        triggerTextEl.text('+').attr({
+	          'class': 'plus',
+	          y: yDim
+	        });
+	        triggerEl.on('click', expandListener);
+	      };
+	      var clipPathId = undefined;
 	
-	        if (opts.allCollapsed === true) _helpers2['default'].collapseAll(creationId);
-	        _helpers2['default'].addButtons(creationId);
-	        d3.select(document.body).style('opacity', 1);
+	      triggerElId += 1;
+	      clipPathId = 'clippath-' + triggerElId;
+	      triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
+	        height: 15,
+	        width: 20,
+	        x: xDim - 20,
+	        y: yDim - 17
+	      });
+	      triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
 	
-	        if (urlParams.target) scrollToTarget(urlParams.target);
+	      if (isUndefined(item.collapsed)) {
+	        item.collapsed = false;
+	        setCollapseTextAndListener();
+	      } else {
+	        if (item.collapsed === true) setExpandTextAndListener();else if (item.collapsed === false) setCollapseTextAndListener();
 	      }
-	    }, {
-	      key: 'setRelationships',
-	      value: function setRelationships(items, container) {
-	        var diagram = this;
+	    })();
+	  }
+	};
 	
-	        _.each(items, function (item) {
-	          diagram.generateEmptyRelationships(item);
+	var scrollToTarget = function scrollToTarget(target, conf) {
+	  var targetFound = null;
+	  var recursiveFindTarget = function recursiveFindTarget(items) {
+	    each(items, function (item) {
+	      if (isNull(targetFound)) {
+	        if (isString(item.text) && item.text.indexOf(target) > -1) targetFound = item;else if (item.items) recursiveFindTarget(item.items);
+	      }
+	    });
+	  };
+	  var currentScroll = undefined,
+	      scrollElTop = undefined;
 	
-	          if (container) {
-	            diagram.addDependantRelationship(container, item.textG, item);
-	            diagram.addDependencyRelationship(item, container.textG, container);
+	  recursiveFindTarget(conf.body);
+	
+	  if (targetFound) {
+	    currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+	    scrollElTop = targetFound.textG[0][0].getBoundingClientRect().top;
+	    defer(function () {
+	      window.scrollTo(0, scrollElTop + currentScroll);
+	    });
+	  }
+	  console.log("targetFound", targetFound);
+	};
+	
+	var bodyPosition = undefined;
+	
+	var addBodyItems = function addBodyItems(_ref2) {
+	  var conf = _ref2.conf;
+	  var container = _ref2.container;
+	  var depth = _ref2.depth;
+	  var diagram = _ref2.diagram;
+	  var items = _ref2.items;
+	  var svg = _ref2.svg;
+	
+	  var newContainer = undefined,
+	      textEl = undefined,
+	      textWidth = undefined,
+	      descriptionWidth = undefined,
+	      containerText = undefined,
+	      textElValue = undefined;
+	
+	  items = items || conf.body;
+	  container = container || bodyG;
+	  depth = depth || 1;
+	
+	  if (items === conf.body) bodyPosition = 1;
+	
+	  each(items, function (item, itemIndex) {
+	    if (item.hidden !== true) {
+	      var currentTextGId = 'diagrams-box-text-' + textGId++;
+	
+	      if (isString(item)) {
+	        item = _helpers2['default'].generateItem({ text: item });
+	        items[itemIndex] = item;
+	      }
+	      item.items = item.items || [];
+	
+	      if (item.items.length > 0) {
+	        newContainer = container.append('g');
+	        containerText = _diagrams2['default'].utils.formatShortDescription(item.text);
+	
+	        if (item.items && item.items.length > 0) containerText += ':';
+	
+	        if (item.description) {
+	          item.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(containerText, item.description);
+	          containerText += ' (...)';
+	        } else item.fullText = item.text;
+	
+	        textEl = newContainer.append('text').text(containerText).attr({
+	          id: currentTextGId,
+	          x: fixedValues.depthWidth * depth,
+	          y: fixedValues.rowHeight * ++bodyPosition
+	        });
+	
+	        addBodyItems({
+	          bodyPosition: bodyPosition, conf: conf, container: newContainer, depth: depth + 1,
+	          diagram: diagram, items: item.items, svg: svg
+	        });
+	      } else {
+	        if (item.options && item.options.isLink === true) {
+	          newContainer = container.append('svg:a').attr("xlink:href", item.description);
+	          textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
+	            fill: '#3962B8',
+	            id: currentTextGId,
+	            x: fixedValues.depthWidth * depth,
+	            y: fixedValues.rowHeight * ++bodyPosition
+	          });
+	
+	          item.fullText = item.text + ' (' + item.description + ')';
+	        } else {
+	          newContainer = container.append('g').attr({
+	            id: currentTextGId
+	          });
+	          textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
+	            'class': 'diagrams-box-definition-text',
+	            x: fixedValues.depthWidth * depth,
+	            y: fixedValues.rowHeight * ++bodyPosition
+	          });
+	
+	          if (item.description) {
+	            textWidth = textEl[0][0].getBoundingClientRect().width;
+	            descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - fixedValues.depthWidth * depth - 30;
+	
+	            newContainer.append('text').text('- ' + _diagrams2['default'].utils.formatShortDescription(item.description)).attr({
+	              x: fixedValues.depthWidth * depth + textWidth + 5,
+	              y: fixedValues.rowHeight * bodyPosition - 1
+	            }).each(_diagrams2['default'].svg.textEllipsis(descriptionWidth));
 	          }
 	
-	          if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item);
-	        });
+	          item.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(item.text, item.description);
+	        }
 	      }
-	    }]);
 	
-	    return Box;
-	  })(_diagrams2['default'].Diagram);
+	      collapseIfNecessary(newContainer, item);
+	      item.textG = newContainer;
+	      item.textEl = textEl;
 	
+	      if (item.options.notCompleted === true) {
+	        item.textG.attr('class', '' + (item.textG.attr('class') || '') + ' diagrams-box-not-completed-block');
+	        textElValue = item.textEl.text();
+	        item.textEl.text('');
+	        item.textEl.append('tspan').text(textElValue + ' ');
+	        item.textEl.append('tspan').text('[NOT COMPLETED]').attr('class', 'diagrams-box-not-completed-tag');
+	      }
+	
+	      diagram.addMouseListenersToEl(textEl, item);
+	    }
+	  });
+	};
+	
+	var getAddBodyItemsFn = function getAddBodyItemsFn(_ref3) {
+	  var boxG = _ref3.boxG;
+	  var conf = _ref3.conf;
+	  var diagram = _ref3.diagram;
+	  var svg = _ref3.svg;
+	  var width = _ref3.width;
+	
+	  return function () {
+	    var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+	
+	    svg.attr('height', 10);
+	
+	    if (bodyG) bodyG.remove();
+	    bodyG = boxG.append('g').attr({
+	      transform: 'translate(0, ' + fixedValues.nameHeight + ')'
+	    });
+	    var bodyRect = bodyG.append('rect').attr({
+	      fill: '#fff',
+	      stroke: '#000',
+	      width: width
+	    }).style({
+	      filter: 'url(#diagrams-drop-shadow-box)'
+	    });
+	
+	    triggerElId = 0;
+	    addBodyItems({ bodyG: bodyG, conf: conf, container: null, depth: null, diagram: diagram, items: null, svg: svg });
+	    diagram.setRelationships(conf.body);
+	    _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
+	    _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - fixedValues.nameHeight);
+	
+	    window.scrollTo(0, currentScroll);
+	    diagram.emit('items-rendered');
+	  };
+	};
+	
+	var Box = (function (_d$Diagram) {
+	  _inherits(Box, _d$Diagram);
+	
+	  function Box() {
+	    _classCallCheck(this, Box);
+	
+	    _get(Object.getPrototypeOf(Box.prototype), 'constructor', this).apply(this, arguments);
+	  }
+	
+	  _createClass(Box, [{
+	    key: 'create',
+	    value: function create(creationId, conf, opts) {
+	      var diagram = this;
+	      var svg = _diagrams2['default'].svg.generateSvg();
+	      var width = svg.attr('width') - 40;
+	      var boxG = svg.append('g').attr({
+	        'class': 'box-diagram',
+	        transform: 'translate(20, 20)'
+	      });
+	      var nameG = boxG.append('g');
+	      var urlParams = _diagrams2['default'].utils.getUrlParams();
+	
+	      opts = opts || {};
+	
+	      _helpers2['default'].addBodyItemsAndUpdateHeights.set(getAddBodyItemsFn({ boxG: boxG, conf: conf, diagram: diagram, svg: svg, width: width }));
+	
+	      _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
+	
+	      nameG.append('rect').attr({
+	        fill: '#fff',
+	        height: fixedValues.nameHeight,
+	        stroke: '#000',
+	        width: width
+	      }).style({
+	        filter: 'url(#diagrams-drop-shadow-box)'
+	      });
+	      nameG.append('text').attr({
+	        x: width / 2,
+	        y: 30
+	      }).text(conf.name).style({
+	        'font-weight': 'bold',
+	        'text-anchor': 'middle'
+	      });
+	
+	      d3.select(document.body).style('opacity', 0);
+	      _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	
+	      if (opts.allCollapsed === true) _helpers2['default'].collapseAll(creationId);
+	      _helpers2['default'].addButtons(creationId);
+	      d3.select(document.body).style('opacity', 1);
+	
+	      if (urlParams.target) scrollToTarget(urlParams.target, conf);
+	    }
+	  }, {
+	    key: 'setRelationships',
+	    value: function setRelationships(items, container) {
+	      var diagram = this;
+	
+	      each(items, function (item) {
+	        diagram.generateEmptyRelationships(item);
+	
+	        if (container) {
+	          diagram.addDependantRelationship(container, item.textG, item);
+	          diagram.addDependencyRelationship(item, container.textG, container);
+	        }
+	
+	        if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item);
+	      });
+	    }
+	  }]);
+	
+	  return Box;
+	})(_diagrams2['default'].Diagram);
+	
+	exports['default'] = function () {
 	  new Box({
 	    helpers: _helpers2['default'],
 	    name: 'box'
@@ -2073,6 +2134,716 @@
 
 /***/ },
 /* 29 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _addDiagramInfo = __webpack_require__(30);
+	
+	var _addDiagramInfo2 = _interopRequireDefault(_addDiagramInfo);
+	
+	var _connectionFnFactory = __webpack_require__(31);
+	
+	var _connectionFnFactory2 = _interopRequireDefault(_connectionFnFactory);
+	
+	var _dataFromGeneralToSpecific = __webpack_require__(32);
+	
+	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
+	
+	var _generateConnectionWithText = __webpack_require__(34);
+	
+	var _generateConnectionWithText2 = _interopRequireDefault(_generateConnectionWithText);
+	
+	var _generateFnNodeWithSharedGetAndBoldIfFile = __webpack_require__(35);
+	
+	var _generateFnNodeWithSharedGetAndBoldIfFile2 = _interopRequireDefault(_generateFnNodeWithSharedGetAndBoldIfFile);
+	
+	var _generateNode = __webpack_require__(37);
+	
+	var _generateNode2 = _interopRequireDefault(_generateNode);
+	
+	var _generateNodeOptions = __webpack_require__(38);
+	
+	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
+	
+	var _generateNodeWithSharedGet = __webpack_require__(36);
+	
+	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
+	
+	var _generateNodeWithTargetLink = __webpack_require__(40);
+	
+	var _generateNodeWithTargetLink2 = _interopRequireDefault(_generateNodeWithTargetLink);
+	
+	var _generateNodeWithTextAsTargetLink = __webpack_require__(41);
+	
+	var _generateNodeWithTextAsTargetLink2 = _interopRequireDefault(_generateNodeWithTextAsTargetLink);
+	
+	var _generatePrivateNode = __webpack_require__(42);
+	
+	var _generatePrivateNode2 = _interopRequireDefault(_generatePrivateNode);
+	
+	var _getLinksNumberMapItemWithLink = __webpack_require__(43);
+	
+	var _getLinksNumberMapItemWithLink2 = _interopRequireDefault(_getLinksNumberMapItemWithLink);
+	
+	var _linksNumberMapHandler = __webpack_require__(44);
+	
+	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
+	
+	var _mergeWithDefaultConnection = __webpack_require__(39);
+	
+	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
+	
+	var _setReRender = __webpack_require__(45);
+	
+	var _setReRender2 = _interopRequireDefault(_setReRender);
+	
+	var _updateLinksNumberMapWithLink = __webpack_require__(46);
+	
+	var _updateLinksNumberMapWithLink2 = _interopRequireDefault(_updateLinksNumberMapWithLink);
+	
+	exports['default'] = {
+	  addDiagramInfo: _addDiagramInfo2['default'],
+	  connectionFnFactory: _connectionFnFactory2['default'],
+	  dataFromGeneralToSpecific: _dataFromGeneralToSpecific2['default'],
+	  doWithMinIdAndMaxIdOfLinkNodes: _doWithMinIdAndMaxIdOfLinkNodes2['default'],
+	  generateConnectionWithText: _generateConnectionWithText2['default'],
+	  generateFnNodeWithSharedGetAndBoldIfFile: _generateFnNodeWithSharedGetAndBoldIfFile2['default'],
+	  generateNode: _generateNode2['default'],
+	  generateNodeOptions: _generateNodeOptions2['default'],
+	  generateNodeWithSharedGet: _generateNodeWithSharedGet2['default'],
+	  generateNodeWithTargetLink: _generateNodeWithTargetLink2['default'],
+	  generateNodeWithTextAsTargetLink: _generateNodeWithTextAsTargetLink2['default'],
+	  generatePrivateNode: _generatePrivateNode2['default'],
+	  getLinksNumberMapItemWithLink: _getLinksNumberMapItemWithLink2['default'],
+	  linksNumberMapHandler: _linksNumberMapHandler2['default'],
+	  mergeWithDefaultConnection: _mergeWithDefaultConnection2['default'],
+	  setReRender: _setReRender2['default'],
+	  updateLinksNumberMapWithLink: _updateLinksNumberMapWithLink2['default']
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _ref = _;
+	var isString = _ref.isString;
+	
+	exports['default'] = function (diagram, svg, info) {
+	  if (isString(info)) info = [info];
+	  var hasDescription = info.length === 2;
+	  var svgWidth = svg[0][0].getBoundingClientRect().width;
+	  var infoText = info[0] + (hasDescription ? ' (...)' : '');
+	  var el = svg.append('g').attr({
+	    'class': 'graph-info',
+	    transform: 'translate(10, 50)'
+	  }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
+	
+	  if (hasDescription) {
+	    diagram.addMouseListenersToEl(el, {
+	      el: el,
+	      fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
+	    });
+	  }
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 31 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var _arguments = arguments;
+	var _ref = _;
+	var isArray = _ref.isArray;
+	var map = _ref.map;
+	
+	exports["default"] = function (baseFn, changedProp, changedVal) {
+	  return function () {
+	    var connection = baseFn.apply(undefined, _arguments);
+	    var setVal = function setVal(singleConnection) {
+	      singleConnection[changedProp] = changedVal;
+	
+	      return connection;
+	    };
+	
+	    return isArray(connection) ? map(connection, setVal) : setVal(connection);
+	  };
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 32 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _ref = _;
+	var each = _ref.each;
+	var map = _ref.map;
+	
+	var getNewConnection = function getNewConnection(_ref2) {
+	  var connection = _ref2.connection;
+	  var currentNode = _ref2.currentNode;
+	  var otherNodeId = _ref2.otherNodeId;
+	
+	  if (connection.direction === 'out') return {
+	    from: currentNode.id,
+	    to: otherNodeId
+	  };else if (connection.direction === 'in') return {
+	    from: otherNodeId,
+	    to: currentNode.id
+	  };
+	};
+	
+	var extractConnections = function extractConnections(currentNode, connection) {
+	  return map(connection.nodesIds, function (otherNodeId) {
+	    var newConnection = getNewConnection({ connection: connection, currentNode: currentNode, otherNodeId: otherNodeId });
+	
+	    return newConnection;
+	  });
+	};
+	
+	exports['default'] = function (data) {
+	  var finalItems = [];
+	  var connections = [];
+	
+	  each(data, function (node) {
+	    finalItems.push({
+	      description: node.description,
+	      id: node.id,
+	      name: node.name
+	    });
+	
+	    each(node.connections, function (connection) {
+	      connections = connections.concat(extractConnections(node, connection));
+	    });
+	  });
+	
+	  return {
+	    connections: connections,
+	    items: finalItems
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 33 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var _ref = _;
+	var isNumber = _ref.isNumber;
+	var max = _ref.max;
+	var min = _ref.min;
+	
+	exports["default"] = function (link, cb) {
+	  var getIndex = function getIndex(item) {
+	    return isNumber(item) ? item : item.index;
+	  };
+	  var ids = [getIndex(link.source), getIndex(link.target)];
+	  var minIndex = min(ids);
+	  var maxIndex = max(ids);
+	
+	  return cb(minIndex, maxIndex);
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _generateConnectionWithText = __webpack_require__(34);
+	
+	var _generateConnectionWithText2 = _interopRequireDefault(_generateConnectionWithText);
+	
+	var _ref = _;
+	var isArray = _ref.isArray;
+	var isNumber = _ref.isNumber;
+	var isString = _ref.isString;
+	var map = _ref.map;
+	
+	exports['default'] = function (nodesIds, text) {
+	  if (isArray(nodesIds) && isArray(nodesIds[0])) {
+	    return map(nodesIds, function (args) {
+	      return _generateConnectionWithText2['default'].apply({}, args);
+	    });
+	  }
+	
+	  if (isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (isNumber(nodesIds)) nodesIds = [nodesIds];
+	
+	  return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _arguments = arguments;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateNodeWithSharedGet = __webpack_require__(36);
+	
+	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
+	
+	exports['default'] = function (file) {
+	  return function () {
+	    var opts = '';
+	    var preffix = '';
+	
+	    if (_arguments[0].split('@')[0] === file) opts = 'b';
+	
+	    if (_arguments.length > 2) preffix = _arguments[2];
+	
+	    if (_arguments.length > 3) opts = _arguments[3] + ' ' + opts;
+	
+	    return (0, _generateNodeWithSharedGet2['default'])(_arguments[0], _arguments[1], preffix, opts);
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _arguments = arguments;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _generateNode = __webpack_require__(37);
+	
+	var _generateNode2 = _interopRequireDefault(_generateNode);
+	
+	exports['default'] = function () {
+	  var text = _arguments[0];
+	  var sharedKey = undefined,
+	      preffix = undefined,
+	      options = undefined;
+	
+	  preffix = _arguments.length > 2 ? _arguments[2] : '';
+	  sharedKey = preffix + text.split('(')[0];
+	  options = _arguments.length > 3 ? _arguments[3] : null;
+	
+	  return (0, _generateNode2['default'])(text, _arguments[1], _diagrams2['default'].shared.get(sharedKey), options);
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateNodeOptions = __webpack_require__(38);
+	
+	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
+	
+	var _mergeWithDefaultConnection = __webpack_require__(39);
+	
+	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
+	
+	var _ref = _;
+	var each = _ref.each;
+	var isArray = _ref.isArray;
+	var isNumber = _ref.isNumber;
+	var isObject = _ref.isObject;
+	var isString = _ref.isString;
+	
+	exports['default'] = function () {
+	  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	    args[_key] = arguments[_key];
+	  }
+	
+	  var node = {
+	    name: args[0]
+	  };
+	  var addDefaultConnectionFromNumber = function addDefaultConnectionFromNumber(nodeId) {
+	    node.connections.push((0, _mergeWithDefaultConnection2['default'])({
+	      nodesIds: [nodeId]
+	    }));
+	  };
+	  var addConnection = function addConnection(connection) {
+	    if (isArray(connection)) each(connection, addConnection);else if (isNumber(connection)) addConnection({
+	      nodesIds: [connection]
+	    });else if (isObject(connection)) {
+	      (0, _mergeWithDefaultConnection2['default'])(connection);
+	      node.connections.push(connection);
+	    }
+	  };
+	  var connections = undefined;
+	
+	  if (args.length > 1) {
+	    connections = args[1];
+	    node.connections = [];
+	
+	    if (isString(connections)) {
+	      connections = connections.split(' ').map(Number);
+	
+	      if (connections.length > 0) node.id = connections[0];
+	
+	      if (connections.length > 1) {
+	        each(connections, function (nodeId, index) {
+	          if (index > 0) addConnection(nodeId);
+	        });
+	      }
+	    } else if (isArray(connections)) {
+	      node.id = connections[0];
+	      connections = connections.slice(1);
+	      each(connections, function (connection) {
+	        if (isNumber(connection)) addDefaultConnectionFromNumber(connection);else addConnection(connection);
+	      });
+	    } else if (isNumber(connections)) node.id = connections;
+	
+	    if (args.length > 2) node.description = args[2];
+	
+	    if (args.length > 3) node.options = (0, _generateNodeOptions2['default'])(args[3]);
+	  }
+	
+	  return node;
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 38 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateNodeOptions = __webpack_require__(38);
+	
+	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
+	
+	var _ref = _;
+	var each = _ref.each;
+	var isArray = _ref.isArray;
+	var isString = _ref.isString;
+	
+	exports['default'] = function (options) {
+	  var obj = {};
+	  var shape = undefined;
+	
+	  if (isString(options)) return (0, _generateNodeOptions2['default'])(options.split(' '));else if (isArray(options)) {
+	    each(options, function (opt) {
+	      if (opt.substr(0, 2) === 's-') {
+	        shape = opt.substr(2, opt.length - 2);
+	        if (shape === 't') obj.shape = 'triangle';else if (shape === 's') obj.shape = 'square';else obj.shape = 'circle';
+	      } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
+	    });
+	
+	    return obj;
+	  }
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 39 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _ref = _;
+	var defaults = _ref.defaults;
+	
+	exports['default'] = function (connection) {
+	  var defaultConnection = {
+	    direction: 'out',
+	    line: 'plain',
+	    symbol: 'arrow'
+	  };
+	
+	  return defaults(connection, defaultConnection);
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 40 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _generateNode = __webpack_require__(37);
+	
+	var _generateNode2 = _interopRequireDefault(_generateNode);
+	
+	var _ref = _;
+	var isUndefined = _ref.isUndefined;
+	
+	exports['default'] = function (file, target) {
+	  return function () {
+	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	      args[_key] = arguments[_key];
+	    }
+	
+	    if (isUndefined(args[3])) args[3] = '';else args[3] += ' ';
+	    args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
+	
+	    return _generateNode2['default'].apply({}, args);
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 41 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _arguments = arguments;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	exports['default'] = function (file) {
+	  return function () {
+	    return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments[0]).apply({}, _arguments);
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 42 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var _arguments = arguments;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+	
+	var _generateNode = __webpack_require__(37);
+	
+	var _generateNode2 = _interopRequireDefault(_generateNode);
+	
+	exports['default'] = function () {
+	  var args = Array.prototype.slice.call(_arguments);
+	
+	  args[2] += '<br><strong>PRIVATE</strong>';
+	  args[3] = 's-t';
+	
+	  return _generateNode2['default'].apply(undefined, _toConsumableArray(args));
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 43 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
+	
+	var _linksNumberMapHandler = __webpack_require__(44);
+	
+	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
+	
+	exports['default'] = function (link) {
+	  return (0, _doWithMinIdAndMaxIdOfLinkNodes2['default'])(link, function (minIndex, maxIndex) {
+	    return (0, _linksNumberMapHandler2['default'])().get()[minIndex][maxIndex];
+	  });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 44 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var linksNumberMap = {};
+	
+	var handler = {
+	  get: function get() {
+	    return linksNumberMap;
+	  },
+	  reset: function reset() {
+	    return linksNumberMap = {};
+	  }
+	};
+	
+	exports["default"] = function () {
+	  return handler;
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 45 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	exports['default'] = function (diagram, creationId, data) {
+	  diagram.reRender = function (conf) {
+	    diagram.unlisten('configuration-changed');
+	    diagram.reRender = null;
+	    diagram.removePreviousAndCreate(creationId, data, conf);
+	  };
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 46 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	
+	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
+	
+	var _linksNumberMapHandler = __webpack_require__(44);
+	
+	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
+	
+	var _ref = _;
+	var isUndefined = _ref.isUndefined;
+	
+	exports['default'] = function (link) {
+	  (0, _doWithMinIdAndMaxIdOfLinkNodes2['default'])(link, function (minIndex, maxIndex) {
+	    var linksNumberMap = (0, _linksNumberMapHandler2['default'])().get();
+	
+	    if (isUndefined(linksNumberMap[minIndex])) linksNumberMap[minIndex] = {};
+	
+	    if (isUndefined(linksNumberMap[minIndex][maxIndex])) {
+	      linksNumberMap[minIndex][maxIndex] = 1;
+	    } else linksNumberMap[minIndex][maxIndex] += 1;
+	  });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2097,7 +2868,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(30);
+	var _helpers = __webpack_require__(29);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
@@ -2147,7 +2918,7 @@
 	            markers = undefined,
 	            parsedData = undefined;
 	
-	        _helpers2['default'].resetLinksNumberMap();
+	        _helpers2['default'].linksNumberMapHandler().reset();
 	
 	        var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
 	
@@ -2233,7 +3004,6 @@
 	            nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id;
 	            color = colors(nodeIndex);
 	            options = dataNode.options || {};
-	
 	            parsedData.nodes.push({
 	              bold: options.bold || false,
 	              color: color,
@@ -2545,299 +3315,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-	
-	var _diagrams = __webpack_require__(1);
-	
-	var _diagrams2 = _interopRequireDefault(_diagrams);
-	
-	var linksNumberMap = undefined;
-	
-	var helpers = {
-	  addDiagramInfo: function addDiagramInfo(diagram, svg, info) {
-	    if (_.isString(info)) info = [info];
-	    var hasDescription = info.length === 2;
-	    var svgWidth = svg[0][0].getBoundingClientRect().width;
-	    var infoText = info[0] + (hasDescription ? ' (...)' : '');
-	    var el = svg.append('g').attr({
-	      'class': 'graph-info',
-	      transform: 'translate(10, 50)'
-	    }).append('text').text(infoText).each(_diagrams2['default'].svg.textEllipsis(svgWidth));
-	
-	    if (hasDescription) {
-	      diagram.addMouseListenersToEl(el, {
-	        el: el,
-	        fullText: _diagrams2['default'].utils.generateATextDescriptionStr(info[0], info[1])
-	      });
-	    }
-	  },
-	  connectionFnFactory: function connectionFnFactory(baseFn, changedProp, changedVal) {
-	    var _arguments = arguments;
-	
-	    return function () {
-	      var connection = baseFn.apply(undefined, _arguments);
-	      var setVal = function setVal(singleConnection) {
-	        singleConnection[changedProp] = changedVal;
-	
-	        return connection;
-	      };
-	
-	      return _.isArray(connection) ? _.map(connection, setVal) : setVal(connection);
-	    };
-	  },
-	  dataFromGeneralToSpecific: function dataFromGeneralToSpecific(generalData) {
-	    var finalItems = [];
-	    var idToIndexMap = {};
-	    var targetItem = undefined;
-	
-	    _.each(generalData.items, function (item, index) {
-	      finalItems.push({
-	        description: item.description,
-	        id: item.id,
-	        name: item.name
-	      });
-	      idToIndexMap[item.id] = index;
-	    });
-	
-	    _.each(generalData.connections, function (connection) {
-	      targetItem = finalItems[idToIndexMap[connection.to]];
-	      targetItem.connections = targetItem.connections || [];
-	      targetItem.connections.push({
-	        direction: 'in',
-	        nodesIds: [connection.from]
-	      });
-	    });
-	
-	    return finalItems;
-	  },
-	  dataFromSpecificToGeneral: function dataFromSpecificToGeneral(data) {
-	    var finalItems = [];
-	    var connections = [];
-	    var setConnection = function setConnection(node, connection) {
-	      _.each(connection.nodesIds, function (otherNodeId) {
-	        newConnection = {};
-	
-	        if (connection.direction === 'out') {
-	          newConnection.from = node.id;
-	          newConnection.to = otherNodeId;
-	        } else if (connection.direction === 'in') {
-	          newConnection.from = otherNodeId;
-	          newConnection.to = node.id;
-	        }
-	
-	        connections.push(newConnection);
-	      });
-	    };
-	    var newConnection = undefined;
-	
-	    _.each(data, function (node) {
-	      finalItems.push({
-	        description: node.description,
-	        id: node.id,
-	        name: node.name
-	      });
-	      _.each(node.connections, function (connection) {
-	        return setConnection(node, connection);
-	      });
-	    });
-	
-	    return {
-	      connections: connections,
-	      items: finalItems
-	    };
-	  },
-	  doWithMinIdAndMaxIdOfLinkNodes: function doWithMinIdAndMaxIdOfLinkNodes(link, cb) {
-	    var getIndex = function getIndex(item) {
-	      return _.isNumber(item) ? item : item.index;
-	    };
-	    var ids = [getIndex(link.source), getIndex(link.target)];
-	    var minIndex = _.min(ids);
-	    var maxIndex = _.max(ids);
-	
-	    return cb(minIndex, maxIndex);
-	  },
-	  generateConnectionWithText: function generateConnectionWithText(nodesIds, text) {
-	    if (_.isArray(nodesIds) && _.isArray(nodesIds[0])) {
-	      return _.map(nodesIds, function (args) {
-	        return helpers.generateConnectionWithText.apply({}, args);
-	      });
-	    }
-	
-	    if (_.isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if (_.isNumber(nodesIds)) nodesIds = [nodesIds];
-	
-	    return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
-	  },
-	  generateFnNodeWithSharedGetAndBoldIfFile: function generateFnNodeWithSharedGetAndBoldIfFile(file) {
-	    var _arguments2 = arguments;
-	
-	    return function () {
-	      var opts = '';
-	      var preffix = '';
-	
-	      if (_arguments2[0].split('@')[0] === file) opts = 'b';
-	
-	      if (_arguments2.length > 2) preffix = _arguments2[2];
-	
-	      if (_arguments2.length > 3) opts = _arguments2[3] + ' ' + opts;
-	
-	      return helpers.generateNodeWithSharedGet(_arguments2[0], _arguments2[1], preffix, opts);
-	    };
-	  },
-	  generateNode: function generateNode() {
-	    var node = {
-	      name: arguments[0]
-	    };
-	    var addDefaultConnectionFromNumber = function addDefaultConnectionFromNumber(nodeId) {
-	      node.connections.push(helpers.mergeWithDefaultConnection({
-	        nodesIds: [nodeId]
-	      }));
-	    };
-	    var addConnection = function addConnection(connection) {
-	      if (_.isArray(connection)) _.each(connection, addConnection);else if (_.isNumber(connection)) addConnection({
-	        nodesIds: [connection]
-	      });else if (_.isObject(connection)) {
-	        helpers.mergeWithDefaultConnection(connection);
-	        node.connections.push(connection);
-	      }
-	    };
-	    var connections = undefined;
-	
-	    if (arguments.length > 1) {
-	      connections = arguments[1];
-	      node.connections = [];
-	
-	      if (_.isString(connections)) {
-	        connections = connections.split(' ').map(Number);
-	
-	        if (connections.length > 0) node.id = connections[0];
-	
-	        if (connections.length > 1) {
-	          _.each(connections, function (nodeId, index) {
-	            if (index > 0) addConnection(nodeId);
-	          });
-	        }
-	      } else if (_.isArray(connections)) {
-	        node.id = connections[0];
-	        connections = connections.slice(1);
-	        _.each(connections, function (connection) {
-	          if (_.isNumber(connection)) addDefaultConnectionFromNumber(connection);else addConnection(connection);
-	        });
-	      } else if (_.isNumber(connections)) node.id = connections;
-	
-	      if (arguments.length > 2) node.description = arguments[2];
-	
-	      if (arguments.length > 3) node.options = helpers.generateNodeOptions(arguments[3]);
-	    }
-	
-	    return node;
-	  },
-	  generateNodeOptions: function generateNodeOptions(options) {
-	    var obj = {};
-	    var shape = undefined;
-	
-	    if (_.isString(options)) return helpers.generateNodeOptions(options.split(' '));else if (_.isArray(options)) {
-	      _.each(options, function (opt) {
-	        if (opt.substr(0, 2) === 's-') {
-	          shape = opt.substr(2, opt.length - 2);
-	          if (shape === 't') obj.shape = 'triangle';else if (shape === 's') obj.shape = 'square';else obj.shape = 'circle';
-	        } else if (opt === 'b') obj.bold = true;else if (opt.substr(0, 2) === 'l~') obj.linkToUrl = opt.substr(2, opt.length - 2);
-	      });
-	
-	      return obj;
-	    }
-	  },
-	  generateNodeWithSharedGet: function generateNodeWithSharedGet() {
-	    var text = arguments[0];
-	    var sharedKey = undefined,
-	        preffix = undefined,
-	        options = undefined;
-	
-	    preffix = arguments.length > 2 ? arguments[2] : '';
-	    sharedKey = preffix + text.split('(')[0];
-	    options = arguments.length > 3 ? arguments[3] : null;
-	
-	    return helpers.generateNode(text, arguments[1], _diagrams2['default'].shared.get(sharedKey), options);
-	  },
-	  generateNodeWithTargetLink: function generateNodeWithTargetLink(file, target) {
-	    var _arguments3 = arguments;
-	
-	    return function () {
-	      var args = Array.prototype.slice.call(_arguments3);
-	
-	      if (_.isUndefined(args[3])) args[3] = '';else args[3] += ' ';
-	      args[3] += 'l~' + file + '?target=' + encodeURIComponent(target);
-	
-	      return helpers.generateNode.apply({}, args);
-	    };
-	  },
-	  generateNodeWithTextAsTargetLink: function generateNodeWithTextAsTargetLink(file) {
-	    var _arguments4 = arguments;
-	
-	    return function () {
-	      return _diagrams2['default'].graph.generateNodeWithTargetLink(file, _arguments4[0]).apply({}, _arguments4);
-	    };
-	  },
-	  generatePrivateNode: function generatePrivateNode() {
-	    var args = Array.prototype.slice.call(arguments);
-	
-	    args[2] += '<br><strong>PRIVATE</strong>';
-	    args[3] = 's-t';
-	
-	    return helpers.generateNode.apply(helpers, _toConsumableArray(args));
-	  },
-	  getLinksNumberMapItemWithLink: function getLinksNumberMapItemWithLink(link) {
-	    return helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
-	      return linksNumberMap[minIndex][maxIndex];
-	    });
-	  },
-	  mergeWithDefaultConnection: function mergeWithDefaultConnection(connection) {
-	    var defaultConnection = {
-	      direction: 'out',
-	      line: 'plain',
-	      symbol: 'arrow'
-	    };
-	
-	    return _.defaults(connection, defaultConnection);
-	  },
-	  resetLinksNumberMap: function resetLinksNumberMap() {
-	    linksNumberMap = {};
-	  },
-	  setReRender: function setReRender(diagram, creationId, data) {
-	    diagram.reRender = function (conf) {
-	      diagram.unlisten('configuration-changed');
-	      diagram.reRender = null;
-	      diagram.removePreviousAndCreate(creationId, data, conf);
-	    };
-	  },
-	  updateLinksNumberMapWithLink: function updateLinksNumberMapWithLink(link) {
-	    helpers.doWithMinIdAndMaxIdOfLinkNodes(link, function (minIndex, maxIndex) {
-	      if (_.isUndefined(linksNumberMap[minIndex])) linksNumberMap[minIndex] = {};
-	
-	      if (_.isUndefined(linksNumberMap[minIndex][maxIndex])) {
-	        linksNumberMap[minIndex][maxIndex] = 1;
-	      } else linksNumberMap[minIndex][maxIndex] += 1;
-	    });
-	  }
-	};
-	
-	helpers.resetLinksNumberMap();
-	
-	exports['default'] = helpers;
-	module.exports = exports['default'];
-
-/***/ },
-/* 31 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2860,7 +3338,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(32);
+	var _helpers = __webpack_require__(49);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
@@ -3267,7 +3745,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 32 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
