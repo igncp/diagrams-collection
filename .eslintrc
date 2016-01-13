@@ -215,6 +215,7 @@
         "wrap-regex": 0, // require regex literals to be wrapped in parentheses
         "yoda": 0, // require or disallow Yoda conditions
         "igncp-extras/object-properties-sorted": 2,
+        "igncp-extras/max-indentation-spaces": 0, // [2, 10],
     },
     "plugins": [
         "igncp-extras"

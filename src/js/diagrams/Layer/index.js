@@ -8,7 +8,7 @@ export default () => {
   class Layer extends d.Diagram {
     create(creationId, conf) {
       const diagram = this
-      const config = helpers.config
+      const config = helpers.getConfig()
       const colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7',
         '#53777A', '#00A8C6', '#AEE239', '#FAAE8A']
       const addItemsPropToBottomItems = (layers) => {
@@ -238,7 +238,7 @@ export default () => {
       const calcMaxUnityWidth = () => {
         const bodyWidth = document.body.getBoundingClientRect().width
 
-        helpers.maxUnityWidth = Math.floor(bodyWidth / config.widthSize)
+        diagram.maxUnityWidth = Math.floor(bodyWidth / config.widthSize)
       }
       const drawLayersInContainer = function(layers, container, containerData) {
         const widthSize = config.widthSize
@@ -363,7 +363,7 @@ export default () => {
 
       addItemsPropToBottomItems(conf)
       calcMaxUnityWidth()
-      helpers.generateLayersData(conf)
+      helpers.generateLayersData(diagram, conf)
       drawLayersInContainer()
       drawConnectionsIfAny()
       updateSvgHeight()
