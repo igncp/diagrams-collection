@@ -933,7 +933,7 @@
 	      _diagrams2['default'].diagramsRegistry.push({
 	        data: creationArgs,
 	        diagram: this,
-	        id: createdDiagramsMaxId
+	        id: creationArgs[0]
 	      });
 	    }
 	  }, {

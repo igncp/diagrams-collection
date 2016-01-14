@@ -273,7 +273,7 @@ class Diagram {
     d.diagramsRegistry.push({
       data: creationArgs,
       diagram: this,
-      id: createdDiagramsMaxId,
+      id: creationArgs[0],
     })
   }
 
