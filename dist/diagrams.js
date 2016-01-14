@@ -996,12 +996,15 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./Box/helpers/index": 8,
-		"./Box/index": 28,
-		"./Graph/helpers/index": 29,
-		"./Graph/index": 47,
-		"./Layer/helpers/index": 48,
-		"./Layer/index": 67
+		"./Box/creation/index": 8,
+		"./Box/helpers/index": 9,
+		"./Box/index": 34,
+		"./Graph/creation/index": 35,
+		"./Graph/helpers/index": 36,
+		"./Graph/index": 54,
+		"./Layer/creation/index": 55,
+		"./Layer/helpers/index": 56,
+		"./Layer/index": 75
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -1029,79 +1032,156 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _addBodyItemsAndUpdateHeights = __webpack_require__(9);
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _helpers = __webpack_require__(9);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var _getAddBodyItemsFn = __webpack_require__(29);
+	
+	var _getAddBodyItemsFn2 = _interopRequireDefault(_getAddBodyItemsFn);
+	
+	var _scrollToTarget = __webpack_require__(33);
+	
+	var _scrollToTarget2 = _interopRequireDefault(_scrollToTarget);
+	
+	var _features = __webpack_require__(31);
+	
+	var f = (0, _features.getFeatures)();
+	
+	var getCreationFn = function getCreationFn(diagram) {
+	  return function (creationId, conf, opts) {
+	    var svg = _diagrams2['default'].svg.generateSvg();
+	    var width = svg.attr('width') - 40;
+	    var boxG = svg.append('g').attr({
+	      'class': 'box-diagram',
+	      transform: 'translate(20, 20)'
+	    });
+	    var nameG = boxG.append('g');
+	    var urlParams = _diagrams2['default'].utils.getUrlParams();
+	
+	    opts = opts || {};
+	
+	    _helpers2['default'].addBodyItemsAndUpdateHeights.set((0, _getAddBodyItemsFn2['default'])({ boxG: boxG, conf: conf, diagram: diagram, svg: svg, width: width }));
+	
+	    _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
+	
+	    nameG.append('rect').attr({
+	      fill: '#fff',
+	      height: f.nameHeight,
+	      stroke: '#000',
+	      width: width
+	    }).style({
+	      filter: 'url(#diagrams-drop-shadow-box)'
+	    });
+	    nameG.append('text').attr({
+	      x: width / 2,
+	      y: 30
+	    }).text(conf.name).style({
+	      'font-weight': 'bold',
+	      'text-anchor': 'middle'
+	    });
+	
+	    d3.select(document.body).style('opacity', 0);
+	    _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	
+	    if (opts.allCollapsed === true) _helpers2['default'].collapseAll(creationId);
+	    _helpers2['default'].addButtons(creationId);
+	    d3.select(document.body).style('opacity', 1);
+	
+	    if (urlParams.target) (0, _scrollToTarget2['default'])(urlParams.target, conf);
+	  };
+	};
+	exports.getCreationFn = getCreationFn;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _addBodyItemsAndUpdateHeights = __webpack_require__(10);
 	
 	var _addBodyItemsAndUpdateHeights2 = _interopRequireDefault(_addBodyItemsAndUpdateHeights);
 	
-	var _addButtons = __webpack_require__(10);
+	var _addButtons = __webpack_require__(11);
 	
 	var _addButtons2 = _interopRequireDefault(_addButtons);
 	
-	var _collapseAll = __webpack_require__(11);
+	var _collapseAll = __webpack_require__(12);
 	
 	var _collapseAll2 = _interopRequireDefault(_collapseAll);
 	
-	var _collapseItem = __webpack_require__(14);
+	var _collapseItem = __webpack_require__(15);
 	
 	var _collapseItem2 = _interopRequireDefault(_collapseItem);
 	
-	var _convertToGraph = __webpack_require__(16);
+	var _convertToGraph = __webpack_require__(17);
 	
 	var _convertToGraph2 = _interopRequireDefault(_convertToGraph);
 	
-	var _convertToLayer = __webpack_require__(17);
+	var _convertToLayer = __webpack_require__(18);
 	
 	var _convertToLayer2 = _interopRequireDefault(_convertToLayer);
 	
-	var _dataFromGeneralToSpecific = __webpack_require__(18);
+	var _dataFromGeneralToSpecific = __webpack_require__(19);
 	
 	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
 	
-	var _dataFromSpecificToGeneral = __webpack_require__(19);
+	var _dataFromSpecificToGeneral = __webpack_require__(20);
 	
 	var _dataFromSpecificToGeneral2 = _interopRequireDefault(_dataFromSpecificToGeneral);
 	
-	var _expandAll = __webpack_require__(20);
+	var _expandAll = __webpack_require__(21);
 	
 	var _expandAll2 = _interopRequireDefault(_expandAll);
 	
-	var _expandItem = __webpack_require__(15);
+	var _expandItem = __webpack_require__(16);
 	
 	var _expandItem2 = _interopRequireDefault(_expandItem);
 	
-	var _expandOrCollapseAll = __webpack_require__(12);
+	var _expandOrCollapseAll = __webpack_require__(13);
 	
 	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
 	
-	var _filterByString = __webpack_require__(21);
+	var _filterByString = __webpack_require__(22);
 	
 	var _filterByString2 = _interopRequireDefault(_filterByString);
 	
-	var _generateContainer = __webpack_require__(22);
+	var _generateContainer = __webpack_require__(23);
 	
 	var _generateContainer2 = _interopRequireDefault(_generateContainer);
 	
-	var _generateDefinition = __webpack_require__(25);
+	var _generateDefinition = __webpack_require__(26);
 	
 	var _generateDefinition2 = _interopRequireDefault(_generateDefinition);
 	
-	var _generateDefinitionWithSharedGet = __webpack_require__(26);
+	var _generateDefinitionWithSharedGet = __webpack_require__(27);
 	
 	var _generateDefinitionWithSharedGet2 = _interopRequireDefault(_generateDefinitionWithSharedGet);
 	
-	var _generateItem = __webpack_require__(23);
+	var _generateItem = __webpack_require__(24);
 	
 	var _generateItem2 = _interopRequireDefault(_generateItem);
 	
-	var _generateLink = __webpack_require__(27);
+	var _generateLink = __webpack_require__(28);
 	
 	var _generateLink2 = _interopRequireDefault(_generateLink);
 	
-	var _parseItemGenerationOptions = __webpack_require__(24);
+	var _parseItemGenerationOptions = __webpack_require__(25);
 	
 	var _parseItemGenerationOptions2 = _interopRequireDefault(_parseItemGenerationOptions);
 	
-	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	var _traverseBodyDataAndRefresh = __webpack_require__(14);
 	
 	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
 	
@@ -1131,7 +1211,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1155,7 +1235,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1180,28 +1260,6 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _expandOrCollapseAll = __webpack_require__(12);
-	
-	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
-	
-	exports['default'] = function (creationId) {
-	  (0, _expandOrCollapseAll2['default'])(creationId, 'collapse');
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1213,15 +1271,37 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	var _expandOrCollapseAll = __webpack_require__(13);
+	
+	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
+	
+	exports['default'] = function (creationId) {
+	  (0, _expandOrCollapseAll2['default'])(creationId, 'collapse');
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _traverseBodyDataAndRefresh = __webpack_require__(14);
 	
 	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
 	
-	var _collapseItem = __webpack_require__(14);
+	var _collapseItem = __webpack_require__(15);
 	
 	var _collapseItem2 = _interopRequireDefault(_collapseItem);
 	
-	var _expandItem = __webpack_require__(15);
+	var _expandItem = __webpack_require__(16);
 	
 	var _expandItem2 = _interopRequireDefault(_expandItem);
 	
@@ -1254,7 +1334,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1269,7 +1349,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _addBodyItemsAndUpdateHeights = __webpack_require__(9);
+	var _addBodyItemsAndUpdateHeights = __webpack_require__(10);
 	
 	var _addBodyItemsAndUpdateHeights2 = _interopRequireDefault(_addBodyItemsAndUpdateHeights);
 	
@@ -1305,7 +1385,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1325,7 +1405,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1345,7 +1425,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1361,7 +1441,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1417,7 +1497,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1447,7 +1527,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1512,28 +1592,6 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _expandOrCollapseAll = __webpack_require__(12);
-	
-	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
-	
-	exports['default'] = function (creationId) {
-	  (0, _expandOrCollapseAll2['default'])(creationId, 'expand');
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1545,7 +1603,29 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _traverseBodyDataAndRefresh = __webpack_require__(13);
+	var _expandOrCollapseAll = __webpack_require__(13);
+	
+	var _expandOrCollapseAll2 = _interopRequireDefault(_expandOrCollapseAll);
+	
+	exports['default'] = function (creationId) {
+	  (0, _expandOrCollapseAll2['default'])(creationId, 'expand');
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _traverseBodyDataAndRefresh = __webpack_require__(14);
 	
 	var _traverseBodyDataAndRefresh2 = _interopRequireDefault(_traverseBodyDataAndRefresh);
 	
@@ -1589,7 +1669,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1600,7 +1680,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateItem = __webpack_require__(23);
+	var _generateItem = __webpack_require__(24);
 	
 	var _generateItem2 = _interopRequireDefault(_generateItem);
 	
@@ -1632,7 +1712,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1643,7 +1723,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _parseItemGenerationOptions = __webpack_require__(24);
+	var _parseItemGenerationOptions = __webpack_require__(25);
 	
 	var _parseItemGenerationOptions2 = _interopRequireDefault(_parseItemGenerationOptions);
 	
@@ -1677,7 +1757,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1717,28 +1797,6 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _generateItem = __webpack_require__(23);
-	
-	var _generateItem2 = _interopRequireDefault(_generateItem);
-	
-	exports['default'] = function (text, description) {
-	  return (0, _generateItem2['default'])({ description: description, text: text });
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
 /* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1750,20 +1808,12 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _diagrams = __webpack_require__(1);
+	var _generateItem = __webpack_require__(24);
 	
-	var _diagrams2 = _interopRequireDefault(_diagrams);
+	var _generateItem2 = _interopRequireDefault(_generateItem);
 	
-	var _generateDefinition = __webpack_require__(25);
-	
-	var _generateDefinition2 = _interopRequireDefault(_generateDefinition);
-	
-	exports['default'] = function (text) {
-	  var preffix = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
-	
-	  var sharedKey = preffix + text.split('(')[0];
-	
-	  return (0, _generateDefinition2['default'])(text, _diagrams2['default'].shared.get(sharedKey));
+	exports['default'] = function (text, description) {
+	  return (0, _generateItem2['default'])({ description: description, text: text });
 	};
 	
 	module.exports = exports['default'];
@@ -1780,14 +1830,20 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateItem = __webpack_require__(23);
+	var _diagrams = __webpack_require__(1);
 	
-	var _generateItem2 = _interopRequireDefault(_generateItem);
+	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	exports['default'] = function (text, url) {
-	  return (0, _generateItem2['default'])({ description: url, items: null, options: {
-	      isLink: true
-	    }, text: text });
+	var _generateDefinition = __webpack_require__(26);
+	
+	var _generateDefinition2 = _interopRequireDefault(_generateDefinition);
+	
+	exports['default'] = function (text) {
+	  var preffix = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+	
+	  var sharedKey = preffix + text.split('(')[0];
+	
+	  return (0, _generateDefinition2['default'])(text, _diagrams2['default'].shared.get(sharedKey));
 	};
 	
 	module.exports = exports['default'];
@@ -1802,120 +1858,60 @@
 	  value: true
 	});
 	
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-	
-	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	var _generateItem = __webpack_require__(24);
 	
-	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	var _generateItem2 = _interopRequireDefault(_generateItem);
+	
+	exports['default'] = function (text, url) {
+	  return (0, _generateItem2['default'])({ description: url, items: null, options: {
+	      isLink: true
+	    }, text: text });
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 29 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
 	var _diagrams = __webpack_require__(1);
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(8);
+	var _helpers = __webpack_require__(9);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
+	var _collapseIfNecessary = __webpack_require__(30);
+	
+	var _collapseIfNecessary2 = _interopRequireDefault(_collapseIfNecessary);
+	
+	var _triggerElIdHandler = __webpack_require__(32);
+	
+	var _triggerElIdHandler2 = _interopRequireDefault(_triggerElIdHandler);
+	
+	var _features = __webpack_require__(31);
+	
+	var f = (0, _features.getFeatures)();
+	
 	var _ref = _;
-	var defer = _ref.defer;
 	var each = _ref.each;
-	var isNull = _ref.isNull;
 	var isString = _ref.isString;
-	var isUndefined = _ref.isUndefined;
+	
+	var bodyPosition = undefined,
+	    bodyG = undefined;
 	
 	var textGId = 0;
-	var triggerElId = 0;
-	var bodyG = undefined;
-	
-	var fixedValues = {
-	  depthWidth: 35,
-	  nameHeight: 50,
-	  rowHeight: 30
-	};
-	
-	var collapseIfNecessary = function collapseIfNecessary(el, item) {
-	  if (item.items.length > 0 || item.collapsedItems) {
-	    (function () {
-	      var textEl = el.select('text');
-	      var yDim = textEl.attr('y');
-	      var xDim = textEl.attr('x');
-	      var triggerEl = el.append('g').attr({
-	        'class': 'collapsible-trigger'
-	      });
-	      var collapseListener = function collapseListener() {
-	        _helpers2['default'].collapseItem(item);
-	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
-	      };
-	      var expandListener = function expandListener() {
-	        _helpers2['default'].expandItem(item);
-	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
-	      };
-	      var triggerTextEl = triggerEl.append('text').attr({
-	        x: Number(xDim) - 20,
-	        y: Number(yDim) + 5
-	      });
-	      var setCollapseTextAndListener = function setCollapseTextAndListener() {
-	        triggerTextEl.text('-').attr('class', 'minus');
-	        triggerEl.on('click', collapseListener);
-	      };
-	      var setExpandTextAndListener = function setExpandTextAndListener() {
-	        triggerTextEl.text('+').attr({
-	          'class': 'plus',
-	          y: yDim
-	        });
-	        triggerEl.on('click', expandListener);
-	      };
-	      var clipPathId = undefined;
-	
-	      triggerElId += 1;
-	      clipPathId = 'clippath-' + triggerElId;
-	      triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
-	        height: 15,
-	        width: 20,
-	        x: xDim - 20,
-	        y: yDim - 17
-	      });
-	      triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
-	
-	      if (isUndefined(item.collapsed)) {
-	        item.collapsed = false;
-	        setCollapseTextAndListener();
-	      } else {
-	        if (item.collapsed === true) setExpandTextAndListener();else if (item.collapsed === false) setCollapseTextAndListener();
-	      }
-	    })();
-	  }
-	};
-	
-	var scrollToTarget = function scrollToTarget(target, conf) {
-	  var targetFound = null;
-	  var recursiveFindTarget = function recursiveFindTarget(items) {
-	    each(items, function (item) {
-	      if (isNull(targetFound)) {
-	        if (isString(item.text) && item.text.indexOf(target) > -1) targetFound = item;else if (item.items) recursiveFindTarget(item.items);
-	      }
-	    });
-	  };
-	  var currentScroll = undefined,
-	      scrollElTop = undefined;
-	
-	  recursiveFindTarget(conf.body);
-	
-	  if (targetFound) {
-	    currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
-	    scrollElTop = targetFound.textG[0][0].getBoundingClientRect().top;
-	    defer(function () {
-	      window.scrollTo(0, scrollElTop + currentScroll);
-	    });
-	  }
-	  console.log("targetFound", targetFound);
-	};
-	
-	var bodyPosition = undefined;
 	
 	var addBodyItems = function addBodyItems(_ref2) {
 	  var conf = _ref2.conf;
@@ -1961,8 +1957,8 @@
 	
 	        textEl = newContainer.append('text').text(containerText).attr({
 	          id: currentTextGId,
-	          x: fixedValues.depthWidth * depth,
-	          y: fixedValues.rowHeight * ++bodyPosition
+	          x: f.depthWidth * depth,
+	          y: f.rowHeight * ++bodyPosition
 	        });
 	
 	        addBodyItems({
@@ -1973,10 +1969,10 @@
 	        if (item.options && item.options.isLink === true) {
 	          newContainer = container.append('svg:a').attr("xlink:href", item.description);
 	          textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
-	            fill: '#3962B8',
+	            fill: f.shortDescriptionColor,
 	            id: currentTextGId,
-	            x: fixedValues.depthWidth * depth,
-	            y: fixedValues.rowHeight * ++bodyPosition
+	            x: f.depthWidth * depth,
+	            y: f.rowHeight * ++bodyPosition
 	          });
 	
 	          item.fullText = item.text + ' (' + item.description + ')';
@@ -1986,17 +1982,17 @@
 	          });
 	          textEl = newContainer.append('text').text(_diagrams2['default'].utils.formatShortDescription(item.text)).attr({
 	            'class': 'diagrams-box-definition-text',
-	            x: fixedValues.depthWidth * depth,
-	            y: fixedValues.rowHeight * ++bodyPosition
+	            x: f.depthWidth * depth,
+	            y: f.rowHeight * ++bodyPosition
 	          });
 	
 	          if (item.description) {
 	            textWidth = textEl[0][0].getBoundingClientRect().width;
-	            descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - fixedValues.depthWidth * depth - 30;
+	            descriptionWidth = svg[0][0].getBoundingClientRect().width - textWidth - f.depthWidth * depth - 30;
 	
 	            newContainer.append('text').text('- ' + _diagrams2['default'].utils.formatShortDescription(item.description)).attr({
-	              x: fixedValues.depthWidth * depth + textWidth + 5,
-	              y: fixedValues.rowHeight * bodyPosition - 1
+	              x: f.depthWidth * depth + textWidth + 5,
+	              y: f.rowHeight * bodyPosition - 1
 	            }).each(_diagrams2['default'].svg.textEllipsis(descriptionWidth));
 	          }
 	
@@ -2004,7 +2000,7 @@
 	        }
 	      }
 	
-	      collapseIfNecessary(newContainer, item);
+	      (0, _collapseIfNecessary2['default'])(newContainer, item);
 	      item.textG = newContainer;
 	      item.textEl = textEl;
 	
@@ -2021,7 +2017,7 @@
 	  });
 	};
 	
-	var getAddBodyItemsFn = function getAddBodyItemsFn(_ref3) {
+	exports['default'] = function (_ref3) {
 	  var boxG = _ref3.boxG;
 	  var conf = _ref3.conf;
 	  var diagram = _ref3.diagram;
@@ -2031,30 +2027,256 @@
 	  return function () {
 	    var currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
 	
-	    svg.attr('height', 10);
+	    svg.attr('height', f.svgInitialNeglectableHeight);
 	
 	    if (bodyG) bodyG.remove();
 	    bodyG = boxG.append('g').attr({
-	      transform: 'translate(0, ' + fixedValues.nameHeight + ')'
+	      transform: 'translate(0, ' + f.nameHeight + ')'
 	    });
 	    var bodyRect = bodyG.append('rect').attr({
-	      fill: '#fff',
-	      stroke: '#000',
+	      fill: f.bodyRect.fill,
+	      stroke: f.bodyRect.stroke,
 	      width: width
 	    }).style({
 	      filter: 'url(#diagrams-drop-shadow-box)'
 	    });
 	
-	    triggerElId = 0;
+	    _triggerElIdHandler2['default'].reset();
 	    addBodyItems({ bodyG: bodyG, conf: conf, container: null, depth: null, diagram: diagram, items: null, svg: svg });
 	    diagram.setRelationships(conf.body);
 	    _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(svg, boxG, 50);
-	    _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - fixedValues.nameHeight);
+	    _diagrams2['default'].svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - f.nameHeight);
 	
 	    window.scrollTo(0, currentScroll);
 	    diagram.emit('items-rendered');
 	  };
 	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _helpers = __webpack_require__(9);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var _features = __webpack_require__(31);
+	
+	var _triggerElIdHandler = __webpack_require__(32);
+	
+	var _triggerElIdHandler2 = _interopRequireDefault(_triggerElIdHandler);
+	
+	var f = (0, _features.getFeatures)();
+	
+	var _ref = _;
+	var isUndefined = _ref.isUndefined;
+	
+	var collapseIfNecessary = function collapseIfNecessary(el, item) {
+	  if (item.items.length > 0 || item.collapsedItems) {
+	    (function () {
+	      var textEl = el.select('text');
+	      var yDim = Number(textEl.attr('y'));
+	      var xDim = Number(textEl.attr('x'));
+	      var triggerEl = el.append('g').attr({
+	        'class': 'collapsible-trigger'
+	      });
+	      var collapseListener = function collapseListener() {
+	        _helpers2['default'].collapseItem(item);
+	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	      };
+	      var expandListener = function expandListener() {
+	        _helpers2['default'].expandItem(item);
+	        _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
+	      };
+	      var triggerTextEl = triggerEl.append('text').attr({
+	        x: xDim + f.trigger.text.xOffset,
+	        y: yDim + f.trigger.text.yOffset
+	      });
+	      var setCollapseTextAndListener = function setCollapseTextAndListener() {
+	        triggerTextEl.text('-').attr('class', 'minus');
+	        triggerEl.on('click', collapseListener);
+	      };
+	      var setExpandTextAndListener = function setExpandTextAndListener() {
+	        triggerTextEl.text('+').attr({
+	          'class': 'plus',
+	          y: yDim
+	        });
+	        triggerEl.on('click', expandListener);
+	      };
+	      var clipPathId = undefined;
+	
+	      _triggerElIdHandler2['default'].increase();
+	      clipPathId = 'clippath-' + _triggerElIdHandler2['default'].get();
+	      triggerEl.append('clipPath').attr('id', clipPathId).append('rect').attr({
+	        height: f.trigger.CP.height,
+	        width: f.trigger.CP.width,
+	        x: xDim + f.trigger.CP.xOffset,
+	        y: yDim + f.trigger.CP.yOffset
+	      });
+	
+	      triggerTextEl.attr('clip-path', 'url(#' + clipPathId + ')');
+	
+	      if (isUndefined(item.collapsed)) {
+	        item.collapsed = false;
+	        setCollapseTextAndListener();
+	      } else {
+	        if (item.collapsed === true) setExpandTextAndListener();else if (item.collapsed === false) setCollapseTextAndListener();
+	      }
+	    })();
+	  }
+	};
+	
+	exports['default'] = collapseIfNecessary;
+	module.exports = exports['default'];
+
+/***/ },
+/* 31 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	var features = {
+	  bodyRect: {
+	    fill: '#fff',
+	    stroke: '#000'
+	  },
+	  depthWidth: 35,
+	  nameHeight: 50,
+	  rowHeight: 30,
+	  shortDescriptionColor: '#3962B8',
+	  svgInitialNeglectableHeight: 10,
+	  trigger: {
+	    // clippath
+	    CP: {
+	      height: 15,
+	      width: 20,
+	      xOffset: -20,
+	      yOffset: -17
+	    },
+	    text: {
+	      xOffset: -20,
+	      yOffset: 5
+	    }
+	  }
+	};
+	
+	var getFeatures = function getFeatures() {
+	  return features;
+	};
+	exports.getFeatures = getFeatures;
+
+/***/ },
+/* 32 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var triggerElId = undefined;
+	
+	var handler = {
+	  get: function get() {
+	    return triggerElId;
+	  },
+	  increase: function increase() {
+	    triggerElId += 1;
+	  },
+	  reset: function reset() {
+	    triggerElId = 0;
+	  }
+	};
+	
+	exports["default"] = handler;
+	module.exports = exports["default"];
+
+/***/ },
+/* 33 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var _ref = _;
+	var defer = _ref.defer;
+	var each = _ref.each;
+	var isNull = _ref.isNull;
+	var isString = _ref.isString;
+	
+	exports["default"] = function (target, conf) {
+	  var targetFound = null;
+	  var recursiveFindTarget = function recursiveFindTarget(items) {
+	    each(items, function (item) {
+	      if (isNull(targetFound)) {
+	        if (isString(item.text) && item.text.indexOf(target) > -1) targetFound = item;else if (item.items) recursiveFindTarget(item.items);
+	      }
+	    });
+	  };
+	  var currentScroll = undefined,
+	      scrollElTop = undefined;
+	
+	  recursiveFindTarget(conf.body);
+	
+	  if (targetFound) {
+	    currentScroll = (window.pageYOffset || document.documentElement.scrollTop) - (document.documentElement.clientTop || 0);
+	    scrollElTop = targetFound.textG[0][0].getBoundingClientRect().top;
+	    defer(function () {
+	      window.scrollTo(0, scrollElTop + currentScroll);
+	    });
+	  }
+	  console.log("targetFound", targetFound);
+	};
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _helpers = __webpack_require__(9);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var _creation = __webpack_require__(8);
+	
+	var _ref = _;
+	var each = _ref.each;
 	
 	var Box = (function (_d$Diagram) {
 	  _inherits(Box, _d$Diagram);
@@ -2067,47 +2289,8 @@
 	
 	  _createClass(Box, [{
 	    key: 'create',
-	    value: function create(creationId, conf, opts) {
-	      var diagram = this;
-	      var svg = _diagrams2['default'].svg.generateSvg();
-	      var width = svg.attr('width') - 40;
-	      var boxG = svg.append('g').attr({
-	        'class': 'box-diagram',
-	        transform: 'translate(20, 20)'
-	      });
-	      var nameG = boxG.append('g');
-	      var urlParams = _diagrams2['default'].utils.getUrlParams();
-	
-	      opts = opts || {};
-	
-	      _helpers2['default'].addBodyItemsAndUpdateHeights.set(getAddBodyItemsFn({ boxG: boxG, conf: conf, diagram: diagram, svg: svg, width: width }));
-	
-	      _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'box', slope: 4 });
-	
-	      nameG.append('rect').attr({
-	        fill: '#fff',
-	        height: fixedValues.nameHeight,
-	        stroke: '#000',
-	        width: width
-	      }).style({
-	        filter: 'url(#diagrams-drop-shadow-box)'
-	      });
-	      nameG.append('text').attr({
-	        x: width / 2,
-	        y: 30
-	      }).text(conf.name).style({
-	        'font-weight': 'bold',
-	        'text-anchor': 'middle'
-	      });
-	
-	      d3.select(document.body).style('opacity', 0);
-	      _helpers2['default'].addBodyItemsAndUpdateHeights.get()();
-	
-	      if (opts.allCollapsed === true) _helpers2['default'].collapseAll(creationId);
-	      _helpers2['default'].addButtons(creationId);
-	      d3.select(document.body).style('opacity', 1);
-	
-	      if (urlParams.target) scrollToTarget(urlParams.target, conf);
+	    value: function create() {
+	      (0, _creation.getCreationFn)(this).apply(undefined, arguments);
 	    }
 	  }, {
 	    key: 'setRelationships',
@@ -2140,7 +2323,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 29 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2151,71 +2334,505 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _addDiagramInfo = __webpack_require__(30);
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _helpers = __webpack_require__(36);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var SHY_CONNECTIONS = 'Show connections selectively';
+	var GRAPH_ZOOM = 'dia graph zoom';
+	var GRAPH_DRAG = 'Drag nodes on click (may make links difficult)';
+	var CURVED_ARROWS = 'All arrows are curved';
+	var graphZoomConfig = {
+	  'private': true,
+	  type: Number,
+	  value: 1
+	};
+	var dPositionFn = _diagrams2['default'].utils.positionFn;
+	var dTextFn = _diagrams2['default'].utils.textFn;
+	
+	var getCreationFn = function getCreationFn(diagram) {
+	  return function (creationId, data, conf) {
+	    var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+	    var svg = _diagrams2['default'].svg.generateSvg();
+	    var container = svg.append('g');
+	    var width = svg.attr('width');
+	    var dragNodesConfig = diagram.config(GRAPH_DRAG);
+	    var curvedArrows = diagram.config(CURVED_ARROWS);
+	    var force = undefined,
+	        drag = undefined,
+	        link = undefined,
+	        linkOuter = undefined,
+	        node = undefined,
+	        zoom = undefined,
+	        singleNodeEl = undefined,
+	        shape = undefined,
+	        shapeEl = undefined,
+	        markers = undefined,
+	        parsedData = undefined;
+	
+	    _helpers2['default'].linksNumberMapHandler().reset();
+	
+	    var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
+	
+	    var tick = function tick() {
+	      var setPathToLink = function setPathToLink(pathClass) {
+	        link.select('path.' + pathClass).attr("d", function (da) {
+	          var linksNumber = _helpers2['default'].getLinksNumberMapItemWithLink(da);
+	          var linkIndex = da.data.linkIndex;
+	          var dx = da.target.x - da.source.x;
+	          var dy = da.target.y - da.source.y;
+	          var dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
+	
+	          return 'M' + da.source.x + ',' + da.source.y + 'A' + (dr + ',' + dr + ' 0 0,1 ') + (da.target.x + ',' + da.target.y);
+	        });
+	      };
+	
+	      _.each(['link-path', 'link-path-outer'], setPathToLink);
+	
+	      node.each(function (singleNode) {
+	        if (singleNode.shape === 'circle') {
+	          node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
+	        } else {
+	          if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
+	
+	          _diagrams2['default'].utils.applySimpleTransform(shapeEl);
+	        }
+	      });
+	      node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
+	    };
+	    var parseData = function parseData() {
+	      var maxId = _.reduce(data, function (memo, tmpNode) {
+	        var id = tmpNode.id || 0;
+	
+	        return memo > id ? memo : id;
+	      }, 0);
+	      var idsMap = {};
+	      var nodesWithLinkMap = {};
+	      var colors = d3.scale.category20();
+	      var handleConnections = function handleConnections(tmpNode, nodeIndex) {
+	        if (tmpNode.connections.length > 0) {
+	          _.each(tmpNode.connections, function (connection) {
+	            _.each(connection.nodesIds, function (otherNodeId) {
+	              otherNode = idsMap[otherNodeId];
+	
+	              if (otherNode) {
+	                if (conf.hideNodesWithoutLinks) {
+	                  nodesWithLinkMap[otherNode.index] = true;
+	                  nodesWithLinkMap[nodeIndex] = true;
+	                }
+	                linkObj = {};
+	
+	                if (connection.direction === 'out') {
+	                  linkObj.source = nodeIndex;
+	                  linkObj.target = otherNode.index;
+	                } else {
+	                  linkObj.source = otherNode.index;
+	                  linkObj.target = nodeIndex;
+	                }
+	                linkObj.data = connection;
+	                linkObj.color = parsedData.nodes[linkObj.source].color;
+	                _helpers2['default'].updateLinksNumberMapWithLink(linkObj);
+	                linkObj.data.linkIndex = _helpers2['default'].getLinksNumberMapItemWithLink(linkObj) - 1;
+	
+	                if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
+	                parsedData.links.push(linkObj);
+	              }
+	            });
+	          });
+	        }
+	      };
+	      var nodeId = undefined,
+	          color = undefined,
+	          options = undefined,
+	          otherNode = undefined,
+	          linkObj = undefined;
+	
+	      parsedData = {
+	        links: [],
+	        nodes: []
+	      };
+	      markers = [];
+	      _.each(data, function (dataNode, nodeIndex) {
+	        nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id;
+	        color = colors(nodeIndex);
+	        options = dataNode.options || {};
+	        parsedData.nodes.push({
+	          bold: options.bold || false,
+	          color: color,
+	          connections: dataNode.connections || [],
+	          description: dataNode.description || null,
+	          id: nodeId,
+	          linkToUrl: options.linkToUrl || null,
+	          name: dataNode.name,
+	          shape: options.shape || 'circle'
+	        });
+	        idsMap[nodeId] = {
+	          index: nodeIndex
+	        };
+	        idsMap[nodeId].color = color;
+	        markers.push({
+	          color: color,
+	          id: nodeId
+	        });
+	      });
+	
+	      diagram.config(conf);
+	
+	      if (conf.info) _helpers2['default'].addDiagramInfo(diagram, svg, conf.info);
+	
+	      _.each(parsedData.nodes, handleConnections);
+	
+	      if (conf.hideNodesWithoutLinks === true) {
+	        _.each(parsedData.nodes, function (pdNode, nodeIndex) {
+	          if (nodesWithLinkMap[nodeIndex] !== true) pdNode.hidden = true;
+	        });
+	      }
+	    };
+	
+	    var zoomed = function zoomed(translate, scale) {
+	      scale = scale || 1;
+	      container.attr("transform", 'translate(' + translate + ')scale(' + scale + ')');
+	      graphZoomConfig.value = scale;
+	      diagram.config(GRAPH_ZOOM, graphZoomConfig);
+	    };
+	
+	    var dragstarted = function dragstarted() {
+	      d3.event.sourceEvent.stopPropagation();
+	      d3.select(this).classed("dragging", true);
+	      force.start();
+	    };
+	
+	    var dragged = function dragged(da) {
+	      d3.select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y);
+	    };
+	
+	    var dragended = function dragended() {
+	      d3.select(this).classed("dragging", false);
+	    };
+	
+	    var setRelationships = function setRelationships() {
+	      _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
+	      _.each(parsedData.nodes, function (pdNode) {
+	        diagram.addSelfRelationship(pdNode, pdNode.shapeEl, pdNode);
+	      });
+	      _.each(parsedData.links, function (pdLink) {
+	        diagram.addDependencyRelationship(pdLink.source, pdLink.target.shapeEl, pdLink.target);
+	        diagram.addDependantRelationship(pdLink.target, pdLink.source.shapeEl, pdLink.source);
+	      });
+	    };
+	
+	    var getAllLinks = function getAllLinks() {
+	      return container.selectAll(".link");
+	    };
+	
+	    var getLinksWithIsHiding = function getLinksWithIsHiding() {
+	      return getAllLinks().filter(function (da) {
+	        return da.data.hasOwnProperty('shyIsHiding');
+	      });
+	    };
+	
+	    var setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, tmpLink) {
+	      var linksWithIsHiding = undefined;
+	
+	      if (diagram.config(SHY_CONNECTIONS)) {
+	        if (isHiding === false) tmpLink.data.shyIsHiding = isHiding;else if (isHiding === true) {
+	          linksWithIsHiding = getLinksWithIsHiding();
+	          linksWithIsHiding.each(function (da) {
+	            da.data.shyIsHiding = true;
+	          });
+	        }
+	        tmpLink.data.shyIsHidingChanged = true;
+	      }
+	    };
+	
+	    var setDisplayOfShyConnections = function setDisplayOfShyConnections(display, tmpNode) {
+	      var isShowing = display === 'show';
+	      var isHiding = display === 'hide';
+	      var nodeData = tmpNode.data;
+	      var linksWithIsHiding = getLinksWithIsHiding();
+	      var nodeLinks = getAllLinks().filter(function (da) {
+	        return da.source.id === nodeData.id || da.target.id === nodeData.id;
+	      });
+	      var setDisplay = function setDisplay(links, show) {
+	        links.classed('shy-link-hidden', !show);
+	        links.classed('shy-link-showed', show);
+	      };
+	      var hideLinks = function hideLinks(links) {
+	        setDisplay(links, false);
+	        links.each(function (da) {
+	          delete da.data.shyIsHiding;
+	        });
+	      };
+	      var futureConditionalHide = function futureConditionalHide() {
+	        setTimeout(function () {
+	          allAreHiding = true;
+	          shyIsHidingIsSame = true;
+	          nodeLinks.each(function (da) {
+	            allAreHiding = allAreHiding && da.data.shyIsHiding;
+	
+	            if (da.data.shyIsHidingChanged) {
+	              shyIsHidingIsSame = false;
+	              delete da.data.shyIsHidingChanged;
+	            }
+	          });
+	
+	          if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);else futureConditionalHide();
+	        }, 500);
+	      };
+	      var allAreHiding = undefined,
+	          shyIsHidingIsSame = undefined;
+	
+	      if (linksWithIsHiding[0].length === 0) {
+	        if (isShowing) setDisplay(nodeLinks, true);else if (isHiding) {
+	          nodeLinks.each(function (da) {
+	            da.data.shyIsHiding = true;
+	          });
+	          futureConditionalHide();
+	        }
+	      } else {
+	        if (isShowing) {
+	          linksWithIsHiding.each(function (da, index) {
+	            if (index === 0) da.data.shyIsHiding = false;
+	          });
+	        } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
+	      }
+	    };
+	
+	    var setReRender = _.partial(_helpers2['default'].setReRender, diagram, creationId, data, _);
+	
+	    diagram.markRelatedFn = function (item) {
+	      item.el.style('stroke-width', '20px');
+	    };
+	    diagram.unmarkAllItems = function () {
+	      _.each(parsedData.nodes, function (pdNode) {
+	        pdNode.shapeEl.style('stroke-width', '1px');
+	      });
+	    };
+	
+	    conf = conf || {};
+	    parseData();
+	
+	    svg.attr({
+	      'class': 'graph-diagram',
+	      height: height
+	    });
+	
+	    zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
+	      zoomed(d3.event.translate, d3.event.scale);
+	    });
+	
+	    svg.call(zoom);
+	
+	    zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
+	
+	    zoomed(zoom.translate(), zoom.scale());
+	
+	    force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
+	
+	    drag = d3.behavior.drag().origin(function (da) {
+	      return da;
+	    }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
+	
+	    force.nodes(parsedData.nodes).links(parsedData.links).start();
+	
+	    container.append("svg:defs").selectAll("marker").data(markers).enter().append("svg:marker").attr({
+	      'class': 'arrow-head',
+	      fill: dTextFn('color'),
+	      id: dTextFn('id', 'arrow-head-'),
+	      markerHeight: 8,
+	      markerWidth: 8,
+	      orient: 'auto',
+	      refX: 19,
+	      refY: curvedArrows ? -1.5 : 0,
+	      viewBox: '0 -5 10 10'
+	    }).append("svg:path").attr("d", "M0,-5L10,0L0,5");
+	
+	    link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", function () {
+	      var finalClass = 'link';
+	
+	      if (diagram.config(SHY_CONNECTIONS)) finalClass += ' shy-link shy-link-hidden';
+	
+	      return finalClass;
+	    });
+	    link.append("svg:path").attr({
+	      'class': 'link-path',
+	      'marker-end': function markerEnd(da) {
+	        return 'url(#arrow-head-' + da.source.id + ')';
+	      }
+	    }).style({
+	      stroke: dTextFn('color'),
+	      'stroke-dasharray': function strokeDasharray(da) {
+	        if (da.data.line === 'plain') return null;else if (da.data.line === 'dotted') return '5,5';
+	      }
+	    });
+	
+	    linkOuter = link.append('g');
+	    linkOuter.append('svg:path').attr('class', 'link-path-outer');
+	    linkOuter.each(function (da) {
+	      diagram.addMouseListenersToEl(d3.select(this), da.data, {
+	        mouseenter: function mouseenter(eLink) {
+	          setLinkIsHidingIfNecessary(false, eLink);
+	        },
+	        mouseleave: function mouseleave(eLink) {
+	          setLinkIsHidingIfNecessary(true, eLink);
+	        }
+	      });
+	    });
+	
+	    node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
+	      'class': function _class(da) {
+	        var finalClass = 'node';
+	
+	        if (da.hidden === true) finalClass += ' node-hidden';
+	
+	        return finalClass;
+	      },
+	      id: dTextFn('id', 'node-')
+	    });
+	
+	    node.each(function (singleNode) {
+	      var singleNodeClasses = '';
+	
+	      singleNodeEl = d3.select(this);
+	      singleNode.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
+	
+	      if (singleNode.shape === 'circle') {
+	        shapeEl = singleNodeEl.append("circle").attr({
+	          fill: dTextFn('color'),
+	          r: 12
+	        });
+	      } else {
+	        shape = d3.svg.symbol().size(750);
+	        shapeEl = singleNodeEl.append("path");
+	
+	        if (singleNode.shape === 'triangle') {
+	          shape = shape.type('triangle-up');
+	          singleNodeClasses += ' triangle';
+	        } else if (singleNode.shape === 'square') {
+	          shape = shape.type('square');
+	          singleNodeClasses += ' square';
+	        }
+	        shapeEl = shapeEl.attr({
+	          d: shape,
+	          fill: dTextFn('color')
+	        });
+	        _diagrams2['default'].utils.applySimpleTransform(shapeEl);
+	      }
+	
+	      if (dragNodesConfig === true) shapeEl.call(drag);
+	
+	      if (singleNode.bold === true) singleNodeClasses += ' bold';else singleNodeClasses += ' thin';
+	      shapeEl.attr('class', singleNodeClasses);
+	
+	      singleNode.shapeEl = shapeEl;
+	      diagram.addMouseListenersToEl(shapeEl, singleNode, {
+	        click: function click(eNode) {
+	          if (eNode.data.linkToUrl) window.open(eNode.data.linkToUrl);
+	        },
+	        mouseenter: function mouseenter(nodeData) {
+	          if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', nodeData);
+	        },
+	        mouseleave: function mouseleave(nodeData) {
+	          if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', nodeData);
+	        }
+	      });
+	    });
+	
+	    node.append("text").text(dTextFn('name'));
+	
+	    setRelationships();
+	    setReRender(conf);
+	    diagram.listen('configuration-changed', function (config) {
+	      if (config.key === SHY_CONNECTIONS || config.key === GRAPH_DRAG) {
+	        setReRender(config);
+	        diagram.removePreviousAndCreate(creationId, data, config);
+	      }
+	    });
+	  };
+	};
+	exports.getCreationFn = getCreationFn;
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _addDiagramInfo = __webpack_require__(37);
 	
 	var _addDiagramInfo2 = _interopRequireDefault(_addDiagramInfo);
 	
-	var _connectionFnFactory = __webpack_require__(31);
+	var _connectionFnFactory = __webpack_require__(38);
 	
 	var _connectionFnFactory2 = _interopRequireDefault(_connectionFnFactory);
 	
-	var _dataFromGeneralToSpecific = __webpack_require__(32);
+	var _dataFromGeneralToSpecific = __webpack_require__(39);
 	
 	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
 	
-	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(40);
 	
 	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
 	
-	var _generateConnectionWithText = __webpack_require__(34);
+	var _generateConnectionWithText = __webpack_require__(41);
 	
 	var _generateConnectionWithText2 = _interopRequireDefault(_generateConnectionWithText);
 	
-	var _generateFnNodeWithSharedGetAndBoldIfFile = __webpack_require__(35);
+	var _generateFnNodeWithSharedGetAndBoldIfFile = __webpack_require__(42);
 	
 	var _generateFnNodeWithSharedGetAndBoldIfFile2 = _interopRequireDefault(_generateFnNodeWithSharedGetAndBoldIfFile);
 	
-	var _generateNode = __webpack_require__(37);
+	var _generateNode = __webpack_require__(44);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
-	var _generateNodeOptions = __webpack_require__(38);
+	var _generateNodeOptions = __webpack_require__(45);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
-	var _generateNodeWithSharedGet = __webpack_require__(36);
+	var _generateNodeWithSharedGet = __webpack_require__(43);
 	
 	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
 	
-	var _generateNodeWithTargetLink = __webpack_require__(40);
+	var _generateNodeWithTargetLink = __webpack_require__(47);
 	
 	var _generateNodeWithTargetLink2 = _interopRequireDefault(_generateNodeWithTargetLink);
 	
-	var _generateNodeWithTextAsTargetLink = __webpack_require__(41);
+	var _generateNodeWithTextAsTargetLink = __webpack_require__(48);
 	
 	var _generateNodeWithTextAsTargetLink2 = _interopRequireDefault(_generateNodeWithTextAsTargetLink);
 	
-	var _generatePrivateNode = __webpack_require__(42);
+	var _generatePrivateNode = __webpack_require__(49);
 	
 	var _generatePrivateNode2 = _interopRequireDefault(_generatePrivateNode);
 	
-	var _getLinksNumberMapItemWithLink = __webpack_require__(43);
+	var _getLinksNumberMapItemWithLink = __webpack_require__(50);
 	
 	var _getLinksNumberMapItemWithLink2 = _interopRequireDefault(_getLinksNumberMapItemWithLink);
 	
-	var _linksNumberMapHandler = __webpack_require__(44);
+	var _linksNumberMapHandler = __webpack_require__(51);
 	
 	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
 	
-	var _mergeWithDefaultConnection = __webpack_require__(39);
+	var _mergeWithDefaultConnection = __webpack_require__(46);
 	
 	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
 	
-	var _setReRender = __webpack_require__(45);
+	var _setReRender = __webpack_require__(52);
 	
 	var _setReRender2 = _interopRequireDefault(_setReRender);
 	
-	var _updateLinksNumberMapWithLink = __webpack_require__(46);
+	var _updateLinksNumberMapWithLink = __webpack_require__(53);
 	
 	var _updateLinksNumberMapWithLink2 = _interopRequireDefault(_updateLinksNumberMapWithLink);
 	
@@ -2241,7 +2858,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 30 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2289,7 +2906,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 31 */
+/* 38 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2326,7 +2943,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 32 */
+/* 39 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2385,7 +3002,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 33 */
+/* 40 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2412,7 +3029,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 34 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2427,7 +3044,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _generateConnectionWithText = __webpack_require__(34);
+	var _generateConnectionWithText = __webpack_require__(41);
 	
 	var _generateConnectionWithText2 = _interopRequireDefault(_generateConnectionWithText);
 	
@@ -2452,7 +3069,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 35 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2464,7 +3081,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateNodeWithSharedGet = __webpack_require__(36);
+	var _generateNodeWithSharedGet = __webpack_require__(43);
 	
 	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
 	
@@ -2486,7 +3103,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 36 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2502,7 +3119,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _generateNode = __webpack_require__(37);
+	var _generateNode = __webpack_require__(44);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
@@ -2522,7 +3139,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 37 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2533,11 +3150,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateNodeOptions = __webpack_require__(38);
+	var _generateNodeOptions = __webpack_require__(45);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
-	var _mergeWithDefaultConnection = __webpack_require__(39);
+	var _mergeWithDefaultConnection = __webpack_require__(46);
 	
 	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
 	
@@ -2624,7 +3241,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 38 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2635,7 +3252,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateNodeOptions = __webpack_require__(38);
+	var _generateNodeOptions = __webpack_require__(45);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
@@ -2669,7 +3286,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 39 */
+/* 46 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2693,7 +3310,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 40 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2704,7 +3321,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateNode = __webpack_require__(37);
+	var _generateNode = __webpack_require__(44);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
@@ -2727,7 +3344,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 41 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2752,7 +3369,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 42 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2766,7 +3383,7 @@
 	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
-	var _generateNode = __webpack_require__(37);
+	var _generateNode = __webpack_require__(44);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
@@ -2782,7 +3399,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 43 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2793,11 +3410,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(40);
 	
 	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
 	
-	var _linksNumberMapHandler = __webpack_require__(44);
+	var _linksNumberMapHandler = __webpack_require__(51);
 	
 	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
 	
@@ -2810,7 +3427,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 44 */
+/* 51 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2836,7 +3453,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 45 */
+/* 52 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2856,7 +3473,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 46 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2867,11 +3484,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(33);
+	var _doWithMinIdAndMaxIdOfLinkNodes = __webpack_require__(40);
 	
 	var _doWithMinIdAndMaxIdOfLinkNodes2 = _interopRequireDefault(_doWithMinIdAndMaxIdOfLinkNodes);
 	
-	var _linksNumberMapHandler = __webpack_require__(44);
+	var _linksNumberMapHandler = __webpack_require__(51);
 	
 	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
 	
@@ -2893,7 +3510,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 47 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2918,9 +3535,11 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(29);
+	var _helpers = __webpack_require__(36);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var _creation = __webpack_require__(35);
 	
 	var SHY_CONNECTIONS = 'Show connections selectively';
 	var GRAPH_ZOOM = 'dia graph zoom';
@@ -2931,8 +3550,6 @@
 	  type: Number,
 	  value: 1
 	};
-	var dPositionFn = _diagrams2['default'].utils.positionFn;
-	var dTextFn = _diagrams2['default'].utils.textFn;
 	
 	exports['default'] = function () {
 	  var _configuration;
@@ -2948,404 +3565,8 @@
 	
 	    _createClass(Graph, [{
 	      key: 'create',
-	      value: function create(creationId, data, conf) {
-	        var diagram = this;
-	        var bodyHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-	        var svg = _diagrams2['default'].svg.generateSvg();
-	        var container = svg.append('g');
-	        var width = svg.attr('width');
-	        var dragNodesConfig = diagram.config(GRAPH_DRAG);
-	        var curvedArrows = diagram.config(CURVED_ARROWS);
-	        var force = undefined,
-	            drag = undefined,
-	            link = undefined,
-	            linkOuter = undefined,
-	            node = undefined,
-	            zoom = undefined,
-	            singleNodeEl = undefined,
-	            shape = undefined,
-	            shapeEl = undefined,
-	            markers = undefined,
-	            parsedData = undefined;
-	
-	        _helpers2['default'].linksNumberMapHandler().reset();
-	
-	        var height = _diagrams2['default'].svg.selectScreenHeightOrHeight(bodyHeight - 250);
-	
-	        var tick = function tick() {
-	          var setPathToLink = function setPathToLink(pathClass) {
-	            link.select('path.' + pathClass).attr("d", function (da) {
-	              var linksNumber = _helpers2['default'].getLinksNumberMapItemWithLink(da);
-	              var linkIndex = da.data.linkIndex;
-	              var dx = da.target.x - da.source.x;
-	              var dy = da.target.y - da.source.y;
-	              var dr = Math.sqrt(dx * dx + dy * dy) * (curvedArrows ? 3.5 : 1) * (linkIndex + (curvedArrows ? 1 : 0) / (linksNumber * 3));
-	
-	              return 'M' + da.source.x + ',' + da.source.y + 'A' + (dr + ',' + dr + ' 0 0,1 ') + (da.target.x + ',' + da.target.y);
-	            });
-	          };
-	
-	          _.each(['link-path', 'link-path-outer'], setPathToLink);
-	
-	          node.each(function (singleNode) {
-	            if (singleNode.shape === 'circle') {
-	              node.select('circle').attr("cx", dPositionFn('x')).attr("cy", dPositionFn('y'));
-	            } else {
-	              if (singleNode.shape === 'triangle') shapeEl = node.select('path.triangle');else if (singleNode.shape === 'square') shapeEl = node.select('path.square');
-	
-	              _diagrams2['default'].utils.applySimpleTransform(shapeEl);
-	            }
-	          });
-	          node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20));
-	        };
-	        var parseData = function parseData() {
-	          var maxId = _.reduce(data, function (memo, tmpNode) {
-	            var id = tmpNode.id || 0;
-	
-	            return memo > id ? memo : id;
-	          }, 0);
-	          var idsMap = {};
-	          var nodesWithLinkMap = {};
-	          var colors = d3.scale.category20();
-	          var handleConnections = function handleConnections(tmpNode, nodeIndex) {
-	            if (tmpNode.connections.length > 0) {
-	              _.each(tmpNode.connections, function (connection) {
-	                _.each(connection.nodesIds, function (otherNodeId) {
-	                  otherNode = idsMap[otherNodeId];
-	
-	                  if (otherNode) {
-	                    if (conf.hideNodesWithoutLinks) {
-	                      nodesWithLinkMap[otherNode.index] = true;
-	                      nodesWithLinkMap[nodeIndex] = true;
-	                    }
-	                    linkObj = {};
-	
-	                    if (connection.direction === 'out') {
-	                      linkObj.source = nodeIndex;
-	                      linkObj.target = otherNode.index;
-	                    } else {
-	                      linkObj.source = otherNode.index;
-	                      linkObj.target = nodeIndex;
-	                    }
-	                    linkObj.data = connection;
-	                    linkObj.color = parsedData.nodes[linkObj.source].color;
-	                    _helpers2['default'].updateLinksNumberMapWithLink(linkObj);
-	                    linkObj.data.linkIndex = _helpers2['default'].getLinksNumberMapItemWithLink(linkObj) - 1;
-	
-	                    if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
-	                    parsedData.links.push(linkObj);
-	                  }
-	                });
-	              });
-	            }
-	          };
-	          var nodeId = undefined,
-	              color = undefined,
-	              options = undefined,
-	              otherNode = undefined,
-	              linkObj = undefined;
-	
-	          parsedData = {
-	            links: [],
-	            nodes: []
-	          };
-	          markers = [];
-	          _.each(data, function (dataNode, nodeIndex) {
-	            nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id;
-	            color = colors(nodeIndex);
-	            options = dataNode.options || {};
-	            parsedData.nodes.push({
-	              bold: options.bold || false,
-	              color: color,
-	              connections: dataNode.connections || [],
-	              description: dataNode.description || null,
-	              id: nodeId,
-	              linkToUrl: options.linkToUrl || null,
-	              name: dataNode.name,
-	              shape: options.shape || 'circle'
-	            });
-	            idsMap[nodeId] = {
-	              index: nodeIndex
-	            };
-	            idsMap[nodeId].color = color;
-	            markers.push({
-	              color: color,
-	              id: nodeId
-	            });
-	          });
-	
-	          diagram.config(conf);
-	
-	          if (conf.info) _helpers2['default'].addDiagramInfo(diagram, svg, conf.info);
-	
-	          _.each(parsedData.nodes, handleConnections);
-	
-	          if (conf.hideNodesWithoutLinks === true) {
-	            _.each(parsedData.nodes, function (pdNode, nodeIndex) {
-	              if (nodesWithLinkMap[nodeIndex] !== true) pdNode.hidden = true;
-	            });
-	          }
-	        };
-	
-	        var zoomed = function zoomed(translate, scale) {
-	          scale = scale || 1;
-	          container.attr("transform", 'translate(' + translate + ')scale(' + scale + ')');
-	          graphZoomConfig.value = scale;
-	          diagram.config(GRAPH_ZOOM, graphZoomConfig);
-	        };
-	
-	        var dragstarted = function dragstarted() {
-	          d3.event.sourceEvent.stopPropagation();
-	          d3.select(this).classed("dragging", true);
-	          force.start();
-	        };
-	
-	        var dragged = function dragged(da) {
-	          d3.select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y);
-	        };
-	
-	        var dragended = function dragended() {
-	          d3.select(this).classed("dragging", false);
-	        };
-	
-	        var setRelationships = function setRelationships() {
-	          _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram);
-	          _.each(parsedData.nodes, function (pdNode) {
-	            diagram.addSelfRelationship(pdNode, pdNode.shapeEl, pdNode);
-	          });
-	          _.each(parsedData.links, function (pdLink) {
-	            diagram.addDependencyRelationship(pdLink.source, pdLink.target.shapeEl, pdLink.target);
-	            diagram.addDependantRelationship(pdLink.target, pdLink.source.shapeEl, pdLink.source);
-	          });
-	        };
-	
-	        var getAllLinks = function getAllLinks() {
-	          return container.selectAll(".link");
-	        };
-	
-	        var getLinksWithIsHiding = function getLinksWithIsHiding() {
-	          return getAllLinks().filter(function (da) {
-	            return da.data.hasOwnProperty('shyIsHiding');
-	          });
-	        };
-	
-	        var setLinkIsHidingIfNecessary = function setLinkIsHidingIfNecessary(isHiding, tmpLink) {
-	          var linksWithIsHiding = undefined;
-	
-	          if (diagram.config(SHY_CONNECTIONS)) {
-	            if (isHiding === false) tmpLink.data.shyIsHiding = isHiding;else if (isHiding === true) {
-	              linksWithIsHiding = getLinksWithIsHiding();
-	              linksWithIsHiding.each(function (da) {
-	                da.data.shyIsHiding = true;
-	              });
-	            }
-	            tmpLink.data.shyIsHidingChanged = true;
-	          }
-	        };
-	
-	        var setDisplayOfShyConnections = function setDisplayOfShyConnections(display, tmpNode) {
-	          var isShowing = display === 'show';
-	          var isHiding = display === 'hide';
-	          var nodeData = tmpNode.data;
-	          var linksWithIsHiding = getLinksWithIsHiding();
-	          var nodeLinks = getAllLinks().filter(function (da) {
-	            return da.source.id === nodeData.id || da.target.id === nodeData.id;
-	          });
-	          var setDisplay = function setDisplay(links, show) {
-	            links.classed('shy-link-hidden', !show);
-	            links.classed('shy-link-showed', show);
-	          };
-	          var hideLinks = function hideLinks(links) {
-	            setDisplay(links, false);
-	            links.each(function (da) {
-	              delete da.data.shyIsHiding;
-	            });
-	          };
-	          var futureConditionalHide = function futureConditionalHide() {
-	            setTimeout(function () {
-	              allAreHiding = true;
-	              shyIsHidingIsSame = true;
-	              nodeLinks.each(function (da) {
-	                allAreHiding = allAreHiding && da.data.shyIsHiding;
-	
-	                if (da.data.shyIsHidingChanged) {
-	                  shyIsHidingIsSame = false;
-	                  delete da.data.shyIsHidingChanged;
-	                }
-	              });
-	
-	              if (allAreHiding && shyIsHidingIsSame) hideLinks(nodeLinks);else futureConditionalHide();
-	            }, 500);
-	          };
-	          var allAreHiding = undefined,
-	              shyIsHidingIsSame = undefined;
-	
-	          if (linksWithIsHiding[0].length === 0) {
-	            if (isShowing) setDisplay(nodeLinks, true);else if (isHiding) {
-	              nodeLinks.each(function (da) {
-	                da.data.shyIsHiding = true;
-	              });
-	              futureConditionalHide();
-	            }
-	          } else {
-	            if (isShowing) {
-	              linksWithIsHiding.each(function (da, index) {
-	                if (index === 0) da.data.shyIsHiding = false;
-	              });
-	            } else if (isHiding) setLinkIsHidingIfNecessary(true, linksWithIsHiding.data()[0]);
-	          }
-	        };
-	
-	        var setReRender = _.partial(_helpers2['default'].setReRender, diagram, creationId, data, _);
-	
-	        diagram.markRelatedFn = function (item) {
-	          item.el.style('stroke-width', '20px');
-	        };
-	        diagram.unmarkAllItems = function () {
-	          _.each(parsedData.nodes, function (pdNode) {
-	            pdNode.shapeEl.style('stroke-width', '1px');
-	          });
-	        };
-	
-	        conf = conf || {};
-	        parseData();
-	
-	        svg.attr({
-	          'class': 'graph-diagram',
-	          height: height
-	        });
-	
-	        zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", function () {
-	          zoomed(d3.event.translate, d3.event.scale);
-	        });
-	
-	        svg.call(zoom);
-	
-	        zoom.translate([100, 100]).scale(diagram.config(GRAPH_ZOOM).value);
-	
-	        zoomed(zoom.translate(), zoom.scale());
-	
-	        force = d3.layout.force().size([width, height]).charge(conf.charge || -10000).linkDistance(conf.linkDistance || 140).on("tick", tick);
-	
-	        drag = d3.behavior.drag().origin(function (da) {
-	          return da;
-	        }).on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended);
-	
-	        force.nodes(parsedData.nodes).links(parsedData.links).start();
-	
-	        container.append("svg:defs").selectAll("marker").data(markers).enter().append("svg:marker").attr({
-	          'class': 'arrow-head',
-	          fill: dTextFn('color'),
-	          id: dTextFn('id', 'arrow-head-'),
-	          markerHeight: 8,
-	          markerWidth: 8,
-	          orient: 'auto',
-	          refX: 19,
-	          refY: curvedArrows ? -1.5 : 0,
-	          viewBox: '0 -5 10 10'
-	        }).append("svg:path").attr("d", "M0,-5L10,0L0,5");
-	
-	        link = container.selectAll(".link").data(parsedData.links).enter().append('g').attr("class", function () {
-	          var finalClass = 'link';
-	
-	          if (diagram.config(SHY_CONNECTIONS)) finalClass += ' shy-link shy-link-hidden';
-	
-	          return finalClass;
-	        });
-	        link.append("svg:path").attr({
-	          'class': 'link-path',
-	          'marker-end': function markerEnd(da) {
-	            return 'url(#arrow-head-' + da.source.id + ')';
-	          }
-	        }).style({
-	          stroke: dTextFn('color'),
-	          'stroke-dasharray': function strokeDasharray(da) {
-	            if (da.data.line === 'plain') return null;else if (da.data.line === 'dotted') return '5,5';
-	          }
-	        });
-	
-	        linkOuter = link.append('g');
-	        linkOuter.append('svg:path').attr('class', 'link-path-outer');
-	        linkOuter.each(function (da) {
-	          diagram.addMouseListenersToEl(d3.select(this), da.data, {
-	            mouseenter: function mouseenter(eLink) {
-	              setLinkIsHidingIfNecessary(false, eLink);
-	            },
-	            mouseleave: function mouseleave(eLink) {
-	              setLinkIsHidingIfNecessary(true, eLink);
-	            }
-	          });
-	        });
-	
-	        node = container.selectAll(".node").data(parsedData.nodes).enter().append('g').attr({
-	          'class': function _class(da) {
-	            var finalClass = 'node';
-	
-	            if (da.hidden === true) finalClass += ' node-hidden';
-	
-	            return finalClass;
-	          },
-	          id: dTextFn('id', 'node-')
-	        });
-	
-	        node.each(function (singleNode) {
-	          var singleNodeClasses = '';
-	
-	          singleNodeEl = d3.select(this);
-	          singleNode.fullText = _diagrams2['default'].utils.generateATextDescriptionStr(singleNode.name, singleNode.description);
-	
-	          if (singleNode.shape === 'circle') {
-	            shapeEl = singleNodeEl.append("circle").attr({
-	              fill: dTextFn('color'),
-	              r: 12
-	            });
-	          } else {
-	            shape = d3.svg.symbol().size(750);
-	            shapeEl = singleNodeEl.append("path");
-	
-	            if (singleNode.shape === 'triangle') {
-	              shape = shape.type('triangle-up');
-	              singleNodeClasses += ' triangle';
-	            } else if (singleNode.shape === 'square') {
-	              shape = shape.type('square');
-	              singleNodeClasses += ' square';
-	            }
-	            shapeEl = shapeEl.attr({
-	              d: shape,
-	              fill: dTextFn('color')
-	            });
-	            _diagrams2['default'].utils.applySimpleTransform(shapeEl);
-	          }
-	
-	          if (dragNodesConfig === true) shapeEl.call(drag);
-	
-	          if (singleNode.bold === true) singleNodeClasses += ' bold';else singleNodeClasses += ' thin';
-	          shapeEl.attr('class', singleNodeClasses);
-	
-	          singleNode.shapeEl = shapeEl;
-	          diagram.addMouseListenersToEl(shapeEl, singleNode, {
-	            click: function click(eNode) {
-	              if (eNode.data.linkToUrl) window.open(eNode.data.linkToUrl);
-	            },
-	            mouseenter: function mouseenter(nodeData) {
-	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('show', nodeData);
-	            },
-	            mouseleave: function mouseleave(nodeData) {
-	              if (diagram.config(SHY_CONNECTIONS)) setDisplayOfShyConnections('hide', nodeData);
-	            }
-	          });
-	        });
-	
-	        node.append("text").text(dTextFn('name'));
-	
-	        setRelationships();
-	        setReRender(conf);
-	        diagram.listen('configuration-changed', function (config) {
-	          if (config.key === SHY_CONNECTIONS || config.key === GRAPH_DRAG) {
-	            setReRender(config);
-	            diagram.removePreviousAndCreate(creationId, data, config);
-	          }
-	        });
+	      value: function create() {
+	        (0, _creation.getCreationFn)(this).apply(undefined, arguments);
 	      }
 	    }]);
 	
@@ -3365,7 +3586,389 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 48 */
+/* 55 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _diagrams = __webpack_require__(1);
+	
+	var _diagrams2 = _interopRequireDefault(_diagrams);
+	
+	var _helpers = __webpack_require__(56);
+	
+	var _helpers2 = _interopRequireDefault(_helpers);
+	
+	var layerGId = 0;
+	var dTextFn = _diagrams2['default'].utils.textFn;
+	
+	var addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
+	  _.each(layers, function (layer) {
+	    if (layer.hasOwnProperty('items') === false) {
+	      layer.items = [];
+	    } else addItemsPropToBottomItems(layer.items);
+	  });
+	};
+	
+	var getCreationFn = function getCreationFn(diagram) {
+	  return function (creationId, conf) {
+	    var config = _helpers2['default'].getConfig();
+	    var colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'];
+	    var calculateTheMostOptimalConnection = function calculateTheMostOptimalConnection(layerA, layerBObj) {
+	      // There are 12 possible: 4 sides to 3 each
+	      var getTopSidePos = function getTopSidePos(layer) {
+	        return {
+	          x: (layer.x + layer.width / 2) * config.widthSize + config.depthWidthFactor * layer.depth,
+	          y: layer.y * config.heightSize + config.depthHeightFactor * layer.depth
+	        };
+	      };
+	      var getBottomSidePos = function getBottomSidePos(layer) {
+	        return {
+	          x: (layer.x + layer.width / 2) * config.widthSize + config.depthWidthFactor * layer.depth,
+	          y: (layer.y + layer.height) * config.heightSize - config.depthHeightFactor * layer.depth
+	        };
+	      };
+	      var getLeftSidePos = function getLeftSidePos(layer) {
+	        return {
+	          x: layer.x * config.widthSize + config.depthWidthFactor * layer.depth,
+	          y: (layer.y + layer.height / 2) * config.heightSize + config.depthHeightFactor * layer.depth
+	        };
+	      };
+	      var getRightSidePos = function getRightSidePos(layer) {
+	        return {
+	          x: (layer.x + layer.width) * config.widthSize - config.depthWidthFactor * layer.depth,
+	          y: (layer.y + layer.height / 2) * config.heightSize + config.depthHeightFactor * layer.depth
+	        };
+	      };
+	      var getSidesPos = function getSidesPos(layer) {
+	        return {
+	          bottom: getBottomSidePos(layer),
+	          left: getLeftSidePos(layer),
+	          right: getRightSidePos(layer),
+	          top: getTopSidePos(layer)
+	        };
+	      };
+	      var distance = {
+	        val: Infinity
+	      };
+	      var doesNotCrossAnyOfTwoLayers = function doesNotCrossAnyOfTwoLayers(_ref) {
+	        var posA = _ref.posA;
+	        var posB = _ref.posB;
+	        var sideA = _ref.sideA;
+	        var sideB = _ref.sideB;
+	
+	        if ((sideA === 'bottom' || sideA === 'left' || sideA === 'top') && sideB === 'right') {
+	          if (posA.x < posB.x) return false;
+	        } else if ((sideA === 'bottom' || sideA === 'right' || sideA === 'top') && sideB === 'left') {
+	          if (posA.x > posB.x) return false;
+	        } else if ((sideA === 'bottom' || sideA === 'right' || sideA === 'left') && sideB === 'top') {
+	          if (posA.y > posB.y) return false;
+	        } else if ((sideA === 'left' || sideA === 'right' || sideA === 'top') && sideB === 'bottom') {
+	          if (posA.y < posB.y) return false;
+	        }
+	
+	        return true;
+	      };
+	      var calcDistanceAndUpdate = function calcDistanceAndUpdate(posA, posB) {
+	        var e2 = function e2(num) {
+	          return Math.pow(num, 2);
+	        };
+	        var newDistance = Math.sqrt(e2(posA.x - posB.x) + e2(posA.y - posB.y));
+	
+	        if (newDistance < distance.val) {
+	          distance.val = newDistance;
+	          distance.from = posA;
+	          distance.to = posB;
+	
+	          return true;
+	        } else {
+	          return false;
+	        }
+	      };
+	      var eachSide = function eachSide(cb) {
+	        _.each(['top', 'bottom', 'left', 'right'], function (side) {
+	          cb(side);
+	        });
+	      };
+	      var sameTypeOfSides = function sameTypeOfSides(sideA, sideB) {
+	        var result = false;
+	
+	        _.each([[sideA, sideB], [sideB, sideA]], function (sides) {
+	          if (sides[0] === 'top' && sides[1] === 'bottom') result = true;else if (sides[0] === 'left' && sides[1] === 'right') result = true;
+	        });
+	
+	        return result;
+	      };
+	      var loopSidesToGetConnection = function loopSidesToGetConnection(sameTypeOfSidesCondition) {
+	        eachSide(function (sideA) {
+	          eachSide(function (sideB) {
+	            if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
+	
+	            if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
+	              if (sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false || sameTypeOfSides(sideA, sideB)) {
+	                if (doesNotCrossAnyOfTwoLayers({ posA: layerAPos[sideA],
+	                  posB: layerBPos[sideB], sideA: sideA, sideB: sideB })) {
+	                  changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
+	
+	                  if (changed === true) {
+	                    distance.sideA = sideA;
+	                    distance.sideB = sideB;
+	                  }
+	                }
+	              }
+	            }
+	          });
+	        });
+	      };
+	      var layerB = layerBObj.layer;
+	      var layerAPos = getSidesPos(layerA);
+	      var layerBPos = getSidesPos(layerB);
+	      var changed = undefined;
+	
+	      loopSidesToGetConnection(true);
+	
+	      if (changed !== true) loopSidesToGetConnection(false);
+	
+	      layerA.alreadyConnections.push(distance.sideA);
+	      layerB.alreadyConnections.push(distance.sideB);
+	
+	      return distance;
+	    };
+	    var drawConnection = function drawConnection(connection) {
+	      var container = connection.layer.container;
+	      var containerData = connection.layer.containerData;
+	      var connectionG = undefined,
+	          connectionId = undefined,
+	          connectionCoords = undefined,
+	          linkLine = undefined,
+	          connectionPath = undefined;
+	
+	      _.each(connection.connectedTo, function (connectedToLayer) {
+	        connectionCoords = calculateTheMostOptimalConnection(connection.layer, connectedToLayer);
+	        linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'));
+	        connectionId = connection.layer.id + '-' + connectedToLayer.layer.id;
+	        connectionG = container.append('g').attr('id', connectionId);
+	
+	        if (connectionCoords.from && connectionCoords.to) {
+	          connectionPath = connectionG.append('path').attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
+	            fill: 'none',
+	            stroke: '#000'
+	          });
+	
+	          if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
+	
+	          connectionG.append("circle").attr({
+	            cx: connectionCoords.to.x,
+	            cy: connectionCoords.to.y,
+	            fill: colors[connection.layer.depth - 1],
+	            r: 5
+	          }).style({
+	            stroke: '#000'
+	          });
+	
+	          containerData.connections = containerData.connections || [];
+	          containerData.connections.push({
+	            el: connectionG,
+	            id: connectionId
+	          });
+	        }
+	      });
+	    };
+	    var drawConnectionsIfAny = function drawConnectionsIfAny(layers) {
+	      layers = layers || conf;
+	
+	      _.chain(layers).filter(function (layer) {
+	        return layer.hasOwnProperty('connectedTo');
+	      }).map(function (layer) {
+	        var layersConnectedTo = [];
+	        var layerConnectedObj = undefined,
+	            layerConnectedId = undefined,
+	            layerConnectedType = undefined;
+	
+	        _.each(layer.connectedTo, function (layerConnected) {
+	          layerConnectedId = _.isObject(layerConnected) ? layerConnected.id : layerConnected;
+	          layerConnectedType = _.isObject(layerConnected) && layerConnected.type ? layerConnected.type : 'standard';
+	
+	          layerConnectedObj = _.where(layers, {
+	            id: layerConnectedId
+	          })[0];
+	
+	          layersConnectedTo.push({
+	            layer: layerConnectedObj,
+	            type: layerConnectedType
+	          });
+	        });
+	
+	        return {
+	          connectedTo: layersConnectedTo,
+	          layer: layer
+	        };
+	      }).each(function (connection) {
+	        drawConnection(connection);
+	      }).value();
+	
+	      _.chain(layers).filter(function (layer) {
+	        return layer.items.length > 0;
+	      }).each(function (layer) {
+	        drawConnectionsIfAny(layer.items);
+	      }).value();
+	    };
+	    var updateSvgHeight = function updateSvgHeight() {
+	      var getBottomPointOfLayer = function getBottomPointOfLayer(layer) {
+	        return layer.y + layer.height;
+	      };
+	      var bottomLayer = _.max(conf, getBottomPointOfLayer);
+	      var bottomPoint = getBottomPointOfLayer(bottomLayer);
+	      var bottomPointPxs = bottomPoint * config.heightSize + 20;
+	
+	      svg.attr('height', bottomPointPxs);
+	    };
+	    var calcMaxUnityWidth = function calcMaxUnityWidth() {
+	      var bodyWidth = document.body.getBoundingClientRect().width;
+	
+	      diagram.maxUnityWidth = Math.floor(bodyWidth / config.widthSize);
+	    };
+	    var drawLayersInContainer = function drawLayersInContainer(layers, container, containerData) {
+	      var widthSize = config.widthSize;
+	      var heightSize = config.heightSize;
+	      var layerG = undefined,
+	          layerNode = undefined,
+	          layerDims = undefined,
+	          layerText = undefined;
+	
+	      layers = layers || conf;
+	      container = container || svg;
+	
+	      _.each(layers, function (layer, layerIndex) {
+	        var currentLayerId = 'diagrams-layer-g-' + layerGId++;
+	        var numberG = undefined;
+	
+	        layerG = container.append('g').attr({
+	          'class': 'layer-node',
+	          id: currentLayerId,
+	          transform: 'translate(' + layer.x * widthSize + ', ' + layer.y * heightSize + ')'
+	        });
+	
+	        layer.layerG = layerG;
+	        layer.container = container;
+	        layer.containerData = containerData;
+	
+	        layerDims = _helpers2['default'].getFinalLayerDimensions(layer);
+	        layerNode = layerG.append('g');
+	
+	        if (layer.conditional === true) {
+	          layerNode.append('path').attr({
+	            d: _diagrams2['default'].shapes.hexagon({
+	              height: layerDims.height,
+	              width: layerDims.width,
+	              widthPercent: 97 + Math.abs(3 - layer.depth)
+	            }),
+	            fill: layerDims.fill,
+	            stroke: '#f00',
+	            transform: layerDims.transform
+	          });
+	        } else {
+	          layerNode.append('rect').attr({
+	            fill: layerDims.fill,
+	            height: layerDims.height,
+	            transform: layerDims.transform,
+	            width: layerDims.width
+	          }).style({
+	            filter: 'url(#diagrams-drop-shadow-layer)'
+	          });
+	        }
+	
+	        layerText = layerNode.append('text').attr({
+	          transform: layerDims.transform,
+	          x: layer.depth,
+	          y: layer.height * heightSize - 3 * layer.depth - 10
+	        }).text(function () {
+	          return _diagrams2['default'].utils.formatShortDescription(layer.text);
+	        });
+	
+	        layer.fullText = layer.text;
+	        // Missing to add show all layers connections and hide
+	        diagram.addMouseListenersToEl(layerNode, layer);
+	        layerText.each(_diagrams2['default'].svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
+	
+	        if (layerDims.numberTransform) {
+	          numberG = layerNode.append('g').attr({
+	            'class': 'number',
+	            transform: layerDims.numberTransform
+	          });
+	          numberG.append('circle').attr({
+	            cx: 4,
+	            cy: -4,
+	            fill: colors[layer.depth - 1],
+	            filter: 'none',
+	            r: 10,
+	            stroke: '#000',
+	            'stroke-width': 2
+	          });
+	          numberG.append('text').text(layerIndex + 1).attr('fill', '#000');
+	        }
+	
+	        if (layer.items.length > 0) {
+	          drawLayersInContainer(layer.items, layerG, layer);
+	        }
+	      });
+	    };
+	    var svg = _diagrams2['default'].svg.generateSvg({
+	      margin: '20px 0 0 20px'
+	    });
+	
+	    diagram.markRelatedFn = function (item) {
+	      item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
+	      item.el.select('rect').style({
+	        fill: 'rgb(254, 255, 209)'
+	      });
+	    };
+	    diagram.unmarkAllItems = function () {
+	      var recursiveFn = function recursiveFn(items) {
+	        _.each(items, function (item) {
+	          item.layerG.style({
+	            'stroke-width': '1px'
+	          });
+	
+	          if (item.origFill) {
+	            item.layerG.select('rect').style('fill', item.origFill);
+	          }
+	
+	          if (item.items) recursiveFn(item.items);
+	        });
+	      };
+	
+	      recursiveFn(conf);
+	    };
+	
+	    _.each(colors, function (color, index) {
+	      _diagrams2['default'].svg.addVerticalGradientFilter(svg, 'color-' + index, ['#fff', color]);
+	    });
+	
+	    svg.attr('class', 'layers-diagram');
+	
+	    if (_.isArray(conf) === false) conf = [conf];
+	    _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'layer', slope: 2 });
+	
+	    addItemsPropToBottomItems(conf);
+	    calcMaxUnityWidth();
+	    _helpers2['default'].generateLayersData(diagram, conf);
+	    drawLayersInContainer();
+	    drawConnectionsIfAny();
+	    updateSvgHeight();
+	    diagram.generateRelationships(conf);
+	  };
+	};
+	exports.getCreationFn = getCreationFn;
+
+/***/ },
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3376,75 +3979,75 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 	
-	var _methodsWithCode2 = __webpack_require__(49);
+	var _methodsWithCode2 = __webpack_require__(57);
 	
 	var _methodsWithCode3 = _interopRequireDefault(_methodsWithCode2);
 	
-	var _Grid = __webpack_require__(50);
+	var _Grid = __webpack_require__(58);
 	
 	var _Grid2 = _interopRequireDefault(_Grid);
 	
-	var _calculateLayerWithChildrenDimensions = __webpack_require__(51);
+	var _calculateLayerWithChildrenDimensions = __webpack_require__(59);
 	
 	var _calculateLayerWithChildrenDimensions2 = _interopRequireDefault(_calculateLayerWithChildrenDimensions);
 	
-	var _connectWithOpt = __webpack_require__(53);
+	var _connectWithOpt = __webpack_require__(61);
 	
 	var _connectWithOpt2 = _interopRequireDefault(_connectWithOpt);
 	
-	var _connectWithOptAndIdOpt = __webpack_require__(54);
+	var _connectWithOptAndIdOpt = __webpack_require__(62);
 	
 	var _connectWithOptAndIdOpt2 = _interopRequireDefault(_connectWithOptAndIdOpt);
 	
-	var _dataFromGeneralToSpecific = __webpack_require__(55);
+	var _dataFromGeneralToSpecific = __webpack_require__(63);
 	
 	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
 	
-	var _dataFromSpecificToGeneral = __webpack_require__(56);
+	var _dataFromSpecificToGeneral = __webpack_require__(64);
 	
 	var _dataFromSpecificToGeneral2 = _interopRequireDefault(_dataFromSpecificToGeneral);
 	
-	var _extendOpts = __webpack_require__(57);
+	var _extendOpts = __webpack_require__(65);
 	
 	var _extendOpts2 = _interopRequireDefault(_extendOpts);
 	
-	var _generateLayersData = __webpack_require__(60);
+	var _generateLayersData = __webpack_require__(68);
 	
 	var _generateLayersData2 = _interopRequireDefault(_generateLayersData);
 	
-	var _getConfig = __webpack_require__(61);
+	var _getConfig = __webpack_require__(69);
 	
 	var _getConfig2 = _interopRequireDefault(_getConfig);
 	
-	var _getFinalLayerDimensions = __webpack_require__(64);
+	var _getFinalLayerDimensions = __webpack_require__(72);
 	
 	var _getFinalLayerDimensions2 = _interopRequireDefault(_getFinalLayerDimensions);
 	
-	var _getStaticOptsLetters = __webpack_require__(59);
+	var _getStaticOptsLetters = __webpack_require__(67);
 	
 	var _getStaticOptsLetters2 = _interopRequireDefault(_getStaticOptsLetters);
 	
-	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(62);
+	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(70);
 	
 	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
 	
-	var _idOpt = __webpack_require__(58);
+	var _idOpt = __webpack_require__(66);
 	
 	var _idOpt2 = _interopRequireDefault(_idOpt);
 	
-	var _idsHandler = __webpack_require__(63);
+	var _idsHandler = __webpack_require__(71);
 	
 	var _idsHandler2 = _interopRequireDefault(_idsHandler);
 	
-	var _itemsOfLayerShouldBeSorted = __webpack_require__(52);
+	var _itemsOfLayerShouldBeSorted = __webpack_require__(60);
 	
 	var _itemsOfLayerShouldBeSorted2 = _interopRequireDefault(_itemsOfLayerShouldBeSorted);
 	
-	var _newLayer = __webpack_require__(65);
+	var _newLayer = __webpack_require__(73);
 	
 	var _newLayer2 = _interopRequireDefault(_newLayer);
 	
-	var _newLayerConnectedToNext = __webpack_require__(66);
+	var _newLayerConnectedToNext = __webpack_require__(74);
 	
 	var _newLayerConnectedToNext2 = _interopRequireDefault(_newLayerConnectedToNext);
 	
@@ -3479,7 +4082,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 49 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3528,7 +4131,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 50 */
+/* 58 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -3676,7 +4279,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 51 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3687,11 +4290,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _Grid = __webpack_require__(50);
+	var _Grid = __webpack_require__(58);
 	
 	var _Grid2 = _interopRequireDefault(_Grid);
 	
-	var _itemsOfLayerShouldBeSorted = __webpack_require__(52);
+	var _itemsOfLayerShouldBeSorted = __webpack_require__(60);
 	
 	var _itemsOfLayerShouldBeSorted2 = _interopRequireDefault(_itemsOfLayerShouldBeSorted);
 	
@@ -3787,7 +4390,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 52 */
+/* 60 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3813,7 +4416,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 53 */
+/* 61 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3845,7 +4448,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 54 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3873,7 +4476,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 55 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3895,7 +4498,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 56 */
+/* 64 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -3958,7 +4561,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 57 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -3969,15 +4572,15 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 	
-	var _idOpt = __webpack_require__(58);
+	var _idOpt = __webpack_require__(66);
 	
 	var _idOpt2 = _interopRequireDefault(_idOpt);
 	
-	var _getStaticOptsLetters = __webpack_require__(59);
+	var _getStaticOptsLetters = __webpack_require__(67);
 	
 	var _getStaticOptsLetters2 = _interopRequireDefault(_getStaticOptsLetters);
 	
-	var _connectWithOpt = __webpack_require__(53);
+	var _connectWithOpt = __webpack_require__(61);
 	
 	var _connectWithOpt2 = _interopRequireDefault(_connectWithOpt);
 	
@@ -4009,7 +4612,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 58 */
+/* 66 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -4027,7 +4630,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 59 */
+/* 67 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -4064,7 +4667,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 60 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4075,15 +4678,15 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _calculateLayerWithChildrenDimensions = __webpack_require__(51);
+	var _calculateLayerWithChildrenDimensions = __webpack_require__(59);
 	
 	var _calculateLayerWithChildrenDimensions2 = _interopRequireDefault(_calculateLayerWithChildrenDimensions);
 	
-	var _getConfig = __webpack_require__(61);
+	var _getConfig = __webpack_require__(69);
 	
 	var _getConfig2 = _interopRequireDefault(_getConfig);
 	
-	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(62);
+	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(70);
 	
 	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
 	
@@ -4123,7 +4726,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 61 */
+/* 69 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -4145,7 +4748,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 62 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -4156,7 +4759,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 	
-	var _idsHandler = __webpack_require__(63);
+	var _idsHandler = __webpack_require__(71);
 	
 	var _idsHandler2 = _interopRequireDefault(_idsHandler);
 	
@@ -4189,7 +4792,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 63 */
+/* 71 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -4207,7 +4810,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 64 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4218,7 +4821,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _getConfig = __webpack_require__(61);
+	var _getConfig = __webpack_require__(69);
 	
 	var _getConfig2 = _interopRequireDefault(_getConfig);
 	
@@ -4240,7 +4843,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 65 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4251,11 +4854,11 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _idsHandler = __webpack_require__(63);
+	var _idsHandler = __webpack_require__(71);
 	
 	var _idsHandler2 = _interopRequireDefault(_idsHandler);
 	
-	var _extendOpts = __webpack_require__(57);
+	var _extendOpts = __webpack_require__(65);
 	
 	var _extendOpts2 = _interopRequireDefault(_extendOpts);
 	
@@ -4286,7 +4889,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 66 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4297,7 +4900,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _newLayer = __webpack_require__(65);
+	var _newLayer = __webpack_require__(73);
 	
 	var _newLayer2 = _interopRequireDefault(_newLayer);
 	
@@ -4316,7 +4919,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 67 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4339,14 +4942,13 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _helpers = __webpack_require__(48);
+	var _helpers = __webpack_require__(56);
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
-	exports['default'] = function () {
-	  var layerGId = 0;
-	  var dTextFn = _diagrams2['default'].utils.textFn;
+	var _creation = __webpack_require__(55);
 	
+	exports['default'] = function () {
 	  var Layer = (function (_d$Diagram) {
 	    _inherits(Layer, _d$Diagram);
 	
@@ -4358,360 +4960,8 @@
 	
 	    _createClass(Layer, [{
 	      key: 'create',
-	      value: function create(creationId, conf) {
-	        var diagram = this;
-	        var config = _helpers2['default'].getConfig();
-	        var colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'];
-	        var addItemsPropToBottomItems = function addItemsPropToBottomItems(layers) {
-	          _.each(layers, function (layer) {
-	            if (layer.hasOwnProperty('items') === false) {
-	              layer.items = [];
-	            } else addItemsPropToBottomItems(layer.items);
-	          });
-	        };
-	        var calculateTheMostOptimalConnection = function calculateTheMostOptimalConnection(layerA, layerBObj) {
-	          // There are 12 possible: 4 sides to 3 each
-	          var getTopSidePos = function getTopSidePos(layer) {
-	            return {
-	              x: (layer.x + layer.width / 2) * config.widthSize + config.depthWidthFactor * layer.depth,
-	              y: layer.y * config.heightSize + config.depthHeightFactor * layer.depth
-	            };
-	          };
-	          var getBottomSidePos = function getBottomSidePos(layer) {
-	            return {
-	              x: (layer.x + layer.width / 2) * config.widthSize + config.depthWidthFactor * layer.depth,
-	              y: (layer.y + layer.height) * config.heightSize - config.depthHeightFactor * layer.depth
-	            };
-	          };
-	          var getLeftSidePos = function getLeftSidePos(layer) {
-	            return {
-	              x: layer.x * config.widthSize + config.depthWidthFactor * layer.depth,
-	              y: (layer.y + layer.height / 2) * config.heightSize + config.depthHeightFactor * layer.depth
-	            };
-	          };
-	          var getRightSidePos = function getRightSidePos(layer) {
-	            return {
-	              x: (layer.x + layer.width) * config.widthSize - config.depthWidthFactor * layer.depth,
-	              y: (layer.y + layer.height / 2) * config.heightSize + config.depthHeightFactor * layer.depth
-	            };
-	          };
-	          var getSidesPos = function getSidesPos(layer) {
-	            return {
-	              bottom: getBottomSidePos(layer),
-	              left: getLeftSidePos(layer),
-	              right: getRightSidePos(layer),
-	              top: getTopSidePos(layer)
-	            };
-	          };
-	          var distance = {
-	            val: Infinity
-	          };
-	          var doesNotCrossAnyOfTwoLayers = function doesNotCrossAnyOfTwoLayers(_ref) {
-	            var posA = _ref.posA;
-	            var posB = _ref.posB;
-	            var sideA = _ref.sideA;
-	            var sideB = _ref.sideB;
-	
-	            if ((sideA === 'bottom' || sideA === 'left' || sideA === 'top') && sideB === 'right') {
-	              if (posA.x < posB.x) return false;
-	            } else if ((sideA === 'bottom' || sideA === 'right' || sideA === 'top') && sideB === 'left') {
-	              if (posA.x > posB.x) return false;
-	            } else if ((sideA === 'bottom' || sideA === 'right' || sideA === 'left') && sideB === 'top') {
-	              if (posA.y > posB.y) return false;
-	            } else if ((sideA === 'left' || sideA === 'right' || sideA === 'top') && sideB === 'bottom') {
-	              if (posA.y < posB.y) return false;
-	            }
-	
-	            return true;
-	          };
-	          var calcDistanceAndUpdate = function calcDistanceAndUpdate(posA, posB) {
-	            var e2 = function e2(num) {
-	              return Math.pow(num, 2);
-	            };
-	            var newDistance = Math.sqrt(e2(posA.x - posB.x) + e2(posA.y - posB.y));
-	
-	            if (newDistance < distance.val) {
-	              distance.val = newDistance;
-	              distance.from = posA;
-	              distance.to = posB;
-	
-	              return true;
-	            } else {
-	              return false;
-	            }
-	          };
-	          var eachSide = function eachSide(cb) {
-	            _.each(['top', 'bottom', 'left', 'right'], function (side) {
-	              cb(side);
-	            });
-	          };
-	          var sameTypeOfSides = function sameTypeOfSides(sideA, sideB) {
-	            var result = false;
-	
-	            _.each([[sideA, sideB], [sideB, sideA]], function (sides) {
-	              if (sides[0] === 'top' && sides[1] === 'bottom') result = true;else if (sides[0] === 'left' && sides[1] === 'right') result = true;
-	            });
-	
-	            return result;
-	          };
-	          var loopSidesToGetConnection = function loopSidesToGetConnection(sameTypeOfSidesCondition) {
-	            eachSide(function (sideA) {
-	              eachSide(function (sideB) {
-	                if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = [];
-	
-	                if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
-	                  if (sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false || sameTypeOfSides(sideA, sideB)) {
-	                    if (doesNotCrossAnyOfTwoLayers({ posA: layerAPos[sideA],
-	                      posB: layerBPos[sideB], sideA: sideA, sideB: sideB })) {
-	                      changed = calcDistanceAndUpdate(layerAPos[sideA], layerBPos[sideB]);
-	
-	                      if (changed === true) {
-	                        distance.sideA = sideA;
-	                        distance.sideB = sideB;
-	                      }
-	                    }
-	                  }
-	                }
-	              });
-	            });
-	          };
-	          var layerB = layerBObj.layer;
-	          var layerAPos = getSidesPos(layerA);
-	          var layerBPos = getSidesPos(layerB);
-	          var changed = undefined;
-	
-	          loopSidesToGetConnection(true);
-	
-	          if (changed !== true) loopSidesToGetConnection(false);
-	
-	          layerA.alreadyConnections.push(distance.sideA);
-	          layerB.alreadyConnections.push(distance.sideB);
-	
-	          return distance;
-	        };
-	        var drawConnection = function drawConnection(connection) {
-	          var container = connection.layer.container;
-	          var containerData = connection.layer.containerData;
-	          var connectionG = undefined,
-	              connectionId = undefined,
-	              connectionCoords = undefined,
-	              linkLine = undefined,
-	              connectionPath = undefined;
-	
-	          _.each(connection.connectedTo, function (connectedToLayer) {
-	            connectionCoords = calculateTheMostOptimalConnection(connection.layer, connectedToLayer);
-	            linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'));
-	            connectionId = connection.layer.id + '-' + connectedToLayer.layer.id;
-	            connectionG = container.append('g').attr('id', connectionId);
-	
-	            if (connectionCoords.from && connectionCoords.to) {
-	              connectionPath = connectionG.append('path').attr('d', linkLine([connectionCoords.from, connectionCoords.to])).style({
-	                fill: 'none',
-	                stroke: '#000'
-	              });
-	
-	              if (connectedToLayer.type === 'dashed') connectionPath.style('stroke-dasharray', '5, 5');
-	
-	              connectionG.append("circle").attr({
-	                cx: connectionCoords.to.x,
-	                cy: connectionCoords.to.y,
-	                fill: colors[connection.layer.depth - 1],
-	                r: 5
-	              }).style({
-	                stroke: '#000'
-	              });
-	
-	              containerData.connections = containerData.connections || [];
-	              containerData.connections.push({
-	                el: connectionG,
-	                id: connectionId
-	              });
-	            }
-	          });
-	        };
-	        var drawConnectionsIfAny = function drawConnectionsIfAny(layers) {
-	          layers = layers || conf;
-	
-	          _.chain(layers).filter(function (layer) {
-	            return layer.hasOwnProperty('connectedTo');
-	          }).map(function (layer) {
-	            var layersConnectedTo = [];
-	            var layerConnectedObj = undefined,
-	                layerConnectedId = undefined,
-	                layerConnectedType = undefined;
-	
-	            _.each(layer.connectedTo, function (layerConnected) {
-	              layerConnectedId = _.isObject(layerConnected) ? layerConnected.id : layerConnected;
-	              layerConnectedType = _.isObject(layerConnected) && layerConnected.type ? layerConnected.type : 'standard';
-	
-	              layerConnectedObj = _.where(layers, {
-	                id: layerConnectedId
-	              })[0];
-	
-	              layersConnectedTo.push({
-	                layer: layerConnectedObj,
-	                type: layerConnectedType
-	              });
-	            });
-	
-	            return {
-	              connectedTo: layersConnectedTo,
-	              layer: layer
-	            };
-	          }).each(function (connection) {
-	            drawConnection(connection);
-	          }).value();
-	
-	          _.chain(layers).filter(function (layer) {
-	            return layer.items.length > 0;
-	          }).each(function (layer) {
-	            drawConnectionsIfAny(layer.items);
-	          }).value();
-	        };
-	        var updateSvgHeight = function updateSvgHeight() {
-	          var getBottomPointOfLayer = function getBottomPointOfLayer(layer) {
-	            return layer.y + layer.height;
-	          };
-	          var bottomLayer = _.max(conf, getBottomPointOfLayer);
-	          var bottomPoint = getBottomPointOfLayer(bottomLayer);
-	          var bottomPointPxs = bottomPoint * config.heightSize + 20;
-	
-	          svg.attr('height', bottomPointPxs);
-	        };
-	        var calcMaxUnityWidth = function calcMaxUnityWidth() {
-	          var bodyWidth = document.body.getBoundingClientRect().width;
-	
-	          diagram.maxUnityWidth = Math.floor(bodyWidth / config.widthSize);
-	        };
-	        var drawLayersInContainer = function drawLayersInContainer(layers, container, containerData) {
-	          var widthSize = config.widthSize;
-	          var heightSize = config.heightSize;
-	          var layerG = undefined,
-	              layerNode = undefined,
-	              layerDims = undefined,
-	              layerText = undefined;
-	
-	          layers = layers || conf;
-	          container = container || svg;
-	
-	          _.each(layers, function (layer, layerIndex) {
-	            var currentLayerId = 'diagrams-layer-g-' + layerGId++;
-	            var numberG = undefined;
-	
-	            layerG = container.append('g').attr({
-	              'class': 'layer-node',
-	              id: currentLayerId,
-	              transform: 'translate(' + layer.x * widthSize + ', ' + layer.y * heightSize + ')'
-	            });
-	
-	            layer.layerG = layerG;
-	            layer.container = container;
-	            layer.containerData = containerData;
-	
-	            layerDims = _helpers2['default'].getFinalLayerDimensions(layer);
-	            layerNode = layerG.append('g');
-	
-	            if (layer.conditional === true) {
-	              layerNode.append('path').attr({
-	                d: _diagrams2['default'].shapes.hexagon({
-	                  height: layerDims.height,
-	                  width: layerDims.width,
-	                  widthPercent: 97 + Math.abs(3 - layer.depth)
-	                }),
-	                fill: layerDims.fill,
-	                stroke: '#f00',
-	                transform: layerDims.transform
-	              });
-	            } else {
-	              layerNode.append('rect').attr({
-	                fill: layerDims.fill,
-	                height: layerDims.height,
-	                transform: layerDims.transform,
-	                width: layerDims.width
-	              }).style({
-	                filter: 'url(#diagrams-drop-shadow-layer)'
-	              });
-	            }
-	
-	            layerText = layerNode.append('text').attr({
-	              transform: layerDims.transform,
-	              x: layer.depth,
-	              y: layer.height * heightSize - 3 * layer.depth - 10
-	            }).text(function () {
-	              return _diagrams2['default'].utils.formatShortDescription(layer.text);
-	            });
-	
-	            layer.fullText = layer.text;
-	            // Missing to add show all layers connections and hide
-	            diagram.addMouseListenersToEl(layerNode, layer);
-	            layerText.each(_diagrams2['default'].svg.textEllipsis(layer.width * widthSize - config.depthWidthFactor * layer.depth * 2));
-	
-	            if (layerDims.numberTransform) {
-	              numberG = layerNode.append('g').attr({
-	                'class': 'number',
-	                transform: layerDims.numberTransform
-	              });
-	              numberG.append('circle').attr({
-	                cx: 4,
-	                cy: -4,
-	                fill: colors[layer.depth - 1],
-	                filter: 'none',
-	                r: 10,
-	                stroke: '#000',
-	                'stroke-width': 2
-	              });
-	              numberG.append('text').text(layerIndex + 1).attr('fill', '#000');
-	            }
-	
-	            if (layer.items.length > 0) {
-	              drawLayersInContainer(layer.items, layerG, layer);
-	            }
-	          });
-	        };
-	        var svg = _diagrams2['default'].svg.generateSvg({
-	          margin: '20px 0 0 20px'
-	        });
-	
-	        diagram.markRelatedFn = function (item) {
-	          item.data.origFill = item.data.origFill || item.el.select('rect').style('fill');
-	          item.el.select('rect').style({
-	            fill: 'rgb(254, 255, 209)'
-	          });
-	        };
-	        diagram.unmarkAllItems = function () {
-	          var recursiveFn = function recursiveFn(items) {
-	            _.each(items, function (item) {
-	              item.layerG.style({
-	                'stroke-width': '1px'
-	              });
-	
-	              if (item.origFill) {
-	                item.layerG.select('rect').style('fill', item.origFill);
-	              }
-	
-	              if (item.items) recursiveFn(item.items);
-	            });
-	          };
-	
-	          recursiveFn(conf);
-	        };
-	
-	        _.each(colors, function (color, index) {
-	          _diagrams2['default'].svg.addVerticalGradientFilter(svg, 'color-' + index, ['#fff', color]);
-	        });
-	
-	        svg.attr('class', 'layers-diagram');
-	
-	        if (_.isArray(conf) === false) conf = [conf];
-	        _diagrams2['default'].svg.addFilterColor({ container: svg, deviation: 3, id: 'layer', slope: 2 });
-	
-	        addItemsPropToBottomItems(conf);
-	        calcMaxUnityWidth();
-	        _helpers2['default'].generateLayersData(diagram, conf);
-	        drawLayersInContainer();
-	        drawConnectionsIfAny();
-	        updateSvgHeight();
-	        diagram.generateRelationships(conf);
+	      value: function create() {
+	        (0, _creation.getCreationFn)(this).apply(undefined, arguments);
 	      }
 	    }, {
 	      key: 'generateRelationships',
