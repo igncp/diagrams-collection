@@ -1,8 +1,8 @@
+import { each } from "lodash"
+
 import calculateLayerWithChildrenDimensions from './calculateLayerWithChildrenDimensions'
 import getConfig from "./getConfig"
 import handleConnectedToNextCaseIfNecessary from './handleConnectedToNextCaseIfNecessary'
-
-const { each } = _
 
 const generateLayersData = (diagram, layers, currentDepth) => {
   const config = getConfig()

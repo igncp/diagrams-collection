@@ -1,15 +1,21 @@
+import { Subject } from "rx"
+import { addIndex, forEach } from "ramda"
+import _, { isArray, isString, isUndefined, last, partial, reduce, where } from "lodash"
+
+export const each = addIndex(forEach)
+
 const utils = {
   applySimpleTransform(el) {
     el.attr('transform', d => `translate(${d.x},${d.y})`)
   },
 
   codeBlockOfLanguageFn(language, commentsSymbol = '') {
-    return function(codeBlock, where, withInlineStrs) {
+    return function(codeBlock, position, withInlineStrs) {
       if (withInlineStrs === true) {
         codeBlock = `${commentsSymbol} ...\n${codeBlock}\n${commentsSymbol} ...`
       }
 
-      if (_.isString(where)) codeBlock = `${commentsSymbol} @${where}\n${codeBlock}`
+      if (isString(position)) codeBlock = `${commentsSymbol} @${position}\n${codeBlock}`
 
       return `\`\`${language}\`\`${codeBlock}\`\``
     }
@@ -28,14 +34,14 @@ const utils = {
     constructor.prototype.emit = function(name, data) {
       const fnName = createName(name)
 
-      _subjects[fnName] = _subjects[fnName] || new Rx.Subject()
+      _subjects[fnName] = _subjects[fnName] || new Subject()
       _subjects[fnName].onNext(data)
     }
 
     constructor.prototype.listen = function(name, handler) {
       const fnName = createName(name)
 
-      _subjects[fnName] = _subjects[fnName] || new Rx.Subject()
+      _subjects[fnName] = _subjects[fnName] || new Subject()
 
       return _subjects[fnName].subscribe(handler)
     }
@@ -65,7 +71,7 @@ const utils = {
     props = props.split('.')
 
     return (d) => {
-      const position = _.reduce(props, (memo, property) => memo[property], d)
+      const position = reduce(props, (memo, property) => memo[property], d)
 
       return (preffix || suffix) ? preffix + position + suffix : position
     }
@@ -88,10 +94,10 @@ const utils = {
           return
         } else itemsChecked.push(item)
 
-        if (_.isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
+        if (isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
           connection = itemsIdToFromConnectionMap[item.id]
         } else {
-          connection = _.where(generalData.connections, {
+          connection = where(generalData.connections, {
             from: item.id,
           })
           itemsIdToFromConnectionMap[item.id] = connection
@@ -104,10 +110,10 @@ const utils = {
         } else if (connection.length === 1) {
           parentItemId = connection[0].to
 
-          if (_.isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
+          if (isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
             parentItem = itemsIdToItemsMap[parentItemId]
           } else {
-            parentItem = _.where(generalData.items, {
+            parentItem = where(generalData.items, {
               id: parentItemId,
             })[0]
             itemsIdToItemsMap[parentItemId] = parentItem
@@ -116,13 +122,13 @@ const utils = {
         } else FPNRecursiveFailed = true
       }
 
-      _.each(generalData.items, (item) => {
+      each((item) => {
         if (FPNRecursiveFailed === false) {
           itemsChecked = []
           itemsIdToItemsMap[item.id] = item
           FPNRecursiveFn(item)
         }
-      })
+      })(generalData.items)
     }
     const buildNodesDataRecursiveFn = (transformedData, item) => {
       let text, children
@@ -133,16 +139,16 @@ const utils = {
       if (item.description) text += `: ${item.description}`
       transformedData.text = text
 
-      children = _.where(generalData.connections, {
+      children = where(generalData.connections, {
         to: item.id,
       })
 
       if (children.length > 0) {
         transformedData.items = []
-        _.each(children, (child) => {
+        each((child) => {
           transformedData.items.push({})
-          buildNodesDataRecursiveFn(_.last(transformedData.items), itemsIdToItemsMap[child.from])
-        })
+          buildNodesDataRecursiveFn(last(transformedData.items), itemsIdToItemsMap[child.from])
+        })(children)
       }
     }
     let parentNode
@@ -159,6 +165,8 @@ const utils = {
       return nodesData
     }
   },
+
+  each,
 
   formatShortDescription(text) {
     text = text.replace(/<p>/g, '')
@@ -177,7 +185,7 @@ const utils = {
   formatTextFragment(text) {
     const tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p']
     const encodeOrDecodeTags = (action, tag) => {
-      const encodeOrDecodeTagsWithAction = _.partial(encodeOrDecodeTags, action)
+      const encodeOrDecodeTagsWithAction = partial(encodeOrDecodeTags, action)
       const beginningTagArr = [
         `<${tag}(.*?)>`,
         `<${tag}$1>`,
@@ -191,18 +199,18 @@ const utils = {
         text = text.replace(new RegExp(from, 'g'), to)
       }
 
-      if (_.isArray(tag)) _.each(tag, encodeOrDecodeTagsWithAction)
+      if (isArray(tag)) each(encodeOrDecodeTagsWithAction)(tag)
       else {
-        _.each([beginningTagArr, endingTagArr], (arr) => {
+        each((arr) => {
           if (action === 'encode') replaceText(arr[0], arr[3])
           else if (action === 'decode') replaceText(arr[2], arr[1])
-        })
+        })([beginningTagArr, endingTagArr])
       }
     }
 
     text = utils.replaceCodeFragmentOfText(text,
       ({ allMatches, codeBlock, language, matchStr }) => {
-        const lastMatch = (matchStr === _.last(allMatches))
+        const lastMatch = (matchStr === last(allMatches))
 
         return `<pre${(lastMatch ? ' class="last-code-block" ' : '')}><code>`
           + `${hljs.highlight(language, codeBlock).value}</pre></code>`
@@ -278,6 +286,6 @@ const utils = {
   wrapInParagraph: (text) => `<p>${text}</p>`,
 }
 
-utils.commasAndAndJoin = _.partial(utils.joinWithLastDifferent, _, ', ', ' and ')
+utils.commasAndAndJoin = partial(utils.joinWithLastDifferent, _, ', ', ' and ')
 
 export default utils

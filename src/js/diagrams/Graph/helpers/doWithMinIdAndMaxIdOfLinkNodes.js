@@ -1,4 +1,4 @@
-const { isNumber, max, min } = _
+import { isNumber, max, min } from "lodash"
 
 export default (link, cb) => {
   const getIndex = (item) => {

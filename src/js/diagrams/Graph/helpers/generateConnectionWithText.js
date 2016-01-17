@@ -1,7 +1,7 @@
+import { isArray, isNumber, isString, map } from "lodash"
+
 import d from 'diagrams'
 import generateConnectionWithText from './generateConnectionWithText'
-
-const { isArray, isNumber, isString, map } = _
 
 export default (nodesIds, text) => {
   if (isArray(nodesIds) && isArray(nodesIds[0])) {

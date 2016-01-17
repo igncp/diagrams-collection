@@ -1,8 +1,8 @@
+import { each, extend, isObject } from "lodash"
+
 import idOpt from "./idOpt"
 import getStaticOptsLetters from "./getStaticOptsLetters"
 import connectWithOpt from "./connectWithOpt"
-
-const { each, extend, isObject } = _
 
 export default (...args) => {
   let result = {}

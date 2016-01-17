@@ -1,7 +1,7 @@
+import { isUndefined } from "lodash"
+
 import doWithMinIdAndMaxIdOfLinkNodes from './doWithMinIdAndMaxIdOfLinkNodes'
 import linksNumberMapHandler from './linksNumberMapHandler'
-
-const { isUndefined } = _
 
 export default (link) => {
   doWithMinIdAndMaxIdOfLinkNodes(link, (minIndex, maxIndex) => {

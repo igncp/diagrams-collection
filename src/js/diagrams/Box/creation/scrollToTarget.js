@@ -1,4 +1,4 @@
-const { defer, each, isNull, isString } = _
+import { defer, each, isNull, isString } from "lodash"
 
 export default (target, conf) => {
   let targetFound = null

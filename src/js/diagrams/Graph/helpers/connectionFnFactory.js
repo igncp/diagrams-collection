@@ -1,4 +1,4 @@
-const { isArray, map } = _
+import { isArray, map } from "lodash"
 
 const getSetValFn = ({ changedProp, changedVal, connection }) => {
   return (singleConnection) => {

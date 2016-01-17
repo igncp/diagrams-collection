@@ -1,6 +1,6 @@
-import d from "diagrams"
+import { extend } from "lodash"
 
-const { extend } = _
+import d from "diagrams"
 
 export default (ids, id) => {
   const connectWithOpt = d.layer.connectWithOpt(ids)

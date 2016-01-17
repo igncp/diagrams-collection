@@ -1,3 +1,4 @@
+import addAdvantagesDrawbacksOtherToDesc from './addAdvantagesDrawbacksOtherToDesc'
 import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'
 import addButtons from './addButtons'
 import collapseAll from './collapseAll'
@@ -19,6 +20,7 @@ import parseItemGenerationOptions from './parseItemGenerationOptions'
 import traverseBodyDataAndRefresh from './traverseBodyDataAndRefresh'
 
 const helpers = {
+  addAdvantagesDrawbacksOtherToDesc,
   addBodyItemsAndUpdateHeights,
   addButtons,
   collapseAll,

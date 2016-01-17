@@ -1,4 +1,4 @@
-const { each, map } = _
+import { each, map } from "lodash"
 
 const getNewConnection = ({ connection, currentNode, otherNodeId }) => {
   if (connection.direction === 'out') return {

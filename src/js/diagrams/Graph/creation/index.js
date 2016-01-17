@@ -1,3 +1,6 @@
+import d3, { behavior, layout, select, scale } from "d3"
+import _, { each, isUndefined, partial, reduce } from "lodash"
+
 import d from 'diagrams'
 import helpers from '../helpers'
 
@@ -44,7 +47,7 @@ export const getCreationFn = (diagram) => {
         })
       }
 
-      _.each(['link-path', 'link-path-outer'], setPathToLink)
+      each(['link-path', 'link-path-outer'], setPathToLink)
 
       node.each((singleNode) => {
         if (singleNode.shape === 'circle') {
@@ -59,18 +62,18 @@ export const getCreationFn = (diagram) => {
       node.select('text').attr("x", dPositionFn('x')).attr("y", dPositionFn('y', -20))
     }
     const parseData = () => {
-      let maxId = _.reduce(data, (memo, tmpNode) => {
+      let maxId = reduce(data, (memo, tmpNode) => {
         const id = tmpNode.id || 0
 
         return (memo > id) ? memo : id
       }, 0)
       const idsMap = {}
       const nodesWithLinkMap = {}
-      const colors = d3.scale.category20()
+      const colors = scale.category20()
       const handleConnections = (tmpNode, nodeIndex) => {
         if (tmpNode.connections.length > 0) {
-          _.each(tmpNode.connections, (connection) => {
-            _.each(connection.nodesIds, (otherNodeId) => {
+          each(tmpNode.connections, (connection) => {
+            each(connection.nodesIds, (otherNodeId) => {
               otherNode = idsMap[otherNodeId]
 
               if (otherNode) {
@@ -106,8 +109,8 @@ export const getCreationFn = (diagram) => {
         nodes: [],
       }
       markers = []
-      _.each(data, (dataNode, nodeIndex) => {
-        nodeId = _.isUndefined(dataNode.id) ? maxId++ : dataNode.id
+      each(data, (dataNode, nodeIndex) => {
+        nodeId = isUndefined(dataNode.id) ? maxId++ : dataNode.id
         color = colors(nodeIndex)
         options = dataNode.options || {}
         parsedData.nodes.push({
@@ -135,42 +138,42 @@ export const getCreationFn = (diagram) => {
 
       if (conf.info) helpers.addDiagramInfo(diagram, svg, conf.info)
 
-      _.each(parsedData.nodes, handleConnections)
+      each(parsedData.nodes, handleConnections)
 
       if (conf.hideNodesWithoutLinks === true) {
-        _.each(parsedData.nodes, (pdNode, nodeIndex) => {
+        each(parsedData.nodes, (pdNode, nodeIndex) => {
           if (nodesWithLinkMap[nodeIndex] !== true) pdNode.hidden = true
         })
       }
     }
 
-    const zoomed = (translate, scale) => {
-      scale = scale || 1
-      container.attr("transform", `translate(${translate})scale(${scale})`)
-      graphZoomConfig.value = scale
+    const zoomed = (translate, zoomScale) => {
+      zoomScale = zoomScale || 1
+      container.attr("transform", `translate(${translate})scale(${zoomScale})`)
+      graphZoomConfig.value = zoomScale
       diagram.config(GRAPH_ZOOM, graphZoomConfig)
     }
 
     const dragstarted = function() {
       d3.event.sourceEvent.stopPropagation()
-      d3.select(this).classed("dragging", true)
+      select(this).classed("dragging", true)
       force.start()
     }
 
     const dragged = function(da) {
-      d3.select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y)
+      select(this).attr("cx", da.x = d3.event.x).attr("cy", da.y = d3.event.y)
     }
 
     const dragended = function() {
-      d3.select(this).classed("dragging", false)
+      select(this).classed("dragging", false)
     }
 
     const setRelationships = () => {
-      _.each(parsedData.nodes, diagram.generateEmptyRelationships, diagram)
-      _.each(parsedData.nodes, (pdNode) => {
+      each(parsedData.nodes, diagram.generateEmptyRelationships, diagram)
+      each(parsedData.nodes, (pdNode) => {
         diagram.addSelfRelationship(pdNode, pdNode.shapeEl, pdNode)
       })
-      _.each(parsedData.links, (pdLink) => {
+      each(parsedData.links, (pdLink) => {
         diagram.addDependencyRelationship(pdLink.source, pdLink.target.shapeEl, pdLink.target)
         diagram.addDependantRelationship(pdLink.target, pdLink.source.shapeEl, pdLink.source)
       })
@@ -250,13 +253,13 @@ export const getCreationFn = (diagram) => {
       }
     }
 
-    const setReRender = _.partial(helpers.setReRender, diagram, creationId, data, _)
+    const setReRender = partial(helpers.setReRender, diagram, creationId, data, _)
 
     diagram.markRelatedFn = (item) => {
       item.el.style('stroke-width', '20px')
     }
     diagram.unmarkAllItems = () => {
-      _.each(parsedData.nodes, (pdNode) => {
+      each(parsedData.nodes, (pdNode) => {
         pdNode.shapeEl.style('stroke-width', '1px')
       })
     }
@@ -269,7 +272,7 @@ export const getCreationFn = (diagram) => {
       height,
     })
 
-    zoom = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", () => {
+    zoom = behavior.zoom().scaleExtent([0.1, 10]).on("zoom", () => {
       zoomed(d3.event.translate, d3.event.scale)
     })
 
@@ -280,13 +283,13 @@ export const getCreationFn = (diagram) => {
 
     zoomed(zoom.translate(), zoom.scale())
 
-    force = d3.layout.force()
+    force = layout.force()
       .size([width, height])
       .charge(conf.charge || -10000)
       .linkDistance(conf.linkDistance || 140)
       .on("tick", tick)
 
-    drag = d3.behavior.drag().origin(da => da)
+    drag = behavior.drag().origin(da => da)
       .on("dragstart", dragstarted).on("drag", dragged).on("dragend", dragended)
 
     force.nodes(parsedData.nodes).links(parsedData.links).start()
@@ -328,7 +331,7 @@ export const getCreationFn = (diagram) => {
     linkOuter = link.append('g')
     linkOuter.append('svg:path').attr('class', 'link-path-outer')
     linkOuter.each(function(da) {
-      diagram.addMouseListenersToEl(d3.select(this), da.data, {
+      diagram.addMouseListenersToEl(select(this), da.data, {
         mouseenter(eLink) {
           setLinkIsHidingIfNecessary(false, eLink)
         },
@@ -352,7 +355,7 @@ export const getCreationFn = (diagram) => {
     node.each(function(singleNode) {
       let singleNodeClasses = ''
 
-      singleNodeEl = d3.select(this)
+      singleNodeEl = select(this)
       singleNode.fullText = d.utils
         .generateATextDescriptionStr(singleNode.name, singleNode.description)
 
@@ -362,7 +365,7 @@ export const getCreationFn = (diagram) => {
           r: 12,
         })
       } else {
-        shape = d3.svg.symbol().size(750)
+        shape = svg.symbol().size(750)
         shapeEl = singleNodeEl.append("path")
 
         if (singleNode.shape === 'triangle') {

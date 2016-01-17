@@ -1,11 +1,11 @@
+import { isUndefined } from "lodash"
+
 import helpers from '../helpers'
 
 import { getFeatures } from '../features'
 const f = getFeatures()
 
 import triggerElIdHandler from './triggerElIdHandler'
-
-const { isUndefined } = _
 
 const collapseIfNecessary = (el, item) => {
   if (item.items.length > 0 || item.collapsedItems) {

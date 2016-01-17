@@ -1,7 +1,7 @@
+import { extend, isArray, isObject, isString, isUndefined } from "lodash"
+
 import idsHandler from './idsHandler'
 import extendOpts from './extendOpts'
-
-const { extend, isArray, isObject, isString, isUndefined } = _
 
 export default (text, opts, items) => {
   let layer = { text }

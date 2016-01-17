@@ -1,4 +1,4 @@
-const { isString, reduce } = _
+import { isString, reduce } from "lodash"
 
 const getParsedOptionsOfStrCase = (optionsStr) => {
   const options = optionsStr.split(' ')

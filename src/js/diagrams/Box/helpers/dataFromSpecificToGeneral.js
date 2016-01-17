@@ -1,4 +1,4 @@
-const { each } = _
+import { each } from "lodash"
 
 const recursiveFn = (items, parentCreatedItem, context) => {
   each(items, (item) => {

@@ -1,3 +1,5 @@
+import { select } from "d3"
+
 import d from 'diagrams'
 
 const addEllipsis = ({ self, text, textLength, width }) => {
@@ -72,7 +74,7 @@ const svg = {
     const selector = svg.getDiagramWrapperStr()
     const bodyDims = document.body.getBoundingClientRect()
 
-    return d3.select(selector).append('svg').attr({
+    return select(selector).append('svg').attr({
       height: 4000,
       width: bodyDims.width - 40,
     }).style(style)
@@ -80,7 +82,7 @@ const svg = {
 
   insertInBodyBeforeSvg(tag) {
     const diagramWrapper = svg.getDiagramWrapperStr()
-    const body = d3.select('body')
+    const body = select('body')
     const elementAfterName = (diagramWrapper === 'body') ? 'svg' : diagramWrapper
     const el = body.insert(tag, elementAfterName)
 
@@ -89,7 +91,7 @@ const svg = {
 
   textEllipsis(width) {
     return function() {
-      const self = d3.select(this)
+      const self = select(this)
       const textLength = self.node().getComputedTextLength()
       const text = self.text()
 

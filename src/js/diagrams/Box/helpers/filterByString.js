@@ -1,4 +1,4 @@
-const { any, debounce, each, partial } = _
+import { any, debounce, each, partial } from "lodash"
 
 import traverseBodyDataAndRefresh from './traverseBodyDataAndRefresh'
 

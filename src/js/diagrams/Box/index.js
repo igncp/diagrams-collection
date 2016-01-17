@@ -1,9 +1,9 @@
+import { each } from "lodash"
+
 import d from 'diagrams'
 
 import helpers from './helpers'
 import { getCreationFn } from './creation'
-
-const { each } = _
 
 class Box extends d.Diagram {
   create(...args) {

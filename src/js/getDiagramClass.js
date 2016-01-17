@@ -1,7 +1,9 @@
+import { bind, defaults, each, isFunction, isObject, isString, merge, where } from "lodash"
+
+import { select, selectAll } from "d3"
+
 import d from 'diagrams'
 import svg from 'svg'
-
-const { bind, defaults, each, isFunction, isObject, isString, merge, where } = _
 
 const defaultDiagramConfiguration = {}
 let createdDiagramsMaxId = 0
@@ -24,8 +26,8 @@ class Diagram {
   }
 
   static removePreviousDiagrams() {
-    d3.selectAll('input.diagrams-diagram-button').remove()
-    d3.select('svg').remove()
+    selectAll('input.diagrams-diagram-button').remove()
+    select('svg').remove()
   }
 
   static addDivBeforeSvg() {
@@ -85,12 +87,12 @@ class Diagram {
 
   addMouseListenersToEl(el, data, callbacks) {
     const diagram = this
-    const emitFn = (d3Event, emitedEvent) => {
-      emitedEvent = emitedEvent || d3Event
-      el.on(d3Event, () => {
+    const emitFn = (d3EventName, emitedEvent) => {
+      emitedEvent = emitedEvent || d3EventName
+      el.on(d3EventName, () => {
         diagram.emit(emitedEvent, emitContent)
 
-        if (callbacks && callbacks[d3Event]) callbacks[d3Event](emitContent)
+        if (callbacks && callbacks[d3EventName]) callbacks[d3EventName](emitContent)
       })
     }
     const emitContent = { data, el }

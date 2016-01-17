@@ -1,4 +1,4 @@
-const { each, isNumber, isUndefined } = _
+import { each, isNumber, isUndefined } from "lodash"
 
 export default (ids, result, type) => {
   const objs = []

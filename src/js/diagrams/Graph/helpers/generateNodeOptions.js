@@ -1,6 +1,6 @@
-import generateNodeOptions from './generateNodeOptions'
+import { each, isArray, isString } from "lodash"
 
-const { each, isArray, isString } = _
+import generateNodeOptions from './generateNodeOptions'
 
 const getArrCaseHandler = ({ obj }) => {
   return (opt) => {

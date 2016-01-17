@@ -1,4 +1,4 @@
-const { each } = _
+import { each } from "lodash"
 
 import d from 'diagrams'
 import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'

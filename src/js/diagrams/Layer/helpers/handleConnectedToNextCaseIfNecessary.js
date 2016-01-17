@@ -1,6 +1,6 @@
-import idsHandler from "./idsHandler"
+import { isObject } from "lodash"
 
-const { isObject } = _
+import idsHandler from "./idsHandler"
 
 export default (layers, currentIndex) => {
   const layer = layers[currentIndex]

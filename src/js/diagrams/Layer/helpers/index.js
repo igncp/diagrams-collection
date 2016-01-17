@@ -1,3 +1,5 @@
+import { each } from "lodash"
+
 import _methodsWithCode from "./_methodsWithCode"
 
 import Grid from "./Grid"
@@ -17,8 +19,6 @@ import idsHandler from "./idsHandler"
 import itemsOfLayerShouldBeSorted from "./itemsOfLayerShouldBeSorted"
 import newLayer from "./newLayer"
 import newLayerConnectedToNext from "./newLayerConnectedToNext"
-
-const { each } = _
 
 const helpers = {
   Grid,

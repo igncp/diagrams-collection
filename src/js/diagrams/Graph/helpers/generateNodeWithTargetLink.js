@@ -1,6 +1,6 @@
-import generateNode from './generateNode'
+import { isUndefined } from "lodash"
 
-const { isUndefined } = _
+import generateNode from './generateNode'
 
 export default (file, target) => {
   return (...args) => {

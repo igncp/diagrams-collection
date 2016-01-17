@@ -1,4 +1,4 @@
-const { isUndefined } = _
+import { isUndefined } from "lodash"
 
 export default class Grid {
   constructor(fixedWidth) {

@@ -1,3 +1,5 @@
+import { each, isString } from "lodash"
+
 import d from 'diagrams'
 import helpers from '../helpers'
 
@@ -6,8 +8,6 @@ import triggerElIdHandler from './triggerElIdHandler'
 
 import { getFeatures } from '../features'
 const f = getFeatures()
-
-const { each, isString } = _
 
 let bodyPosition, bodyG
 

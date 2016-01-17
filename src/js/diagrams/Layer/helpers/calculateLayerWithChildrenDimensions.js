@@ -1,7 +1,7 @@
+import { each } from "lodash"
+
 import Grid from './Grid'
 import itemsOfLayerShouldBeSorted from './itemsOfLayerShouldBeSorted'
-
-const { each } = _
 
 export default (diagram, layer) => {
   let itemsOfLayer, grid, itemsOfLayerIndex, width, gridSize, itemsShouldBeSorted

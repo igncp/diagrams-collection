@@ -1,3 +1,5 @@
+import { select } from "d3"
+
 import d from 'diagrams'
 import helpers from '../helpers'
 
@@ -40,12 +42,12 @@ export const getCreationFn = (diagram) => {
       'text-anchor': 'middle',
     })
 
-    d3.select(document.body).style('opacity', 0)
+    select(document.body).style('opacity', 0)
     helpers.addBodyItemsAndUpdateHeights.get()()
 
     if (opts.allCollapsed === true) helpers.collapseAll(creationId)
     helpers.addButtons(creationId)
-    d3.select(document.body).style('opacity', 1)
+    select(document.body).style('opacity', 1)
 
     if (urlParams.target) scrollToTarget(urlParams.target, conf)
   }

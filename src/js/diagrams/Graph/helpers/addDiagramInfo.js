@@ -1,6 +1,6 @@
-import d from 'diagrams'
+import { isString } from "lodash"
 
-const { isString } = _
+import d from 'diagrams'
 
 const addConditionallyMouseListenersToEl = ({ diagram, el, hasDescription, info }) => {
   if (hasDescription) {

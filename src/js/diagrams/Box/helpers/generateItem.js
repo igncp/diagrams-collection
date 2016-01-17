@@ -1,4 +1,4 @@
-const { defaults } = _
+import { defaults } from "lodash"
 
 import parseItemGenerationOptions from './parseItemGenerationOptions'
 

@@ -1,4 +1,4 @@
-const { each } = _
+import { each } from "lodash"
 
 export default (itemsArray) => {
   let ret = true

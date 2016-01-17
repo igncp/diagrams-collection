@@ -1,3 +1,5 @@
+import { each, isObject, isString, keys } from "lodash"
+
 const shared = {
   get(key) {
     shared.throwIfSharedMethodAlreadyExists(key)
@@ -16,12 +18,12 @@ const shared = {
   },
 
   throwIfSharedMethodAlreadyExists(data) {
-    let keys
+    let sharedKeys
 
-    if (_.isObject(data)) {
-      keys = Object.keys(data)
-      _.each(keys, shared.throwIfSharedMethodAlreadyExists)
-    } else if (_.isString(data)) {
+    if (isObject(data)) {
+      sharedKeys = Object.keys(data)
+      each(sharedKeys, shared.throwIfSharedMethodAlreadyExists)
+    } else if (isString(data)) {
       if (shared[methodsVarName].indexOf(data) > 0) throw new Error(`Reserved keyword: ${data}`)
     }
   },
@@ -29,6 +31,6 @@ const shared = {
 
 const methodsVarName = 'builtInMethods'
 
-shared[methodsVarName] = _.keys(shared).concat(methodsVarName)
+shared[methodsVarName] = keys(shared).concat(methodsVarName)
 
 export default shared

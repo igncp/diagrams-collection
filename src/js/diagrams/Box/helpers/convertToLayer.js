@@ -1,6 +1,7 @@
-import d from "diagrams"
+import { each, isString } from "lodash"
+import { select, selectAll } from "d3"
 
-const { each, isString } = _
+import d from "diagrams"
 
 const convertDataToLayers = (items) => {
   each(items, (item, index) => {
@@ -18,9 +19,9 @@ const convertDataToLayers = (items) => {
 }
 
 const createLayers = (layersData) => {
-  const svg = d3.select('svg')
+  const svg = select('svg')
 
-  d3.selectAll('input.diagrams-diagram-button').remove()
+  selectAll('input.diagrams-diagram-button').remove()
 
   svg.remove()
   d.layer(layersData)

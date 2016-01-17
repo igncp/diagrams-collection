@@ -1,3 +1,6 @@
+import { svg as d3Svg } from "d3"
+import { chain, each, isArray, isObject, isUndefined, max, where } from "lodash"
+
 import d from 'diagrams'
 
 import helpers from '../helpers'
@@ -6,7 +9,7 @@ let layerGId = 0
 const dTextFn = d.utils.textFn
 
 const addItemsPropToBottomItems = (layers) => {
-  _.each(layers, (layer) => {
+  each(layers, (layer) => {
     if (layer.hasOwnProperty('items') === false) {
       layer.items = []
     } else addItemsPropToBottomItems(layer.items)
@@ -94,14 +97,14 @@ export const getCreationFn = (diagram) => {
         }
       }
       const eachSide = (cb) => {
-        _.each(['top', 'bottom', 'left', 'right'], (side) => {
+        each(['top', 'bottom', 'left', 'right'], (side) => {
           cb(side)
         })
       }
       const sameTypeOfSides = (sideA, sideB) => {
         let result = false
 
-        _.each([
+        each([
           [sideA, sideB],
           [sideB, sideA],
         ], (sides) => {
@@ -114,7 +117,7 @@ export const getCreationFn = (diagram) => {
       const loopSidesToGetConnection = (sameTypeOfSidesCondition) => {
         eachSide((sideA) => {
           eachSide((sideB) => {
-            if (_.isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = []
+            if (isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = []
 
             if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0
               && layerB.alreadyConnections.indexOf(sideB) < 0) {
@@ -153,9 +156,9 @@ export const getCreationFn = (diagram) => {
       const containerData = connection.layer.containerData
       let connectionG, connectionId, connectionCoords, linkLine, connectionPath
 
-      _.each(connection.connectedTo, (connectedToLayer) => {
+      each(connection.connectedTo, (connectedToLayer) => {
         connectionCoords = calculateTheMostOptimalConnection(connection.layer, connectedToLayer)
-        linkLine = d3.svg.line().x(dTextFn('x')).y(dTextFn('y'))
+        linkLine = d3Svg.line().x(dTextFn('x')).y(dTextFn('y'))
         connectionId = `${connection.layer.id}-${connectedToLayer.layer.id}`
         connectionG = container.append('g').attr('id', connectionId)
 
@@ -190,18 +193,18 @@ export const getCreationFn = (diagram) => {
     const drawConnectionsIfAny = (layers) => {
       layers = layers || conf
 
-      _.chain(layers).filter((layer) => {
+      chain(layers).filter((layer) => {
         return layer.hasOwnProperty('connectedTo')
       }).map((layer) => {
         const layersConnectedTo = []
         let layerConnectedObj, layerConnectedId, layerConnectedType
 
-        _.each(layer.connectedTo, (layerConnected) => {
-          layerConnectedId = _.isObject(layerConnected) ? layerConnected.id : layerConnected
-          layerConnectedType = _.isObject(layerConnected) && layerConnected.type
+        each(layer.connectedTo, (layerConnected) => {
+          layerConnectedId = isObject(layerConnected) ? layerConnected.id : layerConnected
+          layerConnectedType = isObject(layerConnected) && layerConnected.type
             ? layerConnected.type : 'standard'
 
-          layerConnectedObj = _.where(layers, {
+          layerConnectedObj = where(layers, {
             id: layerConnectedId,
           })[0]
 
@@ -219,7 +222,7 @@ export const getCreationFn = (diagram) => {
         drawConnection(connection)
       }).value()
 
-      _.chain(layers).filter((layer) => {
+      chain(layers).filter((layer) => {
         return layer.items.length > 0
       }).each((layer) => {
         drawConnectionsIfAny(layer.items)
@@ -229,7 +232,7 @@ export const getCreationFn = (diagram) => {
       const getBottomPointOfLayer = (layer) => {
         return layer.y + layer.height
       }
-      const bottomLayer = _.max(conf, getBottomPointOfLayer)
+      const bottomLayer = max(conf, getBottomPointOfLayer)
       const bottomPoint = getBottomPointOfLayer(bottomLayer)
       const bottomPointPxs = bottomPoint * config.heightSize + 20
 
@@ -248,7 +251,7 @@ export const getCreationFn = (diagram) => {
       layers = layers || conf
       container = container || svg
 
-      _.each(layers, (layer, layerIndex) => {
+      each(layers, (layer, layerIndex) => {
         const currentLayerId = `diagrams-layer-g-${layerGId++}`
         let numberG
 
@@ -336,7 +339,7 @@ export const getCreationFn = (diagram) => {
     }
     diagram.unmarkAllItems = function() {
       const recursiveFn = (items) => {
-        _.each(items, (item) => {
+        each(items, (item) => {
           item.layerG.style({
             'stroke-width': '1px',
           })
@@ -352,13 +355,13 @@ export const getCreationFn = (diagram) => {
       recursiveFn(conf)
     }
 
-    _.each(colors, (color, index) => {
+    each(colors, (color, index) => {
       d.svg.addVerticalGradientFilter(svg, `color-${index}`, ['#fff', color])
     })
 
     svg.attr('class', 'layers-diagram')
 
-    if (_.isArray(conf) === false) conf = [conf]
+    if (isArray(conf) === false) conf = [conf]
     d.svg.addFilterColor({ container: svg, deviation: 3, id: 'layer', slope: 2 })
 
     addItemsPropToBottomItems(conf)

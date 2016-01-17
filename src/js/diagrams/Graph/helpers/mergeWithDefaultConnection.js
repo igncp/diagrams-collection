@@ -1,4 +1,4 @@
-const { defaults } = _
+import { defaults } from "lodash"
 
 export default (connection) => {
   const defaultConnection = {

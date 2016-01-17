@@ -1,4 +1,4 @@
-const { isArray } = _
+import { isArray } from "lodash"
 
 import generateItem from './generateItem'
 

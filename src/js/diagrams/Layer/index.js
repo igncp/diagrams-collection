@@ -1,3 +1,5 @@
+import { each } from "lodash"
+
 import d from 'diagrams'
 
 import helpers from './helpers'
@@ -12,7 +14,7 @@ export default () => {
     generateRelationships(layers, containerLayer) {
       const diagram = this
 
-      _.each(layers, (layer) => {
+      each(layers, (layer) => {
         diagram.generateEmptyRelationships(layer)
         diagram.addSelfRelationship(layer, layer.layerG, layer)
 

@@ -1,4 +1,4 @@
-const { partial } = _
+import { partial } from "lodash"
 
 import traverseBodyDataAndRefresh from './traverseBodyDataAndRefresh'
 import collapseItem from './collapseItem'

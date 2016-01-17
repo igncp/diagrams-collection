@@ -1,7 +1,9 @@
+import { forEach } from "ramda"
+import { isArray, isNumber, isObject, isString } from "lodash"
+
+import { each } from "utils"
 import generateNodeOptions from './generateNodeOptions'
 import mergeWithDefaultConnection from './mergeWithDefaultConnection'
-
-const { each, isArray, isNumber, isObject, isString } = _
 
 const addDefaultConnectionFromNumber = (node, nodeId) => {
   node.connections.push(mergeWithDefaultConnection({
@@ -10,9 +12,9 @@ const addDefaultConnectionFromNumber = (node, nodeId) => {
 }
 
 const addConnection = (node, connection) => {
-  if (isArray(connection)) each(connection, (singleConnection) => {
+  if (isArray(connection)) forEach((singleConnection) => {
     addConnection(node, singleConnection)
-  })
+  }, connection)
   else if (isNumber(connection)) addConnection({
     nodesIds: [connection],
   })
@@ -28,9 +30,9 @@ const handleStrCase = (node, origConnections) => {
   if (connections.length > 0) node.id = connections[0]
 
   if (connections.length > 1) {
-    each(connections, (nodeId, index) => {
+    each((nodeId, index) => {
       if (index > 0) addConnection(node, nodeId)
-    })
+    }, connections)
   }
 }
 
@@ -38,10 +40,10 @@ const handleArrCase = (node, origConnections) => {
   const connections = origConnections.slice(1)
 
   node.id = origConnections[0]
-  each(connections, (connection) => {
+  forEach((connection) => {
     if (isNumber(connection)) addDefaultConnectionFromNumber(node, connection)
     else addConnection(node, connection)
-  })
+  }, connections)
 }
 
 const handleCases = (node, origConnections) => {
