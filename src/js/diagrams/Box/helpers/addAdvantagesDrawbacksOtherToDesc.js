@@ -8,7 +8,8 @@ const { lvl1Tkns, lvl2Tkns, lvl3Tkns } = tokens
 const formatSection = (sectionHeader, sectionContent) => {
 
   let section = `${lvl2Tkns.firstToken}diagrams-box-ado-section`
-    + `${lvl2Tkns.secondToken}${sectionHeader}:`
+    + `${lvl2Tkns.secondToken}${lvl3Tkns.firstToken}diagrams-box-ado-section-header`
+    + `${lvl3Tkns.secondToken}${sectionHeader}${lvl3Tkns.thirdToken}:`
 
   forEach((sectionContentRow) => {
     section += `${lvl3Tkns.firstToken}diagrams-box-ado-row${lvl3Tkns.secondToken}`

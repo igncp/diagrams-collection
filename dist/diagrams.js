@@ -44370,7 +44370,7 @@
 	
 	var formatSection = function formatSection(sectionHeader, sectionContent) {
 	
-	  var section = lvl2Tkns.firstToken + "diagrams-box-ado-section" + ("" + lvl2Tkns.secondToken + sectionHeader + ":");
+	  var section = lvl2Tkns.firstToken + "diagrams-box-ado-section" + ("" + lvl2Tkns.secondToken + lvl3Tkns.firstToken + "diagrams-box-ado-section-header") + ("" + lvl3Tkns.secondToken + sectionHeader + lvl3Tkns.thirdToken + ":");
 	
 	  (0, _ramda.forEach)(function (sectionContentRow) {
 	    section += lvl3Tkns.firstToken + "diagrams-box-ado-row" + lvl3Tkns.secondToken + ("  - " + sectionContentRow + lvl3Tkns.thirdToken);

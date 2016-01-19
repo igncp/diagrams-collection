@@ -12,6 +12,15 @@ rect {
 .layer-node path {
   cursor: pointer;
 }
+.diagrams-box-ado-section {
+  float: left;
+  width: 49%;
+}
+.diagrams-box-ado-section-header {
+  color: #1497c1;
+  display: inline-block;
+  font-weight: bold;
+}
 .box-diagram {
   font-size: 25px;
   .diagrams-box-definition-text {
