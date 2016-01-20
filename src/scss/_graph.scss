@@ -1,0 +1,49 @@
+.graph-diagram {
+  .graph-info {
+    cursor: default;
+    font-size: 23px;
+
+    fill: #407b38;
+  }
+  .link {
+    &.shy-link {
+      &.shy-link-hidden {
+        display: none;
+      }
+      &.shy-link-showed {
+        display: block;
+      }
+    }
+    .link-path {
+      fill: none;
+      stroke-width: 1.5px;
+    }
+    .link-path-outer {
+      cursor: pointer;
+
+      stroke: rgba(0,0,0,0);
+      stroke-width: 40px;
+      fill: none;
+    }
+  }
+  .node {
+    cursor: pointer;
+    &.node-hidden {
+      visibility: hidden;
+    }
+    text {
+      text-anchor: middle;
+    }
+    .triangle,
+    .square,
+    circle {
+      stroke: #000;
+      &.bold {
+        stroke-width: 4px;
+      }
+      &.thin {
+        stroke-width: 1px;
+      }
+    }
+  }
+}

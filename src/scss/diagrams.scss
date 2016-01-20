@@ -1,5 +1,9 @@
 @import 'compass';
 
+@import 'box';
+@import 'graph';
+@import 'layer';
+
 body {
   margin: 0;
 }
@@ -9,112 +13,10 @@ rect {
 .diagrams-diagram-button {
   margin: 5px 15px 10px;
 }
-.layer-node path {
-  cursor: pointer;
-}
-.diagrams-box-ado-section {
-  float: left;
-  width: 49%;
-}
-.diagrams-box-ado-section-header {
-  color: #1497c1;
-  display: inline-block;
-  font-weight: bold;
-}
-.box-diagram {
-  font-size: 25px;
-  .diagrams-box-definition-text {
-    font-weight: bold;
 
-    fill: #18694a;
-  }
-  .diagrams-box-not-completed-tag {
-    font-weight: bold;
-
-    fill: #6576af;
-  }
-  .diagrams-box-not-completed-block {
-    fill: #333;
-    .diagrams-box-definition-text {
-      fill: #737958;
-    }
-  }
-}
-.layers-diagram,
-.box-diagram {
-  rect,
-  text {
-    cursor: pointer;
-  }
-}
-.layers-diagram {
-  font-size: 13px;
-  rect,
-  text {
-    cursor: pointer;
-  }
-}
-.graph-diagram {
-  .graph-info {
-    cursor: default;
-    font-size: 23px;
-
-    fill: #407b38;
-  }
-  .link {
-    &.shy-link {
-      &.shy-link-hidden {
-        display: none;
-      }
-      &.shy-link-showed {
-        display: block;
-      }
-    }
-    .link-path {
-      fill: none;
-      stroke-width: 1.5px;
-    }
-    .link-path-outer {
-      cursor: pointer;
-
-      stroke: rgba(0,0,0,0);
-      stroke-width: 40px;
-      fill: none;
-    }
-  }
-  .node {
-    cursor: pointer;
-    &.node-hidden {
-      visibility: hidden;
-    }
-    text {
-      text-anchor: middle;
-    }
-    .triangle,
-    .square,
-    circle {
-      stroke: #000;
-      &.bold {
-        stroke-width: 4px;
-      }
-      &.thin {
-        stroke-width: 1px;
-      }
-    }
-  }
-}
 pre {
   font-size: 20px;
   &.last-code-block {
     background-color: #eaf3fa;
-  }
-}
-.collapsible-trigger {
-  fill: #af2661;
-  text.plus {
-    font-size: 30px;
-  }
-  text.minus {
-    font-size: 50px;
   }
 }
