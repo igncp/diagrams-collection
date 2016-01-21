@@ -4,6 +4,7 @@ import { isArray, last, partial } from "lodash"
 import each from "./each"
 import replaceCodeFragmentOfText from "./replaceCodeFragmentOfText"
 import getClassedDivTokens from "./getClassedDivTokens"
+import { removeEditedDescriptionToken } from "./editedDescriptionTokenHandler"
 
 const tokens = getClassedDivTokens()
 
@@ -38,6 +39,8 @@ export default (text) => {
       })([beginningTagArr, endingTagArr])
     }
   }
+
+  text = removeEditedDescriptionToken(text)
 
   text = replaceCodeFragmentOfText(text,
     ({ allMatches, codeBlock, language, matchStr }) => {

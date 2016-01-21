@@ -4,6 +4,7 @@ import d from "diagrams"
 
 const tokens = d.utils.getClassedDivTokens()
 const { lvl1Tkns, lvl2Tkns, lvl3Tkns } = tokens
+const { getEditedDescriptionToken } = d.utils.editedDescriptionTokenHandler
 
 const formatSection = (sectionHeader, sectionContent) => {
 
@@ -30,7 +31,7 @@ const aADO = (description, ADO) => {
   finalDescription += formatSection('Other', ADO[2])
   finalDescription += lvl1Tkns.thirdToken
 
-  return finalDescription
+  return `${getEditedDescriptionToken()}${finalDescription}`
 }
 
 export default aADO

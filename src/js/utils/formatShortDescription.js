@@ -1,6 +1,11 @@
 import replaceCodeFragmentOfText from "./replaceCodeFragmentOfText"
+import { startsWithEditedDescriptionToken } from "./editedDescriptionTokenHandler"
 
 export default (text) => {
+  if (startsWithEditedDescriptionToken(text)) {
+    return "(...)"
+  }
+
   text = text.replace(/<p>/g, '')
   text = text.replace(/<br>/g, ' ')
   text = text.replace(/<\/p>/g, '. ')

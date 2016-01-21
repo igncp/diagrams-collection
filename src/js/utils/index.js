@@ -11,6 +11,7 @@ import formatShortDescription from "./formatShortDescription"
 import formatTextFragment from "./formatTextFragment"
 import generateATextDescriptionStr from "./generateATextDescriptionStr"
 import getClassedDivTokens from "./getClassedDivTokens"
+import editedDescriptionTokenHandler from "./editedDescriptionTokenHandler"
 import getUrlParams from "./getUrlParams"
 import joinWithLastDifferent from "./joinWithLastDifferent"
 import positionFn from "./positionFn"
@@ -28,6 +29,7 @@ export default {
   d3DefaultReturnFn,
   dataFromGeneralToSpecificForATreeStructureType,
   each,
+  editedDescriptionTokenHandler,
   formatShortDescription,
   formatTextFragment,
   generateATextDescriptionStr,
