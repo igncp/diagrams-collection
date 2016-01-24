@@ -15,4 +15,9 @@ forEach(requireAndRunDiagram)([
   'Box', 'Graph', 'Layer',
 ])
 
-window.diagrams = d
+if (typeof module === "object" && module.exports) {
+
+  module.exports = d
+} else {
+  window.diagrams = d
+}

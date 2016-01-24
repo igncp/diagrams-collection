@@ -225,6 +225,13 @@
         "node": true
     },
     "globals": {
+        "sinon": false,
+        "expect": false,
+        "mockery": false,
+        "beforeEach": false,
+        "afterEach": false,
+        "describe": false,
+        "it": false,
         "Rx": false,
         "_": false,
         "hljs": false,
