@@ -67,7 +67,12 @@
 	
 	(0, _ramda.forEach)(requireAndRunDiagram)(['Box', 'Graph', 'Layer']);
 	
-	window.diagrams = _diagrams2['default'];
+	if (window) {
+	  window.diagrams = _diagrams2['default'];
+	} else {
+	
+	  module.exports = _diagrams2['default'];
+	}
 
 /***/ },
 /* 1 */
@@ -33692,11 +33697,22 @@
 	
 	exports["default"] = function (text, predicate) {
 	  var codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g;
-	  var allMatches = text.match(codeRegex);
 	
-	  return text.replace(codeRegex, function (matchStr, language, codeBlock) {
-	    return predicate({ allMatches: allMatches, codeBlock: codeBlock, language: language, matchStr: matchStr });
-	  });
+	  if (text) {
+	    var _ret = (function () {
+	      var allMatches = text.match(codeRegex);
+	
+	      return {
+	        v: text.replace(codeRegex, function (matchStr, language, codeBlock) {
+	          return predicate({ allMatches: allMatches, codeBlock: codeBlock, language: language, matchStr: matchStr });
+	        })
+	      };
+	    })();
+	
+	    if (typeof _ret === "object") return _ret.v;
+	  } else {
+	    return text;
+	  }
 	};
 	
 	module.exports = exports["default"];
@@ -33717,7 +33733,7 @@
 	    return editedDescriptionToken;
 	  },
 	  removeEditedDescriptionToken: function removeEditedDescriptionToken(text) {
-	    return text.replace(new RegExp(editedDescriptionToken, "gm"), "");
+	    return text ? text.replace(new RegExp(editedDescriptionToken, "gm"), "") : text;
 	  },
 	  startsWithEditedDescriptionToken: function startsWithEditedDescriptionToken(text) {
 	    return text.substr(0, editedDescriptionToken.length) === editedDescriptionToken;
@@ -33763,7 +33779,9 @@
 	  return text.replace(token.regexp, "<div class=\"$1\">$2</div>");
 	};
 	
-	exports["default"] = function (text) {
+	exports["default"] = function () {
+	  var text = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+	
 	  var tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p'];
 	  var encodeOrDecodeTags = function encodeOrDecodeTags(action, tag) {
 	    var encodeOrDecodeTagsWithAction = (0, _lodash.partial)(encodeOrDecodeTags, action);

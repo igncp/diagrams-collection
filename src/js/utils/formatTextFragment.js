@@ -14,7 +14,7 @@ const getTextWithTokensReplaced = (text, level) => {
   return text.replace(token.regexp, `<div class="$1">$2</div>`)
 }
 
-export default (text) => {
+export default (text = '') => {
   const tagsToEncode = ['strong', 'code', 'pre', 'br', 'span', 'p']
   const encodeOrDecodeTags = (action, tag) => {
     const encodeOrDecodeTagsWithAction = partial(encodeOrDecodeTags, action)
