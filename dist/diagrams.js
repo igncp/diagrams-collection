@@ -45674,7 +45674,6 @@
 	                linkObj.color = parsedData.nodes[linkObj.source].color;
 	                _helpers2["default"].updateLinksNumberMapWithLink(linkObj);
 	                linkObj.data.linkIndex = _helpers2["default"].getLinksNumberMapItemWithLink(linkObj) - 1;
-	
 	                if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
 	                parsedData.links.push(linkObj);
 	              }
@@ -46025,19 +46024,19 @@
 	
 	var _generateConnectionWithText2 = _interopRequireDefault(_generateConnectionWithText);
 	
-	var _generateFnNodeWithSharedGetAndBoldIfFile = __webpack_require__(69);
+	var _generateFnNodeWithSharedGetAndBoldIfFile = __webpack_require__(70);
 	
 	var _generateFnNodeWithSharedGetAndBoldIfFile2 = _interopRequireDefault(_generateFnNodeWithSharedGetAndBoldIfFile);
 	
-	var _generateNode = __webpack_require__(71);
+	var _generateNode = __webpack_require__(72);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
-	var _generateNodeOptions = __webpack_require__(72);
+	var _generateNodeOptions = __webpack_require__(73);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
-	var _generateNodeWithSharedGet = __webpack_require__(70);
+	var _generateNodeWithSharedGet = __webpack_require__(71);
 	
 	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
 	
@@ -46061,7 +46060,7 @@
 	
 	var _linksNumberMapHandler2 = _interopRequireDefault(_linksNumberMapHandler);
 	
-	var _mergeWithDefaultConnection = __webpack_require__(73);
+	var _mergeWithDefaultConnection = __webpack_require__(69);
 	
 	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
 	
@@ -46150,7 +46149,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	var _arguments = arguments;
 	
 	var _lodash = __webpack_require__(6);
 	
@@ -46168,7 +46166,7 @@
 	
 	exports["default"] = function (baseFn, changedProp, changedVal) {
 	  return function () {
-	    var connection = baseFn.apply(undefined, _arguments);
+	    var connection = baseFn.apply(undefined, arguments);
 	    var setVal = getSetValFn({ changedProp: changedProp, changedVal: changedVal, connection: connection });
 	
 	    return (0, _lodash.isArray)(connection) ? (0, _lodash.map)(connection, setVal) : setVal(connection);
@@ -46274,9 +46272,9 @@
 	
 	var _lodash = __webpack_require__(6);
 	
-	var _diagrams = __webpack_require__(2);
+	var _mergeWithDefaultConnection = __webpack_require__(69);
 	
-	var _diagrams2 = _interopRequireDefault(_diagrams);
+	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
 	
 	var _generateConnectionWithText = __webpack_require__(68);
 	
@@ -46291,7 +46289,7 @@
 	
 	  if ((0, _lodash.isString)(nodesIds)) nodesIds = nodesIds.split(' ').map(Number);else if ((0, _lodash.isNumber)(nodesIds)) nodesIds = [nodesIds];
 	
-	  return _diagrams2['default'].graph.mergeWithDefaultConnection({ nodesIds: nodesIds, text: text });
+	  return (0, _mergeWithDefaultConnection2['default'])({ nodesIds: nodesIds, text: text });
 	};
 	
 	module.exports = exports['default'];
@@ -46305,11 +46303,35 @@
 	Object.defineProperty(exports, '__esModule', {
 	  value: true
 	});
+	
+	var _lodash = __webpack_require__(6);
+	
+	exports['default'] = function (connection) {
+	  var defaultConnection = {
+	    direction: 'out',
+	    line: 'plain',
+	    symbol: 'arrow'
+	  };
+	
+	  return (0, _lodash.defaults)(connection, defaultConnection);
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 70 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, '__esModule', {
+	  value: true
+	});
 	var _arguments = arguments;
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _generateNodeWithSharedGet = __webpack_require__(70);
+	var _generateNodeWithSharedGet = __webpack_require__(71);
 	
 	var _generateNodeWithSharedGet2 = _interopRequireDefault(_generateNodeWithSharedGet);
 	
@@ -46331,7 +46353,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 70 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -46347,7 +46369,7 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _generateNode = __webpack_require__(71);
+	var _generateNode = __webpack_require__(72);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
@@ -46367,7 +46389,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 71 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -46384,11 +46406,11 @@
 	
 	var _utils = __webpack_require__(3);
 	
-	var _generateNodeOptions = __webpack_require__(72);
+	var _generateNodeOptions = __webpack_require__(73);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
-	var _mergeWithDefaultConnection = __webpack_require__(73);
+	var _mergeWithDefaultConnection = __webpack_require__(69);
 	
 	var _mergeWithDefaultConnection2 = _interopRequireDefault(_mergeWithDefaultConnection);
 	
@@ -46468,7 +46490,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 72 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -46481,7 +46503,7 @@
 	
 	var _lodash = __webpack_require__(6);
 	
-	var _generateNodeOptions = __webpack_require__(72);
+	var _generateNodeOptions = __webpack_require__(73);
 	
 	var _generateNodeOptions2 = _interopRequireDefault(_generateNodeOptions);
 	
@@ -46510,30 +46532,6 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 73 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
-	
-	var _lodash = __webpack_require__(6);
-	
-	exports['default'] = function (connection) {
-	  var defaultConnection = {
-	    direction: 'out',
-	    line: 'plain',
-	    symbol: 'arrow'
-	  };
-	
-	  return (0, _lodash.defaults)(connection, defaultConnection);
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
 /* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -46547,7 +46545,7 @@
 	
 	var _lodash = __webpack_require__(6);
 	
-	var _generateNode = __webpack_require__(71);
+	var _generateNode = __webpack_require__(72);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	
@@ -46606,7 +46604,7 @@
 	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 	
-	var _generateNode = __webpack_require__(71);
+	var _generateNode = __webpack_require__(72);
 	
 	var _generateNode2 = _interopRequireDefault(_generateNode);
 	

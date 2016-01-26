@@ -94,7 +94,6 @@ export const getCreationFn = (diagram) => {
                 linkObj.color = parsedData.nodes[linkObj.source].color
                 helpers.updateLinksNumberMapWithLink(linkObj)
                 linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1
-
                 if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text
                 parsedData.links.push(linkObj)
               }

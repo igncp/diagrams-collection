@@ -1,6 +1,6 @@
 import { isArray, isNumber, isString, map } from "lodash"
 
-import d from 'diagrams'
+import mergeWithDefaultConnection from './mergeWithDefaultConnection'
 import generateConnectionWithText from './generateConnectionWithText'
 
 export default (nodesIds, text) => {
@@ -13,5 +13,5 @@ export default (nodesIds, text) => {
   if (isString(nodesIds)) nodesIds = nodesIds.split(' ').map(Number)
   else if (isNumber(nodesIds)) nodesIds = [nodesIds]
 
-  return d.graph.mergeWithDefaultConnection({ nodesIds, text })
+  return mergeWithDefaultConnection({ nodesIds, text })
 }

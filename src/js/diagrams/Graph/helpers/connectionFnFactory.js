@@ -9,8 +9,8 @@ const getSetValFn = ({ changedProp, changedVal, connection }) => {
 }
 
 export default (baseFn, changedProp, changedVal) => {
-  return () => {
-    const connection = baseFn(...arguments)
+  return (...args) => {
+    const connection = baseFn(...args)
     const setVal = getSetValFn({ changedProp, changedVal, connection })
 
     return (isArray(connection)) ? map(connection, setVal) : setVal(connection)
