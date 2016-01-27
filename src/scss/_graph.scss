@@ -44,6 +44,10 @@
       &.thin {
         stroke-width: 1px;
       }
+      &.marked.bold, &.marked.thin {
+        stroke-width: 10px !important;
+        stroke: #0085d2;
+      }
     }
   }
 }

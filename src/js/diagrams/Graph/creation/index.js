@@ -94,6 +94,7 @@ export const getCreationFn = (diagram) => {
                 linkObj.color = parsedData.nodes[linkObj.source].color
                 helpers.updateLinksNumberMapWithLink(linkObj)
                 linkObj.data.linkIndex = helpers.getLinksNumberMapItemWithLink(linkObj) - 1
+
                 if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text
                 parsedData.links.push(linkObj)
               }
@@ -255,11 +256,15 @@ export const getCreationFn = (diagram) => {
     const setReRender = partial(helpers.setReRender, diagram, creationId, data, _)
 
     diagram.markRelatedFn = (item) => {
-      item.el.style('stroke-width', '20px')
+      const prevClass = item.el.attr("class")
+
+      item.el.attr("class", `${prevClass} marked`)
     }
     diagram.unmarkAllItems = () => {
       each(parsedData.nodes, (pdNode) => {
-        pdNode.shapeEl.style('stroke-width', '1px')
+        const prevClass = pdNode.shapeEl.attr("class")
+
+        pdNode.shapeEl.attr('class', prevClass ? prevClass.replace(/ marked/gm, "") : "")
       })
     }
 
@@ -324,6 +329,7 @@ export const getCreationFn = (diagram) => {
       'stroke-dasharray': (da) => {
         if (da.data.line === 'plain') return null
         else if (da.data.line === 'dotted') return '5,5'
+        else if (da.data.line === 'morse') return '20,10,5,5,5,10'
       },
     })
 

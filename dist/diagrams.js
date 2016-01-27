@@ -45674,6 +45674,7 @@
 	                linkObj.color = parsedData.nodes[linkObj.source].color;
 	                _helpers2["default"].updateLinksNumberMapWithLink(linkObj);
 	                linkObj.data.linkIndex = _helpers2["default"].getLinksNumberMapItemWithLink(linkObj) - 1;
+	
 	                if (linkObj.data.text) linkObj.data.fullText = linkObj.data.text;
 	                parsedData.links.push(linkObj);
 	              }
@@ -45841,11 +45842,15 @@
 	    var setReRender = (0, _lodash.partial)(_helpers2["default"].setReRender, diagram, creationId, data, _lodash2["default"]);
 	
 	    diagram.markRelatedFn = function (item) {
-	      item.el.style('stroke-width', '20px');
+	      var prevClass = item.el.attr("class");
+	
+	      item.el.attr("class", prevClass + " marked");
 	    };
 	    diagram.unmarkAllItems = function () {
 	      (0, _lodash.each)(parsedData.nodes, function (pdNode) {
-	        pdNode.shapeEl.style('stroke-width', '1px');
+	        var prevClass = pdNode.shapeEl.attr("class");
+	
+	        pdNode.shapeEl.attr('class', prevClass ? prevClass.replace(/ marked/gm, "") : "");
 	      });
 	    };
 	
@@ -45902,7 +45907,7 @@
 	    }).style({
 	      stroke: dTextFn('color'),
 	      'stroke-dasharray': function strokeDasharray(da) {
-	        if (da.data.line === 'plain') return null;else if (da.data.line === 'dotted') return '5,5';
+	        if (da.data.line === 'plain') return null;else if (da.data.line === 'dotted') return '5,5';else if (da.data.line === 'morse') return '20,10,5,5,5,10';
 	      }
 	    });
 	
