@@ -47325,12 +47325,20 @@
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
+	var _ramda = __webpack_require__(1);
+	
+	var getCodeParsed = function getCodeParsed(codeFn, code) {
+	  var rawCode = (0, _ramda.isArrayLike)(code) ? code.join("\n") : code;
+	
+	  return codeFn(rawCode);
+	};
+	
 	exports["default"] = function (helpers, helpersMethod) {
 	  helpers[helpersMethod + "WithCode"] = function (codeLanguage) {
 	    var codeFn = _diagrams2["default"].utils.codeBlockOfLanguageFn(codeLanguage);
 	
 	    return function () {
-	      arguments[0] = codeFn(arguments[0]);
+	      arguments[0] = getCodeParsed(codeFn, arguments[0]);
 	
 	      return helpers[helpersMethod].apply(helpers, arguments);
 	    };
@@ -47346,7 +47354,7 @@
 	
 	      var paragraphText = args[0];
 	      var code = args[1];
-	      var text = _diagrams2["default"].utils.wrapInParagraph(paragraphText) + codeFn(code);
+	      var text = _diagrams2["default"].utils.wrapInParagraph(paragraphText) + getCodeParsed(codeFn, code);
 	
 	      args = args.splice(2);
 	      args.unshift(text);
