@@ -9,7 +9,6 @@ export default (layer) => {
   const fill = `url(#color-${String(layer.depth - 1)})`
   const dimensions = { fill, height, transform, width }
 
-
   if (config.showNumbersAll === true || (layer.containerData
     && layer.containerData.showNumbers === true)) {
     dimensions.numberTransform = `translate(`
