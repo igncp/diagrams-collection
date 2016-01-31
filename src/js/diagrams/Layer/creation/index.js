@@ -18,7 +18,10 @@ const addItemsPropToBottomItems = (layers) => {
 
 export const getCreationFn = (diagram) => {
   return (creationId, conf) => {
-    const config = helpers.getConfig()
+    const configHandler = helpers.getConfigHandler()
+
+    configHandler.setDefault()
+    const config = configHandler.get()
     const colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7',
       '#53777A', '#00A8C6', '#AEE239', '#FAAE8A']
     const calculateTheMostOptimalConnection = (layerA, layerBObj) => {

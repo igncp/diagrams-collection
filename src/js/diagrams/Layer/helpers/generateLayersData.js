@@ -1,11 +1,11 @@
 import { each } from "lodash"
 
 import calculateLayerWithChildrenDimensions from './calculateLayerWithChildrenDimensions'
-import getConfig from "./getConfig"
+import getConfigHandler from "./getConfigHandler"
 import handleConnectedToNextCaseIfNecessary from './handleConnectedToNextCaseIfNecessary'
 
 const generateLayersData = (diagram, layers, currentDepth) => {
-  const config = getConfig()
+  const config = getConfigHandler().get()
   let maxDepth, itemsDepth
 
   currentDepth = currentDepth || 1

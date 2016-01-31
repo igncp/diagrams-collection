@@ -46847,7 +46847,10 @@
 	
 	var getCreationFn = function getCreationFn(diagram) {
 	  return function (creationId, conf) {
-	    var config = _helpers2["default"].getConfig();
+	    var configHandler = _helpers2["default"].getConfigHandler();
+	
+	    configHandler.setDefault();
+	    var config = configHandler.get();
 	    var colors = ['#ECD078', '#D95B43', '#C02942', '#78E4B7', '#53777A', '#00A8C6', '#AEE239', '#FAAE8A'];
 	    var calculateTheMostOptimalConnection = function calculateTheMostOptimalConnection(layerA, layerBObj) {
 	      // There are 12 possible: 4 sides to 3 each
@@ -47246,9 +47249,9 @@
 	
 	var _generateLayersData2 = _interopRequireDefault(_generateLayersData);
 	
-	var _getConfig = __webpack_require__(96);
+	var _getConfigHandler = __webpack_require__(96);
 	
-	var _getConfig2 = _interopRequireDefault(_getConfig);
+	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
 	
 	var _getFinalLayerDimensions = __webpack_require__(99);
 	
@@ -47291,7 +47294,7 @@
 	  dataFromSpecificToGeneral: _dataFromSpecificToGeneral2["default"],
 	  extendOpts: _extendOpts2["default"],
 	  generateLayersData: _generateLayersData2["default"],
-	  getConfig: _getConfig2["default"],
+	  getConfigHandler: _getConfigHandler2["default"],
 	  getFinalLayerDimensions: _getFinalLayerDimensions2["default"],
 	  getStaticOptsLetters: _getStaticOptsLetters2["default"],
 	  handleConnectedToNextCaseIfNecessary: _handleConnectedToNextCaseIfNecessary2["default"],
@@ -47912,16 +47915,16 @@
 	
 	var _calculateLayerWithChildrenDimensions2 = _interopRequireDefault(_calculateLayerWithChildrenDimensions);
 	
-	var _getConfig = __webpack_require__(96);
+	var _getConfigHandler = __webpack_require__(96);
 	
-	var _getConfig2 = _interopRequireDefault(_getConfig);
+	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
 	
 	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(97);
 	
 	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
 	
 	var generateLayersData = function generateLayersData(diagram, layers, currentDepth) {
-	  var config = (0, _getConfig2["default"])();
+	  var config = (0, _getConfigHandler2["default"])().get();
 	  var maxDepth = undefined,
 	      itemsDepth = undefined;
 	
@@ -47954,7 +47957,7 @@
 
 /***/ },
 /* 96 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
@@ -47962,14 +47965,28 @@
 	  value: true
 	});
 	
+	var _ramda = __webpack_require__(1);
+	
+	var defaultConfig = {
+	  depthHeightFactor: 2,
+	  depthWidthFactor: 4,
+	  heightSize: 60,
+	  showNumbersAll: false,
+	  widthSize: 350
+	};
+	var config = undefined;
+	
+	var handler = {
+	  get: function get() {
+	    return config;
+	  },
+	  setDefault: function setDefault() {
+	    return config = (0, _ramda.merge)({}, defaultConfig);
+	  }
+	};
+	
 	exports["default"] = function () {
-	  return {
-	    depthHeightFactor: 2,
-	    depthWidthFactor: 4,
-	    heightSize: 60,
-	    showNumbersAll: false,
-	    widthSize: 350
-	  };
+	  return handler;
 	};
 	
 	module.exports = exports["default"];
@@ -48047,12 +48064,12 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _getConfig = __webpack_require__(96);
+	var _getConfigHandler = __webpack_require__(96);
 	
-	var _getConfig2 = _interopRequireDefault(_getConfig);
+	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
 	
 	exports['default'] = function (layer) {
-	  var config = (0, _getConfig2['default'])();
+	  var config = (0, _getConfigHandler2['default'])().get();
 	  var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
 	  var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
 	  var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');

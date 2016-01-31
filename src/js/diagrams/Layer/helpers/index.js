@@ -10,7 +10,7 @@ import dataFromGeneralToSpecific from "./dataFromGeneralToSpecific"
 import dataFromSpecificToGeneral from "./dataFromSpecificToGeneral"
 import extendOpts from "./extendOpts"
 import generateLayersData from "./generateLayersData"
-import getConfig from "./getConfig"
+import getConfigHandler from "./getConfigHandler"
 import getFinalLayerDimensions from "./getFinalLayerDimensions"
 import getStaticOptsLetters from "./getStaticOptsLetters"
 import handleConnectedToNextCaseIfNecessary from "./handleConnectedToNextCaseIfNecessary"
@@ -29,7 +29,7 @@ const helpers = {
   dataFromSpecificToGeneral,
   extendOpts,
   generateLayersData,
-  getConfig,
+  getConfigHandler,
   getFinalLayerDimensions,
   getStaticOptsLetters,
   handleConnectedToNextCaseIfNecessary,
