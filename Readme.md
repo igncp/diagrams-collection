@@ -21,7 +21,7 @@ The library has the following dependencies:
   - rx.js
 
 - External (have to be manually required, and they are included in the `bower.json`)
-  - highlight.js
+  - highlight.js (For the Layer diagram)
 
 ## Author and License
 
