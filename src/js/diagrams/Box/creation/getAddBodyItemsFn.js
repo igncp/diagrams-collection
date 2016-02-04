@@ -99,7 +99,7 @@ const addBodyItems = ({
       item.textG = newContainer
       item.textEl = textEl
 
-      if (item.options.notCompleted === true) {
+      if (item.options && item.options.notCompleted === true) {
         item.textG.attr('class', `${(item.textG.attr('class') || '')}`
           + ` diagrams-box-not-completed-block`)
         textElValue = item.textEl.text()

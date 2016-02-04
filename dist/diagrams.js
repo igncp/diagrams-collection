@@ -44136,9 +44136,10 @@
 	        }
 	
 	        _diagrams2["default"].utils.runIfReady(function () {
-	          var creationArgs = [createdDiagramsMaxId].concat(args);
-	
 	          _this.handleDiagramId();
+	
+	          var creationArgs = [_this.diagramId].concat(args);
+	
 	          _this.addToDiagramsRegistry(creationArgs);
 	          diagram.addConversionButtons();
 	          diagram.create.apply(diagram, _toConsumableArray(creationArgs));
@@ -45238,7 +45239,7 @@
 	      item.textG = newContainer;
 	      item.textEl = textEl;
 	
-	      if (item.options.notCompleted === true) {
+	      if (item.options && item.options.notCompleted === true) {
 	        item.textG.attr('class', '' + (item.textG.attr('class') || '') + ' diagrams-box-not-completed-block');
 	        textElValue = item.textEl.text();
 	        item.textEl.text('');

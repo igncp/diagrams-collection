@@ -286,9 +286,10 @@ class Diagram {
     d.diagramTypes.push(diagram.name)
     d[diagram.name] = (...args) => {
       d.utils.runIfReady(() => {
-        const creationArgs = [createdDiagramsMaxId].concat(args)
-
         this.handleDiagramId()
+
+        const creationArgs = [this.diagramId].concat(args)
+
         this.addToDiagramsRegistry(creationArgs)
         diagram.addConversionButtons()
         diagram.create(...creationArgs)
