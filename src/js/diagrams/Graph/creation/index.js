@@ -1,4 +1,4 @@
-import d3, { behavior, layout, select, scale } from "d3"
+import d3, { behavior, layout, select, scale, svg as d3Svg } from "d3"
 import _, { each, isUndefined, partial, reduce } from "lodash"
 
 import d from 'diagrams'
@@ -370,7 +370,7 @@ export const getCreationFn = (diagram) => {
           r: 12,
         })
       } else {
-        shape = svg.symbol().size(750)
+        shape = d3Svg.symbol().size(750)
         shapeEl = singleNodeEl.append("path")
 
         if (singleNode.shape === 'triangle') {

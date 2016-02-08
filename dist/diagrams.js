@@ -45948,7 +45948,7 @@
 	          r: 12
 	        });
 	      } else {
-	        shape = svg.symbol().size(750);
+	        shape = _d3.svg.symbol().size(750);
 	        shapeEl = singleNodeEl.append("path");
 	
 	        if (singleNode.shape === 'triangle') {
