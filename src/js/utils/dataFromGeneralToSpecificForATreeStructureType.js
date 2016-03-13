@@ -1,6 +1,8 @@
-import { isUndefined, last, where } from "lodash"
+import { filter, find, last, propEq } from "ramda"
 
 import each from "./each"
+
+const isUndefined = val => typeof val === "undefined"
 
 export default (generalData) => {
   // FPN: Find Parent Node
@@ -22,9 +24,7 @@ export default (generalData) => {
       if (isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
         connection = itemsIdToFromConnectionMap[item.id]
       } else {
-        connection = where(generalData.connections, {
-          from: item.id,
-        })
+        connection = filter(propEq("from", item.id))(generalData.connections)
         itemsIdToFromConnectionMap[item.id] = connection
       }
 
@@ -38,9 +38,7 @@ export default (generalData) => {
         if (isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
           parentItem = itemsIdToItemsMap[parentItemId]
         } else {
-          parentItem = where(generalData.items, {
-            id: parentItemId,
-          })[0]
+          parentItem = find(propEq("id", parentItemId))(generalData.items)
           itemsIdToItemsMap[parentItemId] = parentItem
         }
         FPNRecursiveFn(parentItem)
@@ -64,9 +62,7 @@ export default (generalData) => {
     if (item.description) text += `: ${item.description}`
     transformedData.text = text
 
-    children = where(generalData.connections, {
-      to: item.id,
-    })
+    children = filter(propEq("to", item.id))(generalData.connections)
 
     if (children.length > 0) {
       transformedData.items = []

@@ -1,4 +1,4 @@
-import { each } from "lodash"
+import { forEach } from "ramda"
 
 import d from 'diagrams'
 
@@ -13,7 +13,7 @@ class Box extends d.Diagram {
   setRelationships(items, container) {
     const diagram = this
 
-    each(items, (item) => {
+    forEach((item) => {
       diagram.generateEmptyRelationships(item)
 
       if (container) {
@@ -22,7 +22,7 @@ class Box extends d.Diagram {
       }
 
       if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item)
-    })
+    })(items)
   }
 }
 

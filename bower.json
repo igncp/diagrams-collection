@@ -2,7 +2,7 @@
   "name": "diagrams-collections",
   "main": "dist/diagrams.min.js",
   "version": "0.0.1",
-  "homepage": "https://github.com/igncp/diagrams-collections",
+  "homepage": "https://github.com/igncp/diagrams-collection",
   "authors": [
     "Ignacio Carbajo <icarbajop@gmail.com>"
   ],

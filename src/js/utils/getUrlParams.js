@@ -1,21 +1,27 @@
+import { append, assoc, reduce } from "ramda"
+
 export default () => {
-  const query_string = {}
   const query = window.location.search.substring(1)
-  const vars = query.split("&")
+  const pairsStrings = query ? query.split("&") : []
 
-  for (let i = 0; i < vars.length; i++) {
-    const pair = vars[i].split("=")
+  const urlParams = reduce((tempUrlParams, pairString) => {
+    const pair = pairString.split("=")
+    const pairKey = pair[0]
+    const pairValue = pair[1]
+    const previousValue = tempUrlParams[pairKey]
 
-    if (typeof query_string[pair[0]] === "undefined") {
-      query_string[pair[0]] = decodeURIComponent(pair[1])
-    } else if (typeof query_string[pair[0]] === "string") {
-      const arr = [query_string[pair[0]], decodeURIComponent(pair[1])]
+    if (typeof previousValue === "undefined") {
+      return assoc(pairKey, decodeURIComponent(pairValue), tempUrlParams)
+    } else if (typeof previousValue === "string") {
+      const arr = [previousValue, decodeURIComponent(pairValue)]
 
-      query_string[pair[0]] = arr
+      return assoc(pairKey, arr, tempUrlParams)
     } else {
-      query_string[pair[0]].push(decodeURIComponent(pair[1]))
+      return assoc(
+        pairKey, append(decodeURIComponent(pairValue), previousValue), tempUrlParams
+      )
     }
-  }
+  }, {}, pairsStrings)
 
-  return query_string
+  return urlParams
 }

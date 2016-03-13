@@ -1,4 +1,4 @@
-import _, { partial } from "lodash"
+import { __ } from "ramda"
 import joinWithLastDifferent from "./joinWithLastDifferent"
 
-export default partial(joinWithLastDifferent, _, ', ', ' and ')
+export default joinWithLastDifferent(__, ', ', ' and ')

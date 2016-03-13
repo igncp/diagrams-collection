@@ -1,11 +1,11 @@
-import { reduce } from "lodash"
+import { path } from "ramda"
 
 export default (props, preffix, suffix) => {
   props = props.split('.')
 
   return (d) => {
-    const position = reduce(props, (memo, property) => memo[property], d)
+    const value = path(props)(d)
 
-    return (preffix || suffix) ? preffix + position + suffix : position
+    return (preffix || suffix) ? preffix + value + suffix : value
   }
 }

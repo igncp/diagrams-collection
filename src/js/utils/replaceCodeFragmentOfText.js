@@ -1,13 +1,13 @@
-export default (text, predicate) => {
-  const codeRegex = /``([\s\S]*?)``([\s\S]*?)``/g
+import { curry } from "ramda"
 
-  if (text) {
-    const allMatches = text.match(codeRegex)
+import { UNPROCESSED_CODE_FRAGMENT_REGEXP } from "../constants"
 
-    return text.replace(codeRegex, (matchStr, language, codeBlock) => {
-      return predicate({ allMatches, codeBlock, language, matchStr })
-    })
-  } else {
-    return text
-  }
-}
+export default curry((text, predicate) => {
+  if (!text) return ""
+
+  const allMatches = text.match(UNPROCESSED_CODE_FRAGMENT_REGEXP)
+
+  return text.replace(UNPROCESSED_CODE_FRAGMENT_REGEXP, (matchStr, language, codeBlock) => {
+    return predicate({ allMatches, codeBlock, language, matchStr, text })
+  })
+})

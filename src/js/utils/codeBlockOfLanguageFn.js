@@ -1,4 +1,6 @@
-import { isString } from "lodash"
+import { is } from "ramda"
+
+const isString = is(String)
 
 export default (language, commentsSymbol = '') => {
   return function(codeBlock, position, withInlineStrs) {

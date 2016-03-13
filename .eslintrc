@@ -65,7 +65,7 @@
         "lines-around-comment": 2, // enforce empty lines around comments
         "max-depth": 2, // specify the maximum depth that blocks can be nested
         "max-len": [2, 100], // specify the maximum length of a line in your program
-        "max-nested-callbacks": [2, 2], // specify the maximum depth callbacks can be nested
+        "max-nested-callbacks": [2, 3], // specify the maximum depth callbacks can be nested
         "max-params": [2, 3], // limits the number of parameters that can be used in the function declaration.
         "max-statements": 0, // [2, 6], // specify the maximum number of statement allowed in a function
         "new-cap": 0, // require a capital letter for constructors
@@ -169,7 +169,7 @@
         "no-unexpected-multiline": 2, // Avoid code that looks like two expressions but is actually one
         "no-unneeded-ternary": 2, // disallow the use of ternary operators when a simpler alternative exists
         "no-unreachable": 2, // disallow unreachable statements after a return, throw, continue, or break statement (recommended)
-        "no-unused-expressions": 2, // disallow usage of expressions in statement position
+        "no-unused-expressions": 0, // disallow usage of expressions in statement position
         "no-unused-vars": 2, // disallow declaration of variables that are not used in the code (recommended)
         "no-use-before-define": 0, // disallow use of variables before they are defined
         "no-useless-call": 0, // disallow unnecessary .call() and .apply()
@@ -225,16 +225,17 @@
         "node": true
     },
     "globals": {
-        "sinon": false,
+        "spy": false,
+        "stub": false,
         "expect": false,
         "mockery": false,
         "beforeEach": false,
+        "before": false,
         "afterEach": false,
+        "after": false,
         "describe": false,
+        "describeStd": false,
         "it": false,
-        "Rx": false,
-        "_": false,
         "hljs": false,
-        "d3": false,
     }
 }

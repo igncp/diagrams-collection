@@ -1,14 +1,17 @@
 import { bind, defaults, each, isFunction, isObject, isString, merge, where } from "lodash"
-
 import { select, selectAll } from "d3"
 
-import d from 'diagrams'
-import svg from 'svg'
+import svg from './svg'
+import events from "./events"
+import utils from "./utils/index"
 
 const defaultDiagramConfiguration = {}
-let createdDiagramsMaxId = 0
 
-d.diagramsRegistry = []
+const diagramsRegistry = []
+const diagramNames = []
+const diagramFactoryMap = {}
+
+let createdDiagramsMaxId = 0
 
 class Diagram {
   static convertDiagram(creationId, toDiagramType) {
@@ -17,12 +20,13 @@ class Diagram {
     let generalData, specificData
 
     generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs)
-    specificData = d[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData])
+    specificData = diagramFactoryMap[toDiagramType]
+      .dataFromGeneralToSpecific.apply({}, [generalData])
 
-    d.events.emit('diagram-to-transform', item.diagram)
+    events.emit('diagram-to-transform', item.diagram)
 
     Diagram.removePreviousDiagrams()
-    d[toDiagramType].apply(item.diagram, [specificData])
+    diagramFactoryMap[toDiagramType].apply(item.diagram, [specificData])
   }
 
   static removePreviousDiagrams() {
@@ -46,7 +50,7 @@ class Diagram {
   }
 
   static getRegistryItemWithCreationId(creationId) {
-    const items = where(d.diagramsRegistry, {
+    const items = where(diagramsRegistry, {
       id: creationId,
     })
 
@@ -272,7 +276,7 @@ class Diagram {
   }
 
   addToDiagramsRegistry(creationArgs) {
-    d.diagramsRegistry.push({
+    diagramsRegistry.push({
       data: creationArgs,
       diagram: this,
       id: creationArgs[0],
@@ -282,10 +286,9 @@ class Diagram {
   register() {
     const diagram = this
 
-    d.diagramTypes = d.diagramTypes || []
-    d.diagramTypes.push(diagram.name)
-    d[diagram.name] = (...args) => {
-      d.utils.runIfReady(() => {
+    diagramNames.push(diagram.name)
+    diagramFactoryMap[diagram.name] = (...args) => {
+      utils.runWhenReady(() => {
         this.handleDiagramId()
 
         const creationArgs = [this.diagramId].concat(args)
@@ -293,11 +296,11 @@ class Diagram {
         this.addToDiagramsRegistry(creationArgs)
         diagram.addConversionButtons()
         diagram.create(...creationArgs)
-        d.events.emit('diagram-created', diagram)
+        events.emit('diagram-created', diagram)
       })
     }
 
-    defaults(d[diagram.name], Object.getPrototypeOf(diagram))
+    defaults(diagramFactoryMap[diagram.name], Object.getPrototypeOf(diagram))
   }
 
   addConversionButtons() {
@@ -305,7 +308,7 @@ class Diagram {
     const div = Diagram.addDivBeforeSvg()
     let onClickFn
 
-    each(d.diagramTypes, (diagramType) => {
+    each(diagramNames, (diagramType) => {
       if (diagramType !== diagram.name) {
         onClickFn = `diagrams.Diagram.convertDiagram(${diagram.diagramId}, '${diagramType}')`
         div.appendButtonToDiv('diagrams-box-conversion-button',
@@ -315,10 +318,9 @@ class Diagram {
   }
 }
 
-const getDiagramClass = () => {
-  d.utils.composeWithEventEmitter(Diagram)
+utils.composeWithEventEmitter(Diagram)
 
-  return Diagram
+export default {
+  Diagram,
+  diagramFactoryMap,
 }
-
-export default getDiagramClass

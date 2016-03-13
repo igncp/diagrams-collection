@@ -2,6 +2,7 @@ import { svg as d3Svg } from "d3"
 import { chain, each, isArray, isObject, isUndefined, max, where } from "lodash"
 
 import d from 'diagrams'
+import shapes from "../../../shapes"
 
 import helpers from '../helpers'
 
@@ -273,7 +274,7 @@ export const getCreationFn = (diagram) => {
 
         if (layer.conditional === true) {
           layerNode.append('path').attr({
-            d: d.shapes.hexagon({
+            d: shapes.hexagon({
               height: layerDims.height,
               width: layerDims.width,
               widthPercent: 97 + Math.abs(3 - layer.depth),

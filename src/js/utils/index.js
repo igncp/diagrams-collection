@@ -16,7 +16,7 @@ import getUrlParams from "./getUrlParams"
 import joinWithLastDifferent from "./joinWithLastDifferent"
 import positionFn from "./positionFn"
 import replaceCodeFragmentOfText from "./replaceCodeFragmentOfText"
-import runIfReady from "./runIfReady"
+import runWhenReady from "./runWhenReady"
 import textFn from "./textFn"
 import wrapInParagraph from "./wrapInParagraph"
 
@@ -38,7 +38,7 @@ export default {
   joinWithLastDifferent,
   positionFn,
   replaceCodeFragmentOfText,
-  runIfReady,
+  runWhenReady,
   textFn,
   wrapInParagraph,
 }

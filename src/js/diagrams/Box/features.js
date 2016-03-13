@@ -1,4 +1,4 @@
-const features = {
+let features = {
   bodyRect: {
     fill: '#fff',
     stroke: '#000',
@@ -24,3 +24,4 @@ const features = {
 }
 
 export const getFeatures = () => features
+export const setFeatures = newFeatures => features = newFeatures

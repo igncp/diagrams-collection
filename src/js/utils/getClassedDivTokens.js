@@ -1,21 +1,16 @@
-import { is, forEach } from "ramda"
+import { assoc, reduce } from "ramda"
 
-const isNumber = is(Number)
-
-const first = "{diagrams-classed-div}"
-const second = "{:diagrams-classed-div}"
-const third = "{::diagrams-classed-div}"
+import {
+  CLASSED_DIV_TOKEN_FIRST,
+  CLASSED_DIV_TOKEN_SECOND,
+  CLASSED_DIV_TOKEN_THIRD,
+  TOKENS_REPLACED_LEVELS,
+} from "../constants"
 
 const generateClassedDivTokens = (number) => {
-  // More validations could be made
-  if (!isNumber(number) || number < 1 || number > 5) {
-    throw new Error('The number provided to this function must be a 1 '
-      + '<= x <= 5 integer, as these are the checks done by diagrams-collections')
-  }
-
-  const firstToken = `${first}${number}`
-  const secondToken = `${second}${number}`
-  const thirdToken = `${third}${number}`
+  const firstToken = `${CLASSED_DIV_TOKEN_FIRST}${number}`
+  const secondToken = `${CLASSED_DIV_TOKEN_SECOND}${number}`
+  const thirdToken = `${CLASSED_DIV_TOKEN_THIRD}${number}`
 
   return {
     firstToken,
@@ -25,10 +20,7 @@ const generateClassedDivTokens = (number) => {
   }
 }
 
-const tokens = {}
-const checkedLvls = [1, 2, 3, 4, 5]
-const addLevelToTokens = i => tokens[`lvl${i}Tkns`] = generateClassedDivTokens(i)
-
-forEach(addLevelToTokens)(checkedLvls)
+const addLevelToTokens = (acc, lvl) => assoc(`lvl${lvl}Tkns`, generateClassedDivTokens(lvl), acc)
+const tokens = reduce(addLevelToTokens, {}, TOKENS_REPLACED_LEVELS)
 
 export default () => tokens

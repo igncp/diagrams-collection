@@ -1,8 +1,8 @@
 import formatTextFragment from "../formatTextFragment"
 
-describe("formatTextFragment", () => {
-  it("formats the text as expected", () => {
-    const text = "::DIAGRAMS-EDITED::A{diagrams-classed-div}1diagrams-box-ado"
+describeStd(__filename, () => {
+  it("Formats the text as expected. (bbb980)", () => {
+    const init = "::DIAGRAMS-EDITED::A{diagrams-classed-div}1diagrams-box-ado"
       + "{:diagrams-classed-div}"
       + "1{diagrams-classed-div}2diagrams-box-ado-section{:diagrams-classed-div}2{diagrams"
       + "-classed-div}3diagrams-box-ado-section-header{:diagrams-classed-div}3Advantages{:"
@@ -24,7 +24,7 @@ describe("formatTextFragment", () => {
       + "diagrams-classed-div}3diagrams-box-ado-row{:diagrams-classed-div}3  - z{::diagram"
       + "s-classed-div}3{::diagrams-classed-div}2{::diagrams-classed-div}1"
 
-    const expectedResult = `A<div class="diagrams-box-ado"><div class="diagrams-box-ado-`
+    const expected = `A<div class="diagrams-box-ado"><div class="diagrams-box-ado-`
       + `section"><div class="diagrams-box-ado-section-header">Advantages</div`
       + `>:<div class="diagrams-box-ado-row">  - f</div><div class="diagrams-b`
       + `ox-ado-row">  - o</div><div class="diagrams-box-ado-row">  - o</div><`
@@ -37,8 +37,40 @@ describe("formatTextFragment", () => {
       + `row">  - a</div><div class="diagrams-box-ado-row">  - z</div></div></`
       + `div>`
 
-    const result = formatTextFragment(text)
+    const actual = formatTextFragment(init)
 
-    expect(result).to.equal(expectedResult)
+    expect(actual).to.equal(expected)
+  })
+
+  it("Formats the text as expected. (6faa5e)", () => {
+    const init = "foo"
+    const expected = "foo"
+    const actual = formatTextFragment(init)
+
+    expect(actual).to.equal(expected)
+  })
+
+  it("Formats the text as expected. (20a965)", () => {
+    const init = "foo"
+    const expected = "foo"
+    const actual = formatTextFragment(init)
+
+    expect(actual).to.equal(expected)
+  })
+
+  it("Formats the text as expected. (9562cd)", () => {
+    const init = "<p>Foo</p>"
+    const expected = "<p>Foo</p>"
+    const actual = formatTextFragment(init)
+
+    expect(actual).to.equal(expected)
+  })
+
+  it("Formats the text as expected. (bf390a)", () => {
+    const init = "<h1>Foo</h1>"
+    const expected = "&lt;h1&gt;Foo&lt;/h1&gt;"
+    const actual = formatTextFragment(init)
+
+    expect(actual).to.equal(expected)
   })
 })
