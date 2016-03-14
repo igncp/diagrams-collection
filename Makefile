@@ -15,3 +15,6 @@ watch:
 
 test: lint
 	@npm test
+
+copy-githooks:
+	cp scripts/githooks/pre-* .git/hooks/

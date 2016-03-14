@@ -1,6 +1,6 @@
 import { forEach, keys } from "ramda"
 
-import { diagramFactoryMap } from "./diagram"
+import { getState } from "./diagram"
 import d from "./diagrams"
 
 export default () => {
@@ -13,6 +13,7 @@ export default () => {
     'Box', 'Graph', 'Layer',
   ])
 
+  const { diagramFactoryMap } = getState()
   const diagramFactoriesKeys = keys(diagramFactoryMap)
 
   forEach((diagramFactoriesKey) => {

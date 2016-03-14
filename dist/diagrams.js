@@ -44027,13 +44027,16 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	var defaultDiagramConfiguration = {};
+	var state = void 0;
 	
-	var diagramsRegistry = [];
-	var diagramNames = [];
-	var diagramFactoryMap = {};
-	
-	var createdDiagramsMaxId = 0;
+	var resetState = function resetState() {
+	  state = {};
+	  state.defaultDiagramConfiguration = {};
+	  state.diagramsRegistry = [];
+	  state.diagramNames = [];
+	  state.diagramFactoryMap = {};
+	  state.createdDiagramsMaxId = 0;
+	};
 	
 	var Diagram = function () {
 	  _createClass(Diagram, null, [{
@@ -44045,12 +44048,12 @@
 	          specificData = void 0;
 	
 	      generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs);
-	      specificData = diagramFactoryMap[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
+	      specificData = state.diagramFactoryMap[toDiagramType].dataFromGeneralToSpecific.apply({}, [generalData]);
 	
 	      _events2.default.emit('diagram-to-transform', item.diagram);
 	
 	      Diagram.removePreviousDiagrams();
-	      diagramFactoryMap[toDiagramType].apply(item.diagram, [specificData]);
+	      state.diagramFactoryMap[toDiagramType].apply(item.diagram, [specificData]);
 	    }
 	  }, {
 	    key: "removePreviousDiagrams",
@@ -44077,7 +44080,7 @@
 	  }, {
 	    key: "getRegistryItemWithCreationId",
 	    value: function getRegistryItemWithCreationId(creationId) {
-	      var items = (0, _lodash.where)(diagramsRegistry, {
+	      var items = (0, _lodash.where)(state.diagramsRegistry, {
 	        id: creationId
 	      });
 	
@@ -44108,7 +44111,7 @@
 	        opts.helpers[helperName] = (0, _lodash.bind)(opts.helpers[helperName], diagram);
 	      }
 	    });
-	    (0, _lodash.merge)(diagram._configuration, defaultDiagramConfiguration);
+	    (0, _lodash.merge)(diagram._configuration, state.defaultDiagramConfiguration);
 	    (0, _lodash.each)(Object.keys(diagram._configuration), function (confKey) {
 	      diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
 	    });
@@ -44307,13 +44310,13 @@
 	  }, {
 	    key: "handleDiagramId",
 	    value: function handleDiagramId() {
-	      createdDiagramsMaxId++;
-	      this.diagramId = createdDiagramsMaxId;
+	      state.createdDiagramsMaxId++;
+	      this.diagramId = state.createdDiagramsMaxId;
 	    }
 	  }, {
 	    key: "addToDiagramsRegistry",
 	    value: function addToDiagramsRegistry(creationArgs) {
-	      diagramsRegistry.push({
+	      state.diagramsRegistry.push({
 	        data: creationArgs,
 	        diagram: this,
 	        id: creationArgs[0]
@@ -44326,8 +44329,8 @@
 	
 	      var diagram = this;
 	
-	      diagramNames.push(diagram.name);
-	      diagramFactoryMap[diagram.name] = function () {
+	      state.diagramNames.push(diagram.name);
+	      state.diagramFactoryMap[diagram.name] = function () {
 	        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
 	          args[_key] = arguments[_key];
 	        }
@@ -44344,7 +44347,9 @@
 	        });
 	      };
 	
-	      (0, _lodash.defaults)(diagramFactoryMap[diagram.name], Object.getPrototypeOf(diagram));
+	      (0, _lodash.defaults)(state.diagramFactoryMap[diagram.name], Object.getPrototypeOf(diagram));
+	
+	      return state.diagramFactoryMap[diagram.name];
 	    }
 	  }, {
 	    key: "addConversionButtons",
@@ -44353,7 +44358,7 @@
 	      var div = Diagram.addDivBeforeSvg();
 	      var onClickFn = void 0;
 	
-	      (0, _lodash.each)(diagramNames, function (diagramType) {
+	      (0, _lodash.each)(state.diagramNames, function (diagramType) {
 	        if (diagramType !== diagram.name) {
 	          onClickFn = "diagrams.Diagram.convertDiagram(" + diagram.diagramId + ", '" + diagramType + "')";
 	          div.appendButtonToDiv('diagrams-box-conversion-button', "To " + diagramType + " diagram", onClickFn);
@@ -44366,10 +44371,14 @@
 	}();
 	
 	_index2.default.composeWithEventEmitter(Diagram);
+	resetState();
 	
 	exports.default = {
 	  Diagram: Diagram,
-	  diagramFactoryMap: diagramFactoryMap
+	  getState: function getState() {
+	    return state;
+	  },
+	  resetState: resetState
 	};
 	module.exports = exports['default'];
 
@@ -44401,10 +44410,14 @@
 	    diagramFactory.register();
 	  })(['Box', 'Graph', 'Layer']);
 	
-	  var diagramFactoriesKeys = (0, _ramda.keys)(_diagram.diagramFactoryMap);
+	  var _getState = (0, _diagram.getState)();
+	
+	  var diagramFactoryMap = _getState.diagramFactoryMap;
+	
+	  var diagramFactoriesKeys = (0, _ramda.keys)(diagramFactoryMap);
 	
 	  (0, _ramda.forEach)(function (diagramFactoriesKey) {
-	    _diagrams2.default[diagramFactoriesKey] = _diagram.diagramFactoryMap[diagramFactoriesKey];
+	    _diagrams2.default[diagramFactoriesKey] = diagramFactoryMap[diagramFactoriesKey];
 	  })(diagramFactoriesKeys);
 	};
 	
@@ -45750,17 +45763,17 @@
 	  }, {
 	    key: 'setRelationships',
 	    value: function setRelationships(items, container) {
-	      var diagram = this;
+	      var _this2 = this;
 	
 	      (0, _ramda.forEach)(function (item) {
-	        diagram.generateEmptyRelationships(item);
+	        _this2.generateEmptyRelationships(item);
 	
 	        if (container) {
-	          diagram.addDependantRelationship(container, item.textG, item);
-	          diagram.addDependencyRelationship(item, container.textG, container);
+	          _this2.addDependantRelationship(container, item.textG, item);
+	          _this2.addDependencyRelationship(item, container.textG, container);
 	        }
 	
-	        if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item);
+	        if (item.items && item.items.length > 0) _this2.setRelationships(item.items, item);
 	      })(items);
 	    }
 	  }]);
