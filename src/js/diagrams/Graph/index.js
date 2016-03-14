@@ -20,7 +20,7 @@ export default () => {
     }
   }
 
-  new Graph({
+  return new Graph({
     configuration: {
       [CURVED_ARROWS]: false,
       [GRAPH_DRAG]: false,

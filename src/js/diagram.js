@@ -5,13 +5,16 @@ import svg from './svg'
 import events from "./events"
 import utils from "./utils/index"
 
-const defaultDiagramConfiguration = {}
+let state
 
-const diagramsRegistry = []
-const diagramNames = []
-const diagramFactoryMap = {}
-
-let createdDiagramsMaxId = 0
+const resetState = () => {
+  state = {}
+  state.defaultDiagramConfiguration = {}
+  state.diagramsRegistry = []
+  state.diagramNames = []
+  state.diagramFactoryMap = {}
+  state.createdDiagramsMaxId = 0
+}
 
 class Diagram {
   static convertDiagram(creationId, toDiagramType) {
@@ -20,13 +23,13 @@ class Diagram {
     let generalData, specificData
 
     generalData = item.diagram.dataFromSpecificToGeneral.apply({}, newArgs)
-    specificData = diagramFactoryMap[toDiagramType]
+    specificData = state.diagramFactoryMap[toDiagramType]
       .dataFromGeneralToSpecific.apply({}, [generalData])
 
     events.emit('diagram-to-transform', item.diagram)
 
     Diagram.removePreviousDiagrams()
-    diagramFactoryMap[toDiagramType].apply(item.diagram, [specificData])
+    state.diagramFactoryMap[toDiagramType].apply(item.diagram, [specificData])
   }
 
   static removePreviousDiagrams() {
@@ -50,7 +53,7 @@ class Diagram {
   }
 
   static getRegistryItemWithCreationId(creationId) {
-    const items = where(diagramsRegistry, {
+    const items = where(state.diagramsRegistry, {
       id: creationId,
     })
 
@@ -77,12 +80,11 @@ class Diagram {
         opts.helpers[helperName] = bind(opts.helpers[helperName], diagram)
       }
     })
-    merge(diagram._configuration, defaultDiagramConfiguration)
+    merge(diagram._configuration, state.defaultDiagramConfiguration)
     each(Object.keys(diagram._configuration), (confKey) => {
       diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey])
     })
     defaults(prototype, opts.helpers)
-    diagram.register()
   }
 
   reRender() {
@@ -271,12 +273,12 @@ class Diagram {
   }
 
   handleDiagramId() {
-    createdDiagramsMaxId++
-    this.diagramId = createdDiagramsMaxId
+    state.createdDiagramsMaxId++
+    this.diagramId = state.createdDiagramsMaxId
   }
 
   addToDiagramsRegistry(creationArgs) {
-    diagramsRegistry.push({
+    state.diagramsRegistry.push({
       data: creationArgs,
       diagram: this,
       id: creationArgs[0],
@@ -286,8 +288,8 @@ class Diagram {
   register() {
     const diagram = this
 
-    diagramNames.push(diagram.name)
-    diagramFactoryMap[diagram.name] = (...args) => {
+    state.diagramNames.push(diagram.name)
+    state.diagramFactoryMap[diagram.name] = (...args) => {
       utils.runWhenReady(() => {
         this.handleDiagramId()
 
@@ -300,7 +302,9 @@ class Diagram {
       })
     }
 
-    defaults(diagramFactoryMap[diagram.name], Object.getPrototypeOf(diagram))
+    defaults(state.diagramFactoryMap[diagram.name], Object.getPrototypeOf(diagram))
+
+    return state.diagramFactoryMap[diagram.name]
   }
 
   addConversionButtons() {
@@ -308,7 +312,7 @@ class Diagram {
     const div = Diagram.addDivBeforeSvg()
     let onClickFn
 
-    each(diagramNames, (diagramType) => {
+    each(state.diagramNames, (diagramType) => {
       if (diagramType !== diagram.name) {
         onClickFn = `diagrams.Diagram.convertDiagram(${diagram.diagramId}, '${diagramType}')`
         div.appendButtonToDiv('diagrams-box-conversion-button',
@@ -319,8 +323,10 @@ class Diagram {
 }
 
 utils.composeWithEventEmitter(Diagram)
+resetState()
 
 export default {
   Diagram,
-  diagramFactoryMap,
+  getState: () => state,
+  resetState,
 }

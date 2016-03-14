@@ -1,7 +1,7 @@
 import d from "diagrams"
-import includeBuiltInDiagrams from "./includeBuiltInDiagrams"
+import includeBuiltinDiagrams from "./includeBuiltinDiagrams"
 
-includeBuiltInDiagrams()
+includeBuiltinDiagrams()
 
 if (window) {
   window.diagrams = d

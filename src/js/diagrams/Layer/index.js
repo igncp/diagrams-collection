@@ -30,7 +30,7 @@ export default () => {
     }
   }
 
-  new Layer({
+  return new Layer({
     helpers,
     name: 'layer',
   })

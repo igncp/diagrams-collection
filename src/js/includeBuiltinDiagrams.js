@@ -4,10 +4,12 @@ import { diagramFactoryMap } from "./diagram"
 import d from "./diagrams"
 
 export default () => {
-  const requireAndRunDiagram = diagramName =>
-    require(`diagrams/${diagramName}/index`)()
+  forEach((diagramName) => {
+    const diagramFactoryCreator = require(`diagrams/${diagramName}/index`)
+    const diagramFactory = diagramFactoryCreator()
 
-  forEach(requireAndRunDiagram)([
+    diagramFactory.register()
+  })([
     'Box', 'Graph', 'Layer',
   ])
 

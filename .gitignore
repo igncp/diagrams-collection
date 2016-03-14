@@ -4,3 +4,4 @@ vendors
 .sass-cache
 *.log
 /coverage
+*.map

@@ -44,26 +44,25 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	"use strict";
 	
 	var _diagrams = __webpack_require__(1);
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
 	
-	var _includeBuiltInDiagrams = __webpack_require__(34);
+	var _includeBuiltinDiagrams = __webpack_require__(34);
 	
-	var _includeBuiltInDiagrams2 = _interopRequireDefault(_includeBuiltInDiagrams);
+	var _includeBuiltinDiagrams2 = _interopRequireDefault(_includeBuiltinDiagrams);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	(0, _includeBuiltInDiagrams2.default)();
+	(0, _includeBuiltinDiagrams2.default)();
 	
-	if (global.window) {
+	if (window) {
 	  window.diagrams = _diagrams2.default;
 	} else {
 	  module.exports = _diagrams2.default;
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 1 */
@@ -44114,7 +44113,6 @@
 	      diagram.configCheckingLocalStorage(confKey, diagram._configuration[confKey]);
 	    });
 	    (0, _lodash.defaults)(prototype, opts.helpers);
-	    diagram.register();
 	  }
 	
 	  _createClass(Diagram, [{
@@ -44396,11 +44394,12 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	exports.default = function () {
-	  var requireAndRunDiagram = function requireAndRunDiagram(diagramName) {
-	    return __webpack_require__(35)("./" + diagramName + "/index")();
-	  };
+	  (0, _ramda.forEach)(function (diagramName) {
+	    var diagramFactoryCreator = __webpack_require__(35)("./" + diagramName + "/index");
+	    var diagramFactory = diagramFactoryCreator();
 	
-	  (0, _ramda.forEach)(requireAndRunDiagram)(['Box', 'Graph', 'Layer']);
+	    diagramFactory.register();
+	  })(['Box', 'Graph', 'Layer']);
 	
 	  var diagramFactoriesKeys = (0, _ramda.keys)(_diagram.diagramFactoryMap);
 	
@@ -45770,7 +45769,7 @@
 	}(_diagrams2.default.Diagram);
 	
 	exports.default = function () {
-	  new Box({
+	  return new Box({
 	    helpers: _helpers2.default,
 	    name: 'box'
 	  });
@@ -47026,7 +47025,7 @@
 	    return Graph;
 	  }(_diagrams2.default.Diagram);
 	
-	  new Graph({
+	  return new Graph({
 	    configuration: (_configuration = {}, _defineProperty(_configuration, CURVED_ARROWS, false), _defineProperty(_configuration, GRAPH_DRAG, false), _defineProperty(_configuration, GRAPH_ZOOM, graphZoomConfig), _defineProperty(_configuration, SHY_CONNECTIONS, true), _defineProperty(_configuration, 'info', null), _configuration),
 	    configurationKeys: {
 	      SHY_CONNECTIONS: SHY_CONNECTIONS
@@ -48493,7 +48492,7 @@
 	    return Layer;
 	  }(_diagrams2.default.Diagram);
 	
-	  new Layer({
+	  return new Layer({
 	    helpers: _helpers2.default,
 	    name: 'layer'
 	  });

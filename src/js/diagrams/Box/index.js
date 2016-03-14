@@ -11,23 +11,21 @@ class Box extends d.Diagram {
   }
 
   setRelationships(items, container) {
-    const diagram = this
-
     forEach((item) => {
-      diagram.generateEmptyRelationships(item)
+      this.generateEmptyRelationships(item)
 
       if (container) {
-        diagram.addDependantRelationship(container, item.textG, item)
-        diagram.addDependencyRelationship(item, container.textG, container)
+        this.addDependantRelationship(container, item.textG, item)
+        this.addDependencyRelationship(item, container.textG, container)
       }
 
-      if (item.items && item.items.length > 0) diagram.setRelationships(item.items, item)
+      if (item.items && item.items.length > 0) this.setRelationships(item.items, item)
     })(items)
   }
 }
 
 export default () => {
-  new Box({
+  return new Box({
     helpers,
     name: 'box',
   })
