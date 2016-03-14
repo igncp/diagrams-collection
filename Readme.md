@@ -2,7 +2,7 @@
 
 | Tests and Linting |
 |:---:|
-| [![Build Status](https://travis-ci.org/igncp/diagrams-collections.svg?branch=master)](https://travis-ci.org/igncp/diagrams-collections) |
+| [![Build Status](https://travis-ci.org/igncp/diagrams-collection.svg?branch=master)](https://travis-ci.org/igncp/diagrams-collection) |
 
 ## Usage
 
