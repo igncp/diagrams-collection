@@ -225,6 +225,8 @@
         "node": true
     },
     "globals": {
+        "testsHelpers": false,
+        "testsMocks": false,
         "spy": false,
         "stub": false,
         "expect": false,

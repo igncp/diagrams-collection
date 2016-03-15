@@ -43,7 +43,7 @@ export const getCreationFn = (diagram) => {
     })
 
     select(document.body).style('opacity', 0)
-    helpers.addBodyItemsAndUpdateHeights.get()()
+    helpers.addBodyItemsAndUpdateHeights.run()
 
     if (opts.allCollapsed === true) helpers.collapseAll(creationId)
     helpers.addButtons(creationId)

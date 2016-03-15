@@ -1,6 +1,9 @@
 import path from "path"
 const JS_DIR = path.resolve(path.join(__dirname, "..", "src", "js"))
 
+import mocks from "./mocks"
+import helpers from "./helpers"
+
 import { addPath } from "app-module-path"
 
 addPath(JS_DIR)
@@ -37,3 +40,6 @@ const getDescribeText = (filename) => {
 global.describeStd = (filename, fn) => {
   describe(getDescribeText(filename), fn)
 }
+
+global.testsMocks = mocks
+global.testsHelpers = helpers

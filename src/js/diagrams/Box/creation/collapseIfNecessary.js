@@ -1,6 +1,9 @@
 import { isUndefined } from "lodash"
 
-import helpers from '../helpers'
+import {
+  addBodyItemsAndUpdateHeights, collapseItem, expandItem,
+} from '../helpers'
+
 import { getFeatures } from '../features'
 const f = getFeatures()
 
@@ -15,12 +18,12 @@ const collapseIfNecessary = (el, item) => {
       class: 'collapsible-trigger',
     })
     const collapseListener = () => {
-      helpers.collapseItem(item)
-      helpers.addBodyItemsAndUpdateHeights.get()()
+      collapseItem(item)
+      addBodyItemsAndUpdateHeights.run()
     }
     const expandListener = () => {
-      helpers.expandItem(item)
-      helpers.addBodyItemsAndUpdateHeights.get()()
+      expandItem(item)
+      addBodyItemsAndUpdateHeights.run()
     }
     const triggerTextEl = triggerEl.append('text').attr({
       x: xDim + f.trigger.text.xOffset,

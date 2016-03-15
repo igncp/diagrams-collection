@@ -22,5 +22,5 @@ export default (creationId, opts, cb) => {
 
   opts.withCollapsedItems = opts.withCollapsedItems || false
   recursiveFn({ cb, items: bodyData, opts, parents: [] })
-  addBodyItemsAndUpdateHeights.get()()
+  addBodyItemsAndUpdateHeights.run()
 }
