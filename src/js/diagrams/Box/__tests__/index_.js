@@ -1,6 +1,7 @@
-import mockery from "mockery"
 import "../index"
 import { Diagram, getState, resetState } from "../../../diagram"
+
+const { mockReplacing, mockWithMockery } = testsHelpers
 
 const helpersMock = "foo"
 const getCreationFnReturnStub = stub()
@@ -10,34 +11,27 @@ const creationMock = {
 const NOOP = NOOP
 
 describeStd(__filename, () => {
-  let boxDiagramFactoryCreator, cachedModule
+  let boxDiagramFactoryCreator
 
   beforeEach(function() {
-    mockery.enable({
-      warnOnReplace: false,
-      warnOnUnregistered: false,
-    })
-    this.previousDocument = global.document
-    this.previousWindow = global.window
-    global.document = { readyState: "complete" }
-    global.window = {}
-    cachedModule = require.cache[require.resolve('../index.js')]
-    delete require.cache[require.resolve('../index.js')]
-
-    mockery.registerMock("./helpers", helpersMock)
-    mockery.registerMock("./creation", creationMock)
+    this.resetMockery = mockWithMockery(require.resolve('../index.js'), [
+      ["./helpers", helpersMock],
+      ["./creation", creationMock],
+    ])
+    this.resetMocks = mockReplacing(this, [
+      [global, "document", { readyState: "complete" }],
+      [global, "window", {}],
+    ])
     stub(Diagram.prototype, "addConversionButtons", NOOP)
 
     boxDiagramFactoryCreator = require("../index")
   })
 
   afterEach(function() {
-    global.document = this.previousDocument
-    global.window = this.previousWindow
-    Diagram.prototype.addConversionButtons.restore()
-    mockery.disable()
-    require.cache[require.resolve('../index.js')] = cachedModule
+    this.resetMockery()
+    this.resetMocks()
     resetState()
+    Diagram.prototype.addConversionButtons.restore()
     getCreationFnReturnStub.reset()
     creationMock.getCreationFn.reset()
   })
