@@ -1,0 +1,25 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="dist/diagrams.js"></script>
+    <link rel="stylesheet" href="dist/diagrams.css">
+</head>
+<body>
+    <script>
+        var d = diagrams.box.generateDefinition,
+          c = diagrams.box.generateContainer;
+
+          diagrams.box({
+            name: "Foo name",
+            body: [
+              "foo",
+              d("bar"),
+              c("baz", [
+                "bam"
+              ])
+            ]
+          });
+    </script>
+</body>
+</html>

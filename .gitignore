@@ -3,5 +3,5 @@ bower_components
 vendors
 .sass-cache
 *.log
-/coverage
+/reports
 *.map

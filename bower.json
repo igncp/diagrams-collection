@@ -1,5 +1,5 @@
 {
-  "name": "diagrams-collections",
+  "name": "diagrams-collection",
   "main": "dist/diagrams.min.js",
   "version": "0.0.1",
   "homepage": "https://github.com/igncp/diagrams-collection",

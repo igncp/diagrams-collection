@@ -2,7 +2,7 @@ instrumentation:
     root: src/js
     excludes: ["**/__tests__/**"]
 reporting:
-    dir: ./coverage
+    dir: ./reports/coverage
     watermarks:
         statements: [50, 80]
         lines: [50, 80]

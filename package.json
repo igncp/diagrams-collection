@@ -32,15 +32,18 @@
     "load-grunt-tasks": "^3.2.0",
     "mocha": "^2.4.5",
     "mockery": "^1.4.1",
+    "nightwatch": "^0.8.18",
     "sinon": "^1.17.2",
     "sinon-chai": "^2.8.0",
     "webpack": "^1.12.2",
     "webpack-dev-server": "^1.12.1"
   },
   "scripts": {
+    "serve-e2e": "./node_modules/.bin/http-server -p 8081 -c-1 test/e2e/",
     "test": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js'",
     "test-coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha  -- --require test/setup.js 'src/js/**/__tests__/**/*.js'",
-    "test-coverage-server": "./node_modules/.bin/http-server coverage/",
+    "test-coverage-server": "./node_modules/.bin/http-server reports/coverage/",
+    "test-e2e": "./scripts/nightwatch -c test/e2e/nightwatch.json -f *-test.js",
     "test-watch": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js' -w"
   },
   "repository": {
