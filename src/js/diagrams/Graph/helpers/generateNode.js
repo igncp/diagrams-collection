@@ -1,7 +1,7 @@
 import { forEach } from "ramda"
 import { isArray, isNumber, isObject, isString } from "lodash"
 
-import { each } from "utils"
+import { each } from "utils/pure"
 import generateNodeOptions from './generateNodeOptions'
 import mergeWithDefaultConnection from './mergeWithDefaultConnection'
 

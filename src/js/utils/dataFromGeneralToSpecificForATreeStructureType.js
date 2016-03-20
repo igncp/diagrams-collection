@@ -1,6 +1,6 @@
 import { filter, find, last, propEq } from "ramda"
 
-import each from "./each"
+import { each } from "./pure"
 
 const isUndefined = val => typeof val === "undefined"
 

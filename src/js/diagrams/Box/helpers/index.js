@@ -3,8 +3,6 @@ import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'
 import addButtons from './addButtons'
 import collapseAll from './collapseAll'
 import collapseItem from './collapseItem'
-import convertToGraph from './convertToGraph'
-import convertToLayer from './convertToLayer'
 import dataFromGeneralToSpecific from './dataFromGeneralToSpecific'
 import dataFromSpecificToGeneral from './dataFromSpecificToGeneral'
 import expandAll from './expandAll'
@@ -25,8 +23,6 @@ const helpers = {
   addButtons,
   collapseAll,
   collapseItem,
-  convertToGraph,
-  convertToLayer,
   dataFromGeneralToSpecific,
   dataFromSpecificToGeneral,
   expandAll,

@@ -1,13 +1,13 @@
-import d from "diagrams"
+import { compose, omit } from "ramda"
+
+import { dataFromGeneralToSpecificForATreeStructureType, pure } from "../../../utils"
+const { refToProp } = pure
 
 export default (generalData) => {
-  const finalData = d.utils.dataFromGeneralToSpecificForATreeStructureType(generalData)
-
-  finalData.name = finalData.text
-  finalData.body = finalData.items
-
-  delete finalData.items
-  delete finalData.text
-
-  return finalData
+  return compose(
+    omit(["text", "items"]),
+    refToProp("text", "name"),
+    refToProp("items", "body"),
+    dataFromGeneralToSpecificForATreeStructureType
+  )(generalData)
 }

@@ -1,17 +1,15 @@
-import { each } from "lodash"
+import { forEach, merge } from "ramda"
 
 const recursiveFn = (items, parentCreatedItem, context) => {
-  each(items, (item) => {
-    const createdItem = {
-      description: item.description,
+  forEach((item) => {
+    const { description, options } = item
+    const createdItem = merge({
       graphsData: {
-        box: {
-          options: item.options,
-        },
+        box: options ? { options } : {},
       },
       id: ++context.maxId,
       name: item.text,
-    }
+    }, (description ? { description } : {}))
 
     context.finalItems.push(createdItem)
 
@@ -28,7 +26,7 @@ const recursiveFn = (items, parentCreatedItem, context) => {
     }
 
     if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem, context)
-  })
+  }, items)
 }
 
 export default (conf) => {

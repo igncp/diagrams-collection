@@ -8,7 +8,7 @@ const getCreationFnReturnStub = stub()
 const creationMock = {
   getCreationFn: stub().returns(getCreationFnReturnStub),
 }
-const NOOP = NOOP
+const NOOP = () => null
 
 describeStd(__filename, () => {
   let boxDiagramFactoryCreator

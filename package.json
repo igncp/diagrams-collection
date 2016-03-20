@@ -43,7 +43,8 @@
     "test": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js'",
     "test-coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha  -- --require test/setup.js 'src/js/**/__tests__/**/*.js'",
     "test-coverage-server": "./node_modules/.bin/http-server reports/coverage/",
-    "test-e2e": "./scripts/nightwatch -c test/e2e/nightwatch.json -f *-test.js",
+    "test-e2e": "make prod && npm run test-e2e-without-build",
+    "test-e2e-without-build": "./scripts/nightwatch -c test/e2e/nightwatch.json -f *-test.js",
     "test-watch": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js' -w"
   },
   "repository": {

@@ -5,13 +5,13 @@ const { mockWithMockery } = testsHelpers
 const expandOrCollapseAllSpy = spy()
 
 describeStd(__filename, () => {
-  let collapseAll
+  const deps = {}
 
   beforeEach(function() {
     this.resetMockery = mockWithMockery(require.resolve("../collapseAll"), [
       ["./expandOrCollapseAll", expandOrCollapseAllSpy],
     ])
-    collapseAll = require("../collapseAll")
+    deps.collapseAll = require("../collapseAll")
   })
   afterEach(function() {
     this.resetMockery()
@@ -19,7 +19,7 @@ describeStd(__filename, () => {
   })
 
   it("Should call expandOrCollapseAll once.", () => {
-    collapseAll()
+    deps.collapseAll()
 
     expect(expandOrCollapseAllSpy).to.have.been.calledOnce
   })
@@ -27,7 +27,7 @@ describeStd(__filename, () => {
   it("Should call expandOrCollapseAll with the expected arguments.", () => {
     const creationId = 1
 
-    collapseAll(creationId)
+    deps.collapseAll(creationId)
 
     expect(expandOrCollapseAllSpy).to.have.been.calledWith(creationId, "collapse")
   })

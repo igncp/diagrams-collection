@@ -184,7 +184,7 @@
         "operator-assignment": [2, "always"], // require assignment operator shorthand where possible or prohibit it entirely
         "operator-linebreak": 0, // enforce operators to be placed before or after line breaks
         "padded-blocks": 0, // enforce padding within blocks
-        "prefer-arrow-callback": 2, // suggest using arrow functions as callbacks
+        "prefer-arrow-callback": 0, // suggest using arrow functions as callbacks
         "prefer-const": 2, // suggest using const declaration for variables that are never modified after declared
         "prefer-reflect": 0, // suggest using Reflect methods where applicable
         "prefer-spread": 2, // suggest using the spread operator instead of .apply().
