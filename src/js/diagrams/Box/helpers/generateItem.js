@@ -1,19 +1,14 @@
-import { defaults } from "lodash"
+import { merge } from "ramda"
 
+import { defaultOptions } from "../constants"
 import parseItemGenerationOptions from './parseItemGenerationOptions'
 
-const defaultOptions = {
-  isLink: false,
-  notCompleted: false,
-}
-
 export default ({ description = null, items = [], options = {}, text }) => {
-  options = parseItemGenerationOptions(options)
+  const optionsObj = parseItemGenerationOptions(options)
 
-  return {
-    description,
+  return merge({
     items,
-    options: defaults(options, defaultOptions),
+    options: merge(defaultOptions, optionsObj),
     text,
-  }
+  }, (description ? { description } : {}))
 }

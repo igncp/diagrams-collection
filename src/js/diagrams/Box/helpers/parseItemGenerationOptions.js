@@ -1,25 +1,27 @@
-import { isString, reduce } from "lodash"
+import {
+  assoc, compose, nth, is, split, toUpper, reduce,
+} from "ramda"
 
-const getParsedOptionsOfStrCase = (optionsStr) => {
-  const options = optionsStr.split(' ')
+const isString = is(String)
+const secondUppercased = compose(toUpper, nth(1))
 
-  return reduce(options, (parsedOptions, optionsKey) => {
-    // option-one -> optionOne
-    const newKey = optionsKey
-      .replace(/-([a-z])/g, g => g[1].toUpperCase())
+// option-one -> optionOne
+const reduceOptionsArr = (parsedOptions, optionsKey) => {
+  const newKey = optionsKey
+    .replace(/-([a-z])/g, secondUppercased)
 
-    parsedOptions[newKey] = true
-  }, {})
+  return assoc(newKey, true, parsedOptions)
 }
 
-export default (options) => {
-  let parsedOptions
+const getParsedOptionsOfStrType = compose(
+  reduce(reduceOptionsArr, {}),
+  split(' ')
+)
 
+export default (options) => {
   options = options || {}
 
-  if (isString(options)) {
-    parsedOptions = getParsedOptionsOfStrCase(options)
-  } else parsedOptions = options
-
-  return parsedOptions
+  return isString(options)
+    ? getParsedOptionsOfStrType(options)
+    : options
 }
