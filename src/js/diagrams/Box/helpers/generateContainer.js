@@ -1,6 +1,8 @@
-import { isArray } from "lodash"
+import { compose, nth, isArrayLike } from "ramda"
 
 import generateItem from './generateItem'
+
+const secondIsAnArray = compose(isArrayLike, nth(1))
 
 /**
  * Signatures:
@@ -8,7 +10,7 @@ import generateItem from './generateItem'
  * (text, items, options)
  */
 const generateContainer = (...args) => {
-  if (isArray(args[1])) return generateContainer(args[0], null, args[1], args[2])
+  if (secondIsAnArray(args)) return generateContainer(args[0], null, args[1], args[2])
 
   return generateItem({ description: args[1], items: args[2], options: args[3], text: args[0] })
 }
