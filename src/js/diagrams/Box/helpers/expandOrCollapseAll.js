@@ -1,4 +1,4 @@
-import { partial } from "lodash"
+import { curry } from "ramda"
 
 import traverseBodyDataAndRefresh from './traverseBodyDataAndRefresh'
 import collapseItem from './collapseItem'
@@ -9,19 +9,20 @@ const methods = {
   expandItem,
 }
 
-const traverseBodyOpts = {
-  withCollapsedItems: true,
-}
+const traverseBodyOpts = { withCollapsedItems: true }
 
 const itemCanBeCollapsedOrExpanded = item => item.hasOwnProperty('collapsed')
 
-const expandOrCollapseItem = (collapseOrExpand, item) => {
+const expandOrCollapseItem = curry((collapseOrExpand, item) => {
   if (itemCanBeCollapsedOrExpanded(item)) {
     methods[`${collapseOrExpand}Item`](item)
   }
-}
+})
 
 export default (creationId, collapseOrExpand) => {
-  traverseBodyDataAndRefresh(creationId, traverseBodyOpts,
-    partial(expandOrCollapseItem, collapseOrExpand))
+  traverseBodyDataAndRefresh(
+    creationId,
+    traverseBodyOpts,
+    expandOrCollapseItem(collapseOrExpand)
+  )
 }
