@@ -1,17 +1,17 @@
-import { each } from "lodash"
+import { forEach } from "ramda"
 
 import d from 'diagrams'
 import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'
 
 const recursiveFn = ({ cb, items, opts, parents }) => {
-  each(items, (item) => {
+  forEach((item) => {
     if (cb) cb(item, parents)
 
     if (item.items) recursiveFn({ cb, items: item.items, opts, parents: parents.concat(item) })
 
     if (opts.withCollapsedItems && item.collapsedItems)
       recursiveFn({ cb, items: item.collapsedItems, opts, parents: parents.concat(item) })
-  })
+  }, items)
 }
 
 export default (creationId, opts, cb) => {

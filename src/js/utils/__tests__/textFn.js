@@ -22,7 +22,7 @@ describeStd(__filename, () => {
     expect(actual).to.eql(expected)
   })
 
-  it("The returned function returns the expected results. (9c7d77)", () => {
+  it("The returned function returns the expected results. (9650f1)", () => {
     const init = ["foo.bar", "a ", " b"]
     const resultFn = textFn(...init)
     const init2 = {
