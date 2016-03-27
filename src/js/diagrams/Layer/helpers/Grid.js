@@ -10,94 +10,106 @@ export default class Grid {
     this.cells = []
   }
   addItemAtNewRow(item) {
-    const counter = 0
+    let counter = 0
 
     this.position.x = 0
     while (counter < 1000) {
       this.position.y += 1
 
       if (this.itemFitsAtCurrentPos(item)) break
+      counter++
     }
     this.addItemAtCurrentPos(item)
   }
   addItemAtCurrentPos(item) {
-    this.addItemAtPos(item, this.position)
-  }
-  createRowIfNecessary(posY) {
-    if (isUndefined(this.cells[posY])) this.cells[posY] = []
-  }
-  addItemAtPos(item, pos) {
-    let row
-
-    item.x = pos.x
-    item.y = pos.y
-
-    for (let i = 0; i < item.height; i++) {
-      this.createRowIfNecessary(i + pos.y)
-      row = this.cells[i + pos.y]
-
-      for (let j = 0; j < item.width; j++) {
-        row[j + pos.x] = true
-      }
-    }
-    this.updatePosition()
-  }
-  updatePosition() {
-    let counter = 0
-
-    while (counter < 1000) {
-      this.position.x += 1
-
-      if (this.position.x === this.width) {
-        this.position.x = -1
-        this.position.y += 1
-        this.createRowIfNecessary(this.position.y)
-      } else if (this.cells[this.position.y][this.position.x] !== true) {
-        break
-      }
-      counter++
-    }
-  }
-  itemFitsAtPos(item, pos) {
-    let row
-
-    for (let i = 0; i < item.height; i++) {
-      row = this.cells[i + pos.y]
-
-      if (isUndefined(row)) return true
-
-      for (let j = 0; j < item.width; j++) {
-        if (row[j + pos.x] === true) return false
-
-        if ((j + pos.x + 1) > this.width) return false
-      }
-    }
-
-    return true
+    addItemAtPos(this, item, this.position)
   }
   itemFitsAtCurrentPos(item) {
-    return this.itemFitsAtPos(item, this.position)
+    return itemFitsAtPos(this, item, this.position)
   }
   movePositionToNextRow() {
     this.position.y++
     this.position.x = 0
-    this.createRowIfNecessary(this.position.y)
-  }
-  lastRowIsEmpty() {
-    const rows = this.cells.length
-
-    for (let i = 0; i < this.width; i++) {
-      if (this.cells[rows - 1][i] === true) return false
-    }
-
-    return true
+    createRowIfNecessary(this, this.position.y)
   }
   getSize() {
-    const rows = this.cells.length
-
     return {
-      height: (this.lastRowIsEmpty()) ? rows - 1 : rows,
+      height: getGridHeight(this),
       width: this.width,
     }
   }
+}
+
+function getGridHeight(grid) {
+  const rows = grid.cells.length
+
+  if (rows === 0) return 0
+
+  return (lastRowIsEmpty(grid)) ? rows - 1 : rows
+}
+
+function addItemAtPos(grid, item, pos) {
+  let row
+
+  item.x = pos.x
+  item.y = pos.y
+
+  for (let i = 0; i < item.height; i++) {
+    createRowIfNecessary(grid, i + pos.y)
+    row = grid.cells[i + pos.y]
+
+    for (let j = 0; j < item.width; j++) {
+      row[j + pos.x] = true
+    }
+  }
+  updatePosition(grid)
+}
+
+function createRowIfNecessary(grid, posY) {
+  if (isUndefined(grid.cells[posY])) grid.cells[posY] = []
+}
+
+function lastRowIsEmpty(grid) {
+  const rows = grid.cells.length
+
+  for (let i = 0; i < grid.width; i++) {
+    if (grid.cells[rows - 1][i] === true) return false
+  }
+
+  return true
+}
+
+function updatePosition(grid) {
+  let counter = 0
+
+  while (counter < 1000) {
+    grid.position.x += 1
+
+    if (grid.position.x === grid.width) {
+      grid.position.x = -1
+      grid.position.y += 1
+      createRowIfNecessary(grid, grid.position.y)
+    } else if (grid.cells[grid.position.y][grid.position.x] !== true) {
+      break
+    }
+    counter++
+  }
+}
+
+function itemFitsAtPos(grid, item, pos) {
+  let row
+
+  for (let i = 0; i < item.height; i++) {
+    row = grid.cells[i + pos.y]
+
+    if (isUndefined(row)) return true
+
+    for (let j = 0; j < item.width; j++) {
+      if (row[j + pos.x] === true) return false
+
+      if ((j + pos.x + 1) > grid.width) return false
+    }
+  }
+
+  return true
 }

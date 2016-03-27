@@ -1,6 +1,6 @@
 import { forEach } from "ramda"
 
-import d from 'diagrams'
+import { Diagram } from 'diagrams'
 import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'
 
 const recursiveFn = ({ cb, items, opts, parents }) => {
@@ -15,12 +15,12 @@ const recursiveFn = ({ cb, items, opts, parents }) => {
 }
 
 export default (creationId, opts, cb) => {
-  const conf = d.Diagram.getDataWithCreationId(creationId)[1]
+  const conf = Diagram.getDataWithCreationId(creationId)[1]
   const bodyData = conf.body
 
   opts = opts || {}
-
   opts.withCollapsedItems = opts.withCollapsedItems || false
+
   recursiveFn({ cb, items: bodyData, opts, parents: [] })
   addBodyItemsAndUpdateHeights.run()
 }

@@ -1,4 +1,7 @@
 import { each } from "lodash"
+import { merge } from "ramda"
+
+import { diagramName } from "../constants"
 
 export default (conf) => {
   let maxId = -1
@@ -14,14 +17,16 @@ export default (conf) => {
         name = splittedText[0]
         description = splittedText.slice(1).join(firstOccurrence)
       }
+
       createdItem = {
         description: description || null,
-        graphsData: {
-          layer: {
+        graphsData: merge(
+          item.graphsData || {},
+          { [diagramName]: {
             id: item.id,
             relationships: item.options,
-          },
-        },
+          } }
+        ),
         id: ++maxId,
         name: name || item.fullText,
       }

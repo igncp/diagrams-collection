@@ -19,7 +19,6 @@ function runBoxDiagramSpecs(client) {
   client.click(".diagrams-box-collapse-all-button")
   client.expect.element(".box-diagram").text.not.to.contain("bam")
   client.click(".diagrams-box-expand-all-button")
-  client.expect.element(".box-diagram").text.to.contain("[NOT COMPLETED]")
 }
 
 const clickConversionButtonByIndex = curry((index, client) => {
@@ -28,13 +27,16 @@ const clickConversionButtonByIndex = curry((index, client) => {
   })
 })
 
-const convertToGraphFromBox = clickConversionButtonByIndex(0)
+const convertToGraphFromLayer = clickConversionButtonByIndex(0)
 const convertToLayerFromBox = clickConversionButtonByIndex(1)
+const convertToLayerFromGraph = clickConversionButtonByIndex(1)
 const convertToBoxFromLayer = clickConversionButtonByIndex(0)
 
-function runConvertedLayerSpecs(client) {
+let runLayerSpecsCalled = 0
+function runLayerSpecs(client) {
   client.expect.element(".layers-diagram").to.be.visible
-  client.expect.element("#diagrams-layer-g-3").text.to.contain("bam")
+  client.expect.element(`#diagrams-layer-g-${3 + 4*runLayerSpecsCalled}`).text.to.contain("bam")
+  runLayerSpecsCalled++
 }
 
 function runGraphDiagramSpecs() {
@@ -44,15 +46,17 @@ function runGraphDiagramSpecs() {
 export default {
   "Box basic"(client) {
     client
-      .url(`${url}/box/basic`)
+      .url(`${url}/layer/basic`)
       .waitForElementVisible('body', 1000)
-    runBoxDiagramSpecs(client)
-    convertToLayerFromBox(client)
-    runConvertedLayerSpecs(client)
+
+    runLayerSpecs(client)
     convertToBoxFromLayer(client)
     runBoxDiagramSpecs(client)
-    convertToGraphFromBox(client)
+    convertToLayerFromBox(client)
+    runLayerSpecs(client)
+    convertToGraphFromLayer(client)
     runGraphDiagramSpecs(client)
+    convertToLayerFromGraph(client)
 
     client.end()
   },

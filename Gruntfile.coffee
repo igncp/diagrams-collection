@@ -54,4 +54,6 @@ module.exports = (grunt)->
 
   grunt.initConfig gruntConfig
 
+  grunt.registerTask 'build', ['webpack:default']
+  grunt.registerTask 'build-prod', ["build", "uglify"]
   grunt.registerTask 'default', ['watch']

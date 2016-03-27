@@ -40,12 +40,12 @@
   },
   "scripts": {
     "serve-e2e": "./node_modules/.bin/http-server -p 8081 -c-1 test/e2e/",
-    "test": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js'",
-    "test-coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha  -- --require test/setup.js 'src/js/**/__tests__/**/*.js'",
-    "test-coverage-server": "./node_modules/.bin/http-server reports/coverage/",
-    "test-e2e": "make prod && npm run test-e2e-without-build",
+    "test": "./scripts/unit-all",
+    "test-coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha  --  $(cat test/unit-common-options)",
+    "test-coverage-server": "./node_modules/.bin/http-server reports/coverage/lcov-report/",
+    "test-e2e": "make build-prod && npm run test-e2e-without-build",
     "test-e2e-without-build": "./scripts/nightwatch -c test/e2e/nightwatch.json -f *-test.js",
-    "test-watch": "./node_modules/.bin/mocha  --require test/setup.js 'src/js/**/__tests__/**/*.js' -w"
+    "test-watch": "./scripts/unit-all -w"
   },
   "repository": {
     "type": "git",

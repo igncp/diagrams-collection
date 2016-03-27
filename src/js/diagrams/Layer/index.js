@@ -4,6 +4,7 @@ import d from 'diagrams'
 
 import helpers from './helpers'
 import { getCreationFn } from './creation'
+import { diagramName } from "./constants"
 
 export default () => {
   class Layer extends d.Diagram {
@@ -32,6 +33,6 @@ export default () => {
 
   return new Layer({
     helpers,
-    name: 'layer',
+    name: diagramName,
   })
 }

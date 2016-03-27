@@ -1,11 +1,13 @@
 import { forEach, merge } from "ramda"
 
+import { diagramName } from "../constants"
+
 const recursiveFn = (items, parentCreatedItem, context) => {
   forEach((item) => {
     const { description, options } = item
     const createdItem = merge({
       graphsData: {
-        box: options ? { options } : {},
+        [diagramName]: options ? { options } : {},
       },
       id: ++context.maxId,
       name: item.text,

@@ -1,6 +1,7 @@
 import { each, isString } from "lodash"
 
 import d from 'diagrams'
+import { updateHeigthOfElWithOtherEl } from "../../../svg"
 import helpers from '../helpers'
 
 import collapseIfNecessary from './collapseIfNecessary'
@@ -136,8 +137,8 @@ export default ({ boxG, conf, diagram, svg, width }) => {
     triggerElIdHandler.reset()
     addBodyItems({ bodyG, conf, container: null, depth: null, diagram, items: null, svg })
     diagram.setRelationships(conf.body)
-    d.svg.updateHeigthOfElWithOtherEl(svg, boxG, 50)
-    d.svg.updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - f.nameHeight)
+    updateHeigthOfElWithOtherEl(svg, boxG, 50)
+    updateHeigthOfElWithOtherEl(bodyRect, boxG, 25 - f.nameHeight)
 
     window.scrollTo(0, currentScroll)
     diagram.emit('items-rendered')

@@ -23,4 +23,26 @@ describeStd(__filename, () => {
     expect(actual).to.eql(expected)
   })
 
+  it("Transforms to the expected data. (c74db2)", () => {
+    const init = {
+      connections: [{ from: 1, to: 2 }],
+      items: [{ graphsData: {
+        box: {
+          options: { notCompleted: true },
+        },
+      }, id: 1, name: "foo" }, { id: 2, name: "bar" }],
+    }
+    const expected = {
+      body: [{
+        id: 1,
+        options: { notCompleted: true },
+        text: "foo",
+      }],
+      id: 2,
+      name: "bar",
+    }
+    const actual = dataFromGeneralToSpecific(init)
+
+    expect(actual).to.eql(expected)
+  })
 })

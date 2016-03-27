@@ -1,86 +1,117 @@
-import { each } from "lodash"
+import { reduce } from "ramda"
 
 import Grid from './Grid'
-import itemsOfLayerShouldBeSorted from './itemsOfLayerShouldBeSorted'
+import shouldItemsOfLayerBeSorted from './shouldItemsOfLayerBeSorted'
 
-export default (diagram, layer) => {
-  let itemsOfLayer, grid, itemsOfLayerIndex, width, gridSize, itemsShouldBeSorted
-  let totalWidth = 0
-  let totalHeight = 0
-  let maxWidth = 0
-  let maxHeight = 0
-  let whileCounter = 0
-  const itemsArray = []
-  const addedItemToGrid = (index) => {
-    if (itemsOfLayer[index].inNewRow === true) {
-      grid.addItemAtNewRow(itemsOfLayer[index])
-      itemsOfLayer.splice(index, 1)
-
-      return true
-    } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
-      grid.addItemAtCurrentPos(itemsOfLayer[index])
-      itemsOfLayer.splice(index, 1)
-
-      return true
-    } else {
-      return false
-    }
+const generateState = (layer) => {
+  const initialState = {
+    itemsArray: [],
+    itemsOfLayerIndex: 0,
+    maxHeight: 0,
+    maxWidth: 0,
+    totalHeight: 0,
+    totalWidth: 0,
+    whileCounter: 0,
   }
 
-  each(layer.items, (item) => {
-    totalWidth += item.width
-    totalHeight += item.height
-    maxHeight = (item.height > maxHeight) ? item.height : maxHeight
-    maxWidth = (item.width > maxWidth) ? item.width : maxWidth
-    itemsArray.push(item)
-  })
+  return reduce((state, item) => {
+    state.totalWidth += item.width
+    state.totalHeight += item.height
+    state.maxHeight = (item.height > state.maxHeight) ? item.height : state.maxHeight
+    state.maxWidth = (item.width > state.maxWidth) ? item.width : state.maxWidth
+    state.itemsArray.push(item)
+    return state
+  }, initialState, layer.items)
+}
 
+const wasItemAddedToGrid = (index, { grid, itemsOfLayer }, state) => {
+  if (itemsOfLayer[index].inNewRow === true) {
+    grid.addItemAtNewRow(itemsOfLayer[index])
+    itemsOfLayer.splice(index, 1)
+    state.itemsOfLayerIndex = 0
+
+    return true
+  } else if (grid.itemFitsAtCurrentPos(itemsOfLayer[index])) {
+    grid.addItemAtCurrentPos(itemsOfLayer[index])
+    itemsOfLayer.splice(index, 1)
+    state.itemsOfLayerIndex = 0
+
+    return true
+  } else {
+    return false
+  }
+}
+
+const mutateLayer = (layer, gridSize) => {
+  // This two values only persist if the layer is a top one
+  layer.x = 0
+  layer.y = 0
+  layer.width = gridSize.width
+  layer.height = (layer.items.length > 0) ? gridSize.height + 1 : gridSize.height
+}
+
+const getRawGridWidth = ({ layer, maxWidth, totalHeight, totalWidth }) => {
   if ((totalWidth / 2) >= maxWidth) {
     if (totalHeight > totalWidth) {
-      if (totalHeight / 2 < layer.items.length) width = Math.ceil(totalWidth / 2)
-      else width = totalWidth
-    } else width = Math.ceil(totalWidth / 2)
-  } else width = maxWidth
+      if (totalHeight / 2 < layer.items.length) return Math.ceil(totalWidth / 2)
+      else {
+        return totalWidth
+      }
+    } else {
+      return Math.ceil(totalWidth / 2)
+    }
+  } else {
+    return maxWidth
+  }
+}
 
-  width = (diagram.maxUnityWidth < width) ? diagram.maxUnityWidth : width
+const getGridWidth = (diagram, layer, { maxWidth, totalHeight, totalWidth }) => {
+  const rawGridWidth = getRawGridWidth({ layer, maxWidth, totalHeight, totalWidth })
 
-  grid = new Grid(width)
+  return (diagram.maxUnityWidth < rawGridWidth) ? diagram.maxUnityWidth : rawGridWidth
+}
 
-  itemsShouldBeSorted = itemsOfLayerShouldBeSorted(itemsArray)
-
+const getItemsOfLayer = (itemsShouldBeSorted, { itemsArray }) => {
   if (itemsShouldBeSorted) {
-    itemsOfLayer = itemsArray.sort((itemA, itemB) => {
+    return itemsArray.sort((itemA, itemB) => {
       if (itemA.width === itemB.width) {
         return itemA.height < itemB.height
       } else {
         return itemA.width < itemB.width
       }
     })
-  } else itemsOfLayer = itemsArray
-  addedItemToGrid(0)
-  itemsOfLayerIndex = 0
-  while (itemsOfLayer.length > 0 && whileCounter < 1000) {
-    if (addedItemToGrid(itemsOfLayerIndex)) {
-      itemsOfLayerIndex = 0
-    } else {
-      if (itemsShouldBeSorted) {
-        itemsOfLayerIndex++
+  } else {
+    return itemsArray
+  }
+}
 
-        if (itemsOfLayerIndex === itemsOfLayer.length) {
-          itemsOfLayerIndex = 0
+const populateGridUsingState = (grid, state) => {
+  const itemsOfLayer = getItemsOfLayer(itemsShouldBeSorted, state)
+  const itemsShouldBeSorted = shouldItemsOfLayerBeSorted(state.itemsArray)
+
+  wasItemAddedToGrid(0, { grid, itemsOfLayer }, state)
+  while (itemsOfLayer.length > 0 && state.whileCounter < 1000) {
+    if (!wasItemAddedToGrid(state.itemsOfLayerIndex, { grid, itemsOfLayer }, state)) {
+      if (itemsShouldBeSorted) {
+        state.itemsOfLayerIndex++
+
+        if (state.itemsOfLayerIndex === itemsOfLayer.length) {
+          state.itemsOfLayerIndex = 0
           grid.movePositionToNextRow()
         }
       } else {
         grid.movePositionToNextRow()
       }
     }
-    whileCounter++
+    state.whileCounter++
   }
+}
 
-  gridSize = grid.getSize()
-  // This two values only persist if the layer is a top one
-  layer.x = 0
-  layer.y = 0
-  layer.width = gridSize.width
-  layer.height = (layer.items.length > 0) ? gridSize.height + 1 : gridSize.height
+export default (diagram, layer) => {
+  const state = generateState(layer)
+  const gridWidth = getGridWidth(diagram, layer, state)
+  const grid = new Grid(gridWidth)
+
+  populateGridUsingState(grid, state)
+  mutateLayer(layer, grid.getSize())
 }

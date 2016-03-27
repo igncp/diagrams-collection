@@ -40,4 +40,25 @@ describeStd(__filename, () => {
 
     expect(actual).to.eql(expected)
   })
+
+  it("Transforms the expected data. (524580)", () => {
+    const init = { body: [
+      { options: { notCompleted: true }, text: "bar" },
+    ], name: "foo" }
+    const expected = {
+      connections: [{ from: 1, to: 0 }],
+      items: [{ id: 0, name: "foo" }, {
+        graphsData: {
+          box: {
+            options: { notCompleted: true },
+          },
+        },
+        id: 1,
+        name: "bar",
+      }],
+    }
+    const actual = dataFromSpecificToGeneral(init)
+
+    expect(actual).to.eql(expected)
+  })
 })

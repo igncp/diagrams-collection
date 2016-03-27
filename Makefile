@@ -1,5 +1,8 @@
-prod:
-	@grunt uglify
+build:
+	@grunt build
+
+build-prod:
+	@grunt build-prod
 
 lint: lint-jscs lint-eslint
 	@echo "All lints passing"
@@ -11,7 +14,7 @@ lint-eslint:
 	@./node_modules/.bin/eslint -c .eslintrc src/js/  --ext .js,.jsx
 
 watch:
-	@grunt
+	@npm run watch
 
 test: lint
 	@npm test

@@ -1,7 +1,7 @@
-import { forEach, keys } from "ramda"
+import { forEach, keys, isArrayLike } from "ramda"
 import mockery from "mockery"
 
-function resetAll(obj) {
+function resetAllObj(obj) {
   forEach((prop) => {
     if (typeof obj[prop] === "function" && obj[prop].reset) {
       obj[prop].reset()
@@ -9,17 +9,23 @@ function resetAll(obj) {
   })(keys(obj))
 }
 
+function resetAll(objOrArray) {
+  const fn = (isArrayLike(objOrArray)) ? forEach(resetAllObj) : resetAllObj
+  fn(objOrArray)
+}
+
 // e.g. (this, [[global, "window", windowMock]])
 export function mockReplacing(context, replacementsArr) {
   forEach((replacement) => {
     context[`previous_${replacement[1]}`] = replacement[0][replacement[1]]
     replacement[0][replacement[1]] = replacement[2]
-  })(replacementsArr)
+  }, replacementsArr)
 
   const restoreFn = () => {
     forEach((replacement) => {
       replacement[0][replacement[1]] = context[`previous_${replacement[1]}`]
-    })(replacementsArr)
+      delete context[`previous_${replacement[1]}`]
+    }, replacementsArr)
   }
 
   return restoreFn

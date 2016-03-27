@@ -4,6 +4,7 @@ import d from 'diagrams'
 
 import helpers from './helpers'
 import { getCreationFn } from './creation'
+import { diagramName } from "./constants"
 
 class Box extends d.Diagram {
   create(...args) {
@@ -27,6 +28,6 @@ class Box extends d.Diagram {
 export default () => {
   return new Box({
     helpers,
-    name: 'box',
+    name: diagramName,
   })
 }

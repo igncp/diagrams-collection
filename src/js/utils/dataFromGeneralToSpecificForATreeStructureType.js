@@ -1,88 +1,104 @@
-import { filter, find, last, propEq } from "ramda"
+// FPN: Find Parent Node
 
-import { each } from "./pure"
+import { curry, filter, find, forEach, map, omit, merge, isEmpty, propEq } from "ramda"
 
 const isUndefined = val => typeof val === "undefined"
 
-export default (generalData) => {
-  // FPN: Find Parent Node
+function mergeGraphsData(item, transformedData, toDiagramName) {
+  if (!item.graphsData) return transformedData
+
+  const newGraphsData = omit(toDiagramName, item.graphsData)
+
+  if (!isEmpty(newGraphsData)) transformedData.graphsData = newGraphsData
+
+  return merge(transformedData, item.graphsData[toDiagramName] || {})
+}
+
+const buildNodesDataRecursiveFn = ({
+  generalDataConnections, item, itemsIdToItemsMap, toDiagramName,
+}) => {
+  const transformedData = {}
+
+  transformedData.id = item.id
+
+  if (item.description) transformedData.text += `${item.name}: ${item.description}`
+  else transformedData.text = item.name
+
+  const children = filter(propEq("to", item.id), generalDataConnections)
+
+  if (children.length > 0) {
+    transformedData.items = map((child) => buildNodesDataRecursiveFn({
+      generalDataConnections,
+      item: itemsIdToItemsMap[child.from],
+      itemsIdToItemsMap, toDiagramName,
+    }), children)
+  }
+
+  return mergeGraphsData(item, transformedData, toDiagramName)
+}
+
+const findParentNode = (generalData) => {
+  let parentNode, itemsChecked
   let FPNRecursiveFailed = false
   const itemsIdToItemsMap = {}
-  const nodesData = {}
-  const findParentNodeFn = () => {
-    let itemsChecked
-    const itemsIdToFromConnectionMap = {}
-    const FPNRecursiveFn = (item) => {
-      let connection, parentItemId, parentItem
+  const itemsIdToFromConnectionMap = {}
 
-      if (itemsChecked.indexOf(item) > -1) {
-        FPNRecursiveFailed = true
+  function FPNRecursiveFn(item) {
+    let connection, parentItemId, parentItem
 
-        return
-      } else itemsChecked.push(item)
+    if (itemsChecked.indexOf(item) > -1) {
+      FPNRecursiveFailed = true
 
-      if (isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
-        connection = itemsIdToFromConnectionMap[item.id]
+      return
+    } else itemsChecked.push(item)
+
+    if (isUndefined(itemsIdToFromConnectionMap[item.id]) === false) {
+      connection = itemsIdToFromConnectionMap[item.id]
+    } else {
+      connection = filter(propEq("from", item.id))(generalData.connections)
+      itemsIdToFromConnectionMap[item.id] = connection
+    }
+
+    if (connection.length === 0) {
+      if (parentNode) {
+        if (parentNode.id !== item.id) FPNRecursiveFailed = true
+      } else parentNode = item
+    } else if (connection.length === 1) {
+      parentItemId = connection[0].to
+
+      if (isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
+        parentItem = itemsIdToItemsMap[parentItemId]
       } else {
-        connection = filter(propEq("from", item.id))(generalData.connections)
-        itemsIdToFromConnectionMap[item.id] = connection
+        parentItem = find(propEq("id", parentItemId))(generalData.items)
+        itemsIdToItemsMap[parentItemId] = parentItem
       }
-
-      if (connection.length === 0) {
-        if (parentNode) {
-          if (parentNode.id !== item.id) FPNRecursiveFailed = true
-        } else parentNode = item
-      } else if (connection.length === 1) {
-        parentItemId = connection[0].to
-
-        if (isUndefined(itemsIdToItemsMap[parentItemId]) === false) {
-          parentItem = itemsIdToItemsMap[parentItemId]
-        } else {
-          parentItem = find(propEq("id", parentItemId))(generalData.items)
-          itemsIdToItemsMap[parentItemId] = parentItem
-        }
-        FPNRecursiveFn(parentItem)
-      } else FPNRecursiveFailed = true
-    }
-
-    each((item) => {
-      if (FPNRecursiveFailed === false) {
-        itemsChecked = []
-        itemsIdToItemsMap[item.id] = item
-        FPNRecursiveFn(item)
-      }
-    })(generalData.items)
+      FPNRecursiveFn(parentItem)
+    } else FPNRecursiveFailed = true
   }
-  const buildNodesDataRecursiveFn = (transformedData, item) => {
-    let text, children
 
-    transformedData.id = item.id
-    text = item.name
-
-    if (item.description) text += `: ${item.description}`
-    transformedData.text = text
-
-    children = filter(propEq("to", item.id))(generalData.connections)
-
-    if (children.length > 0) {
-      transformedData.items = []
-      each((child) => {
-        transformedData.items.push({})
-        buildNodesDataRecursiveFn(last(transformedData.items), itemsIdToItemsMap[child.from])
-      })(children)
+  forEach((item) => {
+    if (FPNRecursiveFailed === false) {
+      itemsChecked = []
+      itemsIdToItemsMap[item.id] = item
+      FPNRecursiveFn(item)
     }
-  }
-  let parentNode
+  }, generalData.items)
 
-  findParentNodeFn()
+  return { FPNRecursiveFailed, itemsIdToItemsMap, parentNode }
+}
+
+export default curry((errorHandler, toDiagramName, generalData) => {
+  const { FPNRecursiveFailed, itemsIdToItemsMap, parentNode } = findParentNode(generalData)
 
   if (FPNRecursiveFailed) {
-    alert('The data structure is not suitable for this diagram')
+    errorHandler('The data structure is not suitable for this diagram')
 
     return []
   } else {
-    buildNodesDataRecursiveFn(nodesData, parentNode)
-
-    return nodesData
+    return buildNodesDataRecursiveFn({
+      generalDataConnections: generalData.connections,
+      item: parentNode,
+      itemsIdToItemsMap, toDiagramName,
+    })
   }
-}
+})

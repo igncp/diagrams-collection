@@ -13,6 +13,9 @@ const d3ElMock = {
   select: spy(function() {
     return this
   }),
+  style: spy(function() {
+    return this
+  }),
   text: spy(function() {
     return this
   }),

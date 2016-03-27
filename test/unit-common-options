@@ -1,0 +1,1 @@
+--require test/setup.js src/js/**/__tests__/**/*.js test/**/__tests__/**/*.js

@@ -1,36 +1,46 @@
-import { each, isObject, isString, keys } from "lodash"
+import { compose, forEach, keys } from "ramda"
+
+let store
+
+function throwIfSharedMethodAlreadyExists(newKey) {
+  if (shared[methodsVarName].indexOf(newKey) > -1) {
+    throw new Error(`The key already exists: ${newKey}`)
+  }
+}
+
+const resetStore = () => store = {}
 
 const shared = {
   get(key) {
-    shared.throwIfSharedMethodAlreadyExists(key)
+    throwIfSharedMethodAlreadyExists(key)
 
-    return shared[key]
+    return store[key]
   },
 
-  getWithStartingBreakLine: () => `<br>${shared.get(...arguments)}`,
+  getWithStartingBreakLine: (...args) => `<br>${shared.get(...args)}`,
+
+  reset() {
+    resetStore()
+  },
 
   set(data) {
-    shared.throwIfSharedMethodAlreadyExists(data)
-
+    shared.throwIfSharedMethodsAlreadyExists(data)
     for (const prop in data) {
-      if (data.hasOwnProperty(prop)) shared[prop] = data[prop]
+      store[prop] = data[prop]
     }
   },
 
-  throwIfSharedMethodAlreadyExists(data) {
-    let sharedKeys
-
-    if (isObject(data)) {
-      sharedKeys = Object.keys(data)
-      each(sharedKeys, shared.throwIfSharedMethodAlreadyExists)
-    } else if (isString(data)) {
-      if (shared[methodsVarName].indexOf(data) > 0) throw new Error(`Reserved keyword: ${data}`)
-    }
+  throwIfSharedMethodsAlreadyExists(keyValueObj) {
+    compose(
+      forEach(throwIfSharedMethodAlreadyExists),
+      keys
+    )(keyValueObj)
   },
 }
 
 const methodsVarName = 'builtInMethods'
 
 shared[methodsVarName] = keys(shared).concat(methodsVarName)
+resetStore()
 
 export default shared

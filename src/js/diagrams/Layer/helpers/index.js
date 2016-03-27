@@ -1,6 +1,6 @@
-import { each } from "lodash"
+import { merge, reduce } from "ramda"
 
-import _methodsWithCode from "./_methodsWithCode"
+import _getMethodsWithCode from "./_getMethodsWithCode"
 
 import Grid from "./Grid"
 import calculateLayerWithChildrenDimensions from "./calculateLayerWithChildrenDimensions"
@@ -16,11 +16,11 @@ import getStaticOptsLetters from "./getStaticOptsLetters"
 import handleConnectedToNextCaseIfNecessary from "./handleConnectedToNextCaseIfNecessary"
 import idOpt from "./idOpt"
 import idsHandler from "./idsHandler"
-import itemsOfLayerShouldBeSorted from "./itemsOfLayerShouldBeSorted"
 import newLayer from "./newLayer"
 import newLayerConnectedToNext from "./newLayerConnectedToNext"
+import shouldItemsOfLayerBeSorted from "./shouldItemsOfLayerBeSorted"
 
-const helpers = {
+const fileHelpers = {
   Grid,
   calculateLayerWithChildrenDimensions,
   connectWithOpt,
@@ -35,14 +35,18 @@ const helpers = {
   handleConnectedToNextCaseIfNecessary,
   idOpt,
   idsHandler,
-  itemsOfLayerShouldBeSorted,
   newLayer,
   newLayerConnectedToNext,
+  shouldItemsOfLayerBeSorted,
 }
 
-each([
+const totalHelpers = reduce((acc, newHelpersMethod) => {
+  const newMethods = _getMethodsWithCode(acc, newHelpersMethod)
+
+  return merge(acc, newMethods)
+}, fileHelpers, [
   'newLayer',
   'newLayerConnectedToNext',
-], (helpersMethod) => _methodsWithCode(helpers, helpersMethod))
+])
 
-export default helpers
+export default totalHelpers
