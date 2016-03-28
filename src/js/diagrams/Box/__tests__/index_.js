@@ -3,7 +3,7 @@ import { Diagram, getState, resetState } from "../../../diagram"
 
 const { mockReplacing, mockWithMockery } = testsHelpers
 
-const helpersMock = "foo"
+const helpersMock = {}
 const getCreationFnReturnStub = stub()
 const creationMock = {
   getCreationFn: stub().returns(getCreationFnReturnStub),

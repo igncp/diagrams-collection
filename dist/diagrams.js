@@ -21826,9 +21826,15 @@
 	
 	var each = (0, _ramda.addIndex)(_ramda.forEach);
 	
+	var isUndefined = function isUndefined(item) {
+	  return typeof item === "undefined";
+	};
+	var removeUndefined = (0, _ramda.filter)((0, _ramda.compose)(_ramda.not, isUndefined));
+	
 	exports.default = {
 	  each: each,
-	  refToProp: refToProp
+	  refToProp: refToProp,
+	  removeUndefined: removeUndefined
 	};
 	module.exports = exports['default'];
 
@@ -44471,7 +44477,7 @@
 		"./Graph/index": 82,
 		"./Layer/creation/index": 83,
 		"./Layer/helpers/index": 85,
-		"./Layer/index": 105
+		"./Layer/index": 104
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -44833,7 +44839,7 @@
 /* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -44841,7 +44847,7 @@
 	
 	var _ramda = __webpack_require__(5);
 	
-	var _diagrams = __webpack_require__(1);
+	var _diagram = __webpack_require__(32);
 	
 	var _addBodyItemsAndUpdateHeights = __webpack_require__(39);
 	
@@ -44865,7 +44871,7 @@
 	};
 	
 	exports.default = function (creationId, opts, cb) {
-	  var conf = _diagrams.Diagram.getDataWithCreationId(creationId)[1];
+	  var conf = _diagram.Diagram.getDataWithCreationId(creationId)[1];
 	  var bodyData = conf.body;
 	
 	  opts = opts || {};
@@ -45298,6 +45304,8 @@
 	
 	var _lodash = __webpack_require__(33);
 	
+	var _pure = __webpack_require__(24);
+	
 	var _diagrams = __webpack_require__(1);
 	
 	var _diagrams2 = _interopRequireDefault(_diagrams);
@@ -45348,7 +45356,7 @@
 	
 	  if (items === conf.body) bodyPosition = 1;
 	
-	  (0, _lodash.each)(items, function (item, itemIndex) {
+	  if (items) (0, _pure.each)(function (item, itemIndex) {
 	    if (item.hidden !== true) {
 	      var currentTextGId = "diagrams-box-text-" + textGId++;
 	
@@ -45428,7 +45436,7 @@
 	
 	      diagram.addMouseListenersToEl(textEl, item);
 	    }
-	  });
+	  }, items);
 	};
 	
 	exports.default = function (_ref2) {
@@ -47025,6 +47033,8 @@
 	
 	var _helpers2 = _interopRequireDefault(_helpers);
 	
+	var _constants = __webpack_require__(91);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var layerGId = 0;
@@ -47133,9 +47143,11 @@
 	      var loopSidesToGetConnection = function loopSidesToGetConnection(sameTypeOfSidesCondition) {
 	        eachSide(function (sideA) {
 	          eachSide(function (sideB) {
-	            if ((0, _lodash.isUndefined)(layerB.alreadyConnections)) layerB.alreadyConnections = [];
+	            if ((0, _lodash.isUndefined)(layerB.connectionsAlreadyProcessed)) {
+	              layerB.connectionsAlreadyProcessed = [];
+	            }
 	
-	            if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0 && layerB.alreadyConnections.indexOf(sideB) < 0) {
+	            if (sideA !== sideB && layerA.connectionsAlreadyProcessed.indexOf(sideA) < 0 && layerB.connectionsAlreadyProcessed.indexOf(sideB) < 0) {
 	              if (sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false || sameTypeOfSides(sideA, sideB)) {
 	                if (doesNotCrossAnyOfTwoLayers({ posA: layerAPos[sideA],
 	                  posB: layerBPos[sideB], sideA: sideA, sideB: sideB })) {
@@ -47160,8 +47172,8 @@
 	
 	      if (changed !== true) loopSidesToGetConnection(false);
 	
-	      layerA.alreadyConnections.push(distance.sideA);
-	      layerB.alreadyConnections.push(distance.sideB);
+	      layerA.connectionsAlreadyProcessed.push(distance.sideA);
+	      layerB.connectionsAlreadyProcessed.push(distance.sideB);
 	
 	      return distance;
 	    };
@@ -47218,7 +47230,7 @@
 	
 	        (0, _lodash.each)(layer.connectedTo, function (layerConnected) {
 	          layerConnectedId = (0, _lodash.isObject)(layerConnected) ? layerConnected.id : layerConnected;
-	          layerConnectedType = (0, _lodash.isObject)(layerConnected) && layerConnected.type ? layerConnected.type : 'standard';
+	          layerConnectedType = (0, _lodash.isObject)(layerConnected) && layerConnected.type ? layerConnected.type : _constants.defaultConnectionType;
 	
 	          layerConnectedObj = (0, _lodash.where)(layers, {
 	            id: layerConnectedId
@@ -47451,57 +47463,53 @@
 	
 	var _connectWithOpt2 = _interopRequireDefault(_connectWithOpt);
 	
-	var _connectWithOptAndIdOpt = __webpack_require__(91);
-	
-	var _connectWithOptAndIdOpt2 = _interopRequireDefault(_connectWithOptAndIdOpt);
-	
 	var _dataFromGeneralToSpecific = __webpack_require__(92);
 	
 	var _dataFromGeneralToSpecific2 = _interopRequireDefault(_dataFromGeneralToSpecific);
 	
-	var _dataFromSpecificToGeneral = __webpack_require__(94);
+	var _dataFromSpecificToGeneral = __webpack_require__(93);
 	
 	var _dataFromSpecificToGeneral2 = _interopRequireDefault(_dataFromSpecificToGeneral);
 	
-	var _extendOpts = __webpack_require__(95);
-	
-	var _extendOpts2 = _interopRequireDefault(_extendOpts);
-	
-	var _generateLayersData = __webpack_require__(98);
+	var _generateLayersData = __webpack_require__(94);
 	
 	var _generateLayersData2 = _interopRequireDefault(_generateLayersData);
 	
-	var _getConfigHandler = __webpack_require__(99);
+	var _getConfigHandler = __webpack_require__(95);
 	
 	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
 	
-	var _getFinalLayerDimensions = __webpack_require__(102);
+	var _getFinalLayerDimensions = __webpack_require__(98);
 	
 	var _getFinalLayerDimensions2 = _interopRequireDefault(_getFinalLayerDimensions);
 	
-	var _getStaticOptsLetters = __webpack_require__(97);
+	var _getStaticOptsLetters = __webpack_require__(99);
 	
 	var _getStaticOptsLetters2 = _interopRequireDefault(_getStaticOptsLetters);
 	
-	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(100);
+	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(96);
 	
 	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
 	
-	var _idOpt = __webpack_require__(96);
+	var _idOpt = __webpack_require__(100);
 	
 	var _idOpt2 = _interopRequireDefault(_idOpt);
 	
-	var _idsHandler = __webpack_require__(101);
+	var _idsHandler = __webpack_require__(97);
 	
 	var _idsHandler2 = _interopRequireDefault(_idsHandler);
 	
-	var _newLayer = __webpack_require__(103);
+	var _newLayer = __webpack_require__(101);
 	
 	var _newLayer2 = _interopRequireDefault(_newLayer);
 	
-	var _newLayerConnectedToNext = __webpack_require__(104);
+	var _newLayerConnectedToNext = __webpack_require__(103);
 	
 	var _newLayerConnectedToNext2 = _interopRequireDefault(_newLayerConnectedToNext);
+	
+	var _parseOptsString = __webpack_require__(102);
+	
+	var _parseOptsString2 = _interopRequireDefault(_parseOptsString);
 	
 	var _shouldItemsOfLayerBeSorted = __webpack_require__(89);
 	
@@ -47513,10 +47521,8 @@
 	  Grid: _Grid2.default,
 	  calculateLayerWithChildrenDimensions: _calculateLayerWithChildrenDimensions2.default,
 	  connectWithOpt: _connectWithOpt2.default,
-	  connectWithOptAndIdOpt: _connectWithOptAndIdOpt2.default,
 	  dataFromGeneralToSpecific: _dataFromGeneralToSpecific2.default,
 	  dataFromSpecificToGeneral: _dataFromSpecificToGeneral2.default,
-	  extendOpts: _extendOpts2.default,
 	  generateLayersData: _generateLayersData2.default,
 	  getConfigHandler: _getConfigHandler2.default,
 	  getFinalLayerDimensions: _getFinalLayerDimensions2.default,
@@ -47526,6 +47532,7 @@
 	  idsHandler: _idsHandler2.default,
 	  newLayer: _newLayer2.default,
 	  newLayerConnectedToNext: _newLayerConnectedToNext2.default,
+	  parseOptsString: _parseOptsString2.default,
 	  shouldItemsOfLayerBeSorted: _shouldItemsOfLayerBeSorted2.default
 	};
 	
@@ -47929,52 +47936,41 @@
 	  value: true
 	});
 	
-	var _lodash = __webpack_require__(33);
+	var _ramda = __webpack_require__(5);
 	
-	exports.default = function (ids, result, type) {
-	  var objs = [];
+	var _constants = __webpack_require__(91);
 	
-	  if ((0, _lodash.isNumber)(ids)) ids = [ids];
-	  type = type || 'standard';
+	var isNumber = (0, _ramda.is)(Number);
+	var reduceIdsArray = (0, _ramda.curry)(function (type, acc, id) {
+	  return (0, _ramda.concat)(acc, [{
+	    id: "layer-" + id + "-custom",
+	    type: type
+	  }]);
+	});
 	
-	  (0, _lodash.each)(ids, function (id) {
-	    objs.push({
-	      id: "layer-" + id + "-custom",
-	      type: type
-	    });
-	  });
+	exports.default = function (ids, item) {
+	  var type = arguments.length <= 2 || arguments[2] === undefined ? _constants.defaultConnectionType : arguments[2];
 	
-	  if ((0, _lodash.isUndefined)(result.connectedTo) === true) result.connectedTo = objs;else result.connectedTo = result.connectedTo.concat(objs);
+	  var idsArray = isNumber(ids) ? [ids] : ids;
+	  var connections = (0, _ramda.reduce)(reduceIdsArray(type), [], idsArray);
+	
+	  item.connectedTo = !item.connectedTo ? connections : item.connectedTo.concat(connections);
 	};
 	
 	module.exports = exports['default'];
 
 /***/ },
 /* 91 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	var diagramName = exports.diagramName = "layer";
 	
-	var _lodash = __webpack_require__(33);
-	
-	var _diagrams = __webpack_require__(1);
-	
-	var _diagrams2 = _interopRequireDefault(_diagrams);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	exports.default = function (ids, id) {
-	  var connectWithOpt = _diagrams2.default.layer.connectWithOpt(ids);
-	  var idOpt = _diagrams2.default.layer.idOpt(id);
-	
-	  return (0, _lodash.extend)(connectWithOpt, idOpt);
-	};
-	
-	module.exports = exports['default'];
+	var defaultConnectionType = exports.defaultConnectionType = "standard";
 
 /***/ },
 /* 92 */
@@ -47986,16 +47982,16 @@
 	  value: true
 	});
 	
-	var _diagrams = __webpack_require__(1);
+	var _constants = __webpack_require__(91);
 	
-	var _diagrams2 = _interopRequireDefault(_diagrams);
+	var _dataFromGeneralToSpecificForATreeStructureType = __webpack_require__(14);
 	
-	var _constants = __webpack_require__(93);
+	var _dataFromGeneralToSpecificForATreeStructureType2 = _interopRequireDefault(_dataFromGeneralToSpecificForATreeStructureType);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	exports.default = function (generalData) {
-	  return _diagrams2.default.utils.dataFromGeneralToSpecificForATreeStructureType(global.alert, _constants.diagramName, generalData);
+	  return (0, _dataFromGeneralToSpecificForATreeStructureType2.default)(global.alert, _constants.diagramName, generalData);
 	};
 	
 	module.exports = exports['default'];
@@ -48003,14 +47999,89 @@
 
 /***/ },
 /* 93 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	var diagramName = exports.diagramName = "layer";
+	
+	var _ramda = __webpack_require__(5);
+	
+	var _constants = __webpack_require__(91);
+	
+	var _pure = __webpack_require__(24);
+	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
+	var generateRecursiveFnState = function generateRecursiveFnState() {
+	  return {
+	    connections: [],
+	    finalItems: [],
+	    idCounter: -1
+	  };
+	};
+	
+	var createGeneralItem = function createGeneralItem(_ref, item, state) {
+	  var description = _ref.description;
+	  var name = _ref.name;
+	
+	  return (0, _pure.removeUndefined)({
+	    description: description,
+	    graphsData: (0, _ramda.merge)(item.graphsData || {}, _defineProperty({}, _constants.diagramName, (0, _pure.removeUndefined)({
+	      id: item.id,
+	      relationships: item.options
+	    }))),
+	    id: ++state.idCounter,
+	    name: name || item.fullText
+	  });
+	};
+	
+	var recursiveFn = function recursiveFn(state, items, generalItemParent) {
+	  var connections = state.connections;
+	  var finalItems = state.finalItems;
+	
+	
+	  (0, _ramda.forEach)(function (item) {
+	    var firstOccurrence = /(\. |:)/.exec(item.fullText);
+	    var name = void 0,
+	        description = void 0;
+	
+	    if (firstOccurrence) {
+	      var splittedText = item.fullText.split(firstOccurrence[0]);
+	
+	      name = splittedText[0];
+	      description = splittedText.slice(1).join(firstOccurrence);
+	    }
+	
+	    var generalItem = createGeneralItem({ description: description, name: name }, item, state);
+	
+	    finalItems.push(generalItem);
+	
+	    if (generalItemParent) {
+	      connections.push({
+	        from: generalItem.id,
+	        to: generalItemParent.id
+	      });
+	    }
+	
+	    if (item.items && item.items.length > 0) recursiveFn(state, item.items, generalItem);
+	  }, items);
+	};
+	
+	exports.default = function (conf) {
+	  var state = generateRecursiveFnState();
+	
+	  if (!(0, _ramda.isEmpty)(conf)) recursiveFn(state, [conf]);
+	
+	  return {
+	    connections: state.connections,
+	    items: state.finalItems
+	  };
+	};
+	
+	module.exports = exports['default'];
 
 /***/ },
 /* 94 */
@@ -48022,62 +48093,50 @@
 	  value: true
 	});
 	
-	var _lodash = __webpack_require__(33);
+	var _pure = __webpack_require__(24);
 	
-	var _ramda = __webpack_require__(5);
+	var _calculateLayerWithChildrenDimensions = __webpack_require__(88);
 	
-	var _constants = __webpack_require__(93);
+	var _calculateLayerWithChildrenDimensions2 = _interopRequireDefault(_calculateLayerWithChildrenDimensions);
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	var _getConfigHandler = __webpack_require__(95);
 	
-	exports.default = function (conf) {
-	  var maxId = -1;
-	  var finalItems = [];
-	  var connections = [];
-	  var recursiveFn = function recursiveFn(items, parentCreatedItem) {
-	    (0, _lodash.each)(items, function (item) {
-	      var firstOccurrence = /(\. |:)/.exec(item.fullText);
-	      var name = void 0,
-	          description = void 0,
-	          splittedText = void 0,
-	          createdItem = void 0;
+	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
 	
-	      if (firstOccurrence) {
-	        splittedText = item.fullText.split(firstOccurrence[0]);
-	        name = splittedText[0];
-	        description = splittedText.slice(1).join(firstOccurrence);
-	      }
+	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(96);
 	
-	      createdItem = {
-	        description: description || null,
-	        graphsData: (0, _ramda.merge)(item.graphsData || {}, _defineProperty({}, _constants.diagramName, {
-	          id: item.id,
-	          relationships: item.options
-	        })),
-	        id: ++maxId,
-	        name: name || item.fullText
-	      };
-	      finalItems.push(createdItem);
+	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
 	
-	      if (parentCreatedItem) {
-	        connections.push({
-	          from: createdItem.id,
-	          to: parentCreatedItem.id
-	        });
-	      }
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	      if (item.items && item.items.length > 0) recursiveFn(item.items, createdItem);
-	    });
-	  };
+	var generateLayersData = function generateLayersData(diagram, layers, currentDepth) {
+	  var config = (0, _getConfigHandler2.default)().get();
+	  var maxDepth = void 0,
+	      itemsDepth = void 0;
 	
-	  recursiveFn([conf]);
+	  currentDepth = currentDepth || 1;
+	  maxDepth = currentDepth;
+	  (0, _pure.each)(function (layer, layerIndex) {
+	    if (layer.showNumbersAll === true) config.showNumbersAll = true;
+	    layer.depth = currentDepth;
+	    (0, _handleConnectedToNextCaseIfNecessary2.default)(layers, layerIndex);
 	
-	  return {
-	    connections: connections,
-	    items: finalItems
-	  };
+	    if (layer.items.length > 0) {
+	      itemsDepth = generateLayersData(diagram, layer.items, currentDepth + 1);
+	      (0, _calculateLayerWithChildrenDimensions2.default)(diagram, layer);
+	      maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+	    } else {
+	      layer.width = 1;
+	      layer.height = 1;
+	      maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
+	    }
+	    layer.connectionsAlreadyProcessed = [];
+	  }, layers);
+	
+	  return maxDepth;
 	};
 	
+	exports.default = generateLayersData;
 	module.exports = exports['default'];
 
 /***/ },
@@ -48090,47 +48149,35 @@
 	  value: true
 	});
 	
-	var _lodash = __webpack_require__(33);
+	var _ramda = __webpack_require__(5);
 	
-	var _idOpt = __webpack_require__(96);
+	var defaultConfig = {
+	  depthHeightFactor: 2,
+	  depthWidthFactor: 4,
+	  heightSize: 60,
+	  showNumbersAll: false,
+	  widthSize: 350
+	};
+	var config = void 0;
 	
-	var _idOpt2 = _interopRequireDefault(_idOpt);
-	
-	var _getStaticOptsLetters = __webpack_require__(97);
-	
-	var _getStaticOptsLetters2 = _interopRequireDefault(_getStaticOptsLetters);
-	
-	var _connectWithOpt = __webpack_require__(90);
-	
-	var _connectWithOpt2 = _interopRequireDefault(_connectWithOpt);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	var handler = {
+	  get: function get() {
+	    return config;
+	  },
+	  setDefault: function setDefault() {
+	    return config = (0, _ramda.merge)({}, defaultConfig);
+	  }
+	};
 	
 	exports.default = function () {
-	  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	    args[_key] = arguments[_key];
-	  }
-	
-	  var result = {};
-	
-	  (0, _lodash.each)(args, function (arg) {
-	    if (typeof arg === 'string') {
-	      (0, _lodash.each)(arg.split(' '), function (opt) {
-	        if (opt.substr(0, 3) === 'id-') result = (0, _lodash.extend)(result, (0, _idOpt2.default)(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') (0, _connectWithOpt2.default)(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') (0, _connectWithOpt2.default)(Number(opt.substr(4, opt.length)), result, 'dashed');else result = (0, _lodash.extend)(result, (0, _getStaticOptsLetters2.default)()[opt]);
-	      });
-	    } else if ((0, _lodash.isObject)(arg)) {
-	      result = (0, _lodash.extend)(result, arg);
-	    }
-	  });
-	
-	  return result;
+	  return handler;
 	};
 	
 	module.exports = exports['default'];
 
 /***/ },
 /* 96 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
@@ -48138,16 +48185,95 @@
 	  value: true
 	});
 	
-	exports.default = function (id) {
-	  return {
-	    id: "layer-" + id + "-custom"
-	  };
+	var _lodash = __webpack_require__(33);
+	
+	var _idsHandler = __webpack_require__(97);
+	
+	var _idsHandler2 = _interopRequireDefault(_idsHandler);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = function (layers, currentIndex) {
+	  var layer = layers[currentIndex];
+	  var nextLayer = layers[currentIndex + 1];
+	  var connectedTo = void 0,
+	      newId = void 0;
+	
+	  if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
+	    if (nextLayer.id) newId = nextLayer.id;else {
+	      newId = "to-next-" + String(_idsHandler2.default.increase());
+	      nextLayer.id = newId;
+	    }
+	
+	    if ((0, _lodash.isObject)(layer.connectedWithNext) && layer.connectedWithNext.type) {
+	      connectedTo = {
+	        id: newId,
+	        type: layer.connectedWithNext.type
+	      };
+	    } else connectedTo = newId;
+	
+	    if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
+	  }
 	};
 	
 	module.exports = exports['default'];
 
 /***/ },
 /* 97 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var ids = 0;
+	
+	exports.default = {
+	  increase: function increase() {
+	    return ++ids;
+	  },
+	  reset: function reset() {
+	    return ids = 0;
+	  }
+	};
+	module.exports = exports['default'];
+
+/***/ },
+/* 98 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _getConfigHandler = __webpack_require__(95);
+	
+	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = function (layer) {
+	  var config = (0, _getConfigHandler2.default)().get();
+	  var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
+	  var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
+	  var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
+	  var fill = 'url(#color-' + String(layer.depth - 1) + ')';
+	  var dimensions = { fill: fill, height: height, transform: transform, width: width };
+	
+	  if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
+	    dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
+	  }
+	
+	  return dimensions;
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 99 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -48184,144 +48310,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 98 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _lodash = __webpack_require__(33);
-	
-	var _calculateLayerWithChildrenDimensions = __webpack_require__(88);
-	
-	var _calculateLayerWithChildrenDimensions2 = _interopRequireDefault(_calculateLayerWithChildrenDimensions);
-	
-	var _getConfigHandler = __webpack_require__(99);
-	
-	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
-	
-	var _handleConnectedToNextCaseIfNecessary = __webpack_require__(100);
-	
-	var _handleConnectedToNextCaseIfNecessary2 = _interopRequireDefault(_handleConnectedToNextCaseIfNecessary);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var generateLayersData = function generateLayersData(diagram, layers, currentDepth) {
-	  var config = (0, _getConfigHandler2.default)().get();
-	  var maxDepth = void 0,
-	      itemsDepth = void 0;
-	
-	  currentDepth = currentDepth || 1;
-	  maxDepth = currentDepth;
-	  (0, _lodash.each)(layers, function (layer, layerIndex) {
-	    if (layer.showNumbersAll === true) config.showNumbersAll = true;
-	    layer.depth = currentDepth;
-	    (0, _handleConnectedToNextCaseIfNecessary2.default)(layers, layerIndex);
-	
-	    if (layer.items.length > 0) {
-	      itemsDepth = generateLayersData(diagram, layer.items, currentDepth + 1);
-	      layer.maxLayerDepthBelow = itemsDepth - currentDepth;
-	      (0, _calculateLayerWithChildrenDimensions2.default)(diagram, layer);
-	      maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
-	    } else {
-	      layer.maxLayerDepthBelow = 0;
-	      layer.width = 1;
-	      layer.height = 1;
-	      maxDepth = maxDepth < itemsDepth ? itemsDepth : maxDepth;
-	    }
-	    layer.alreadyConnections = [];
-	  });
-	
-	  return maxDepth;
-	};
-	
-	exports.default = generateLayersData;
-	module.exports = exports['default'];
-
-/***/ },
-/* 99 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _ramda = __webpack_require__(5);
-	
-	var defaultConfig = {
-	  depthHeightFactor: 2,
-	  depthWidthFactor: 4,
-	  heightSize: 60,
-	  showNumbersAll: false,
-	  widthSize: 350
-	};
-	var config = void 0;
-	
-	var handler = {
-	  get: function get() {
-	    return config;
-	  },
-	  setDefault: function setDefault() {
-	    return config = (0, _ramda.merge)({}, defaultConfig);
-	  }
-	};
-	
-	exports.default = function () {
-	  return handler;
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
 /* 100 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _lodash = __webpack_require__(33);
-	
-	var _idsHandler = __webpack_require__(101);
-	
-	var _idsHandler2 = _interopRequireDefault(_idsHandler);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	exports.default = function (layers, currentIndex) {
-	  var layer = layers[currentIndex];
-	  var nextLayer = layers[currentIndex + 1];
-	  var connectedTo = void 0,
-	      newId = void 0;
-	
-	  if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-	    if (nextLayer.id) newId = nextLayer.id;else {
-	      newId = "to-next-" + String(_idsHandler2.default.increase());
-	      nextLayer.id = newId;
-	    }
-	
-	    if ((0, _lodash.isObject)(layer.connectedWithNext) && layer.connectedWithNext.type) {
-	      connectedTo = {
-	        id: newId,
-	        type: layer.connectedWithNext.type
-	      };
-	    } else connectedTo = newId;
-	
-	    if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
-	  }
-	};
-	
-	module.exports = exports['default'];
-
-/***/ },
-/* 101 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -48329,53 +48318,17 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	var ids = 0;
 	
-	exports.default = {
-	  increase: function increase() {
-	    return ++ids;
-	  },
-	  reset: function reset() {
-	    return ids = 0;
-	  }
-	};
-	module.exports = exports['default'];
-
-/***/ },
-/* 102 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _getConfigHandler = __webpack_require__(99);
-	
-	var _getConfigHandler2 = _interopRequireDefault(_getConfigHandler);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	exports.default = function (layer) {
-	  var config = (0, _getConfigHandler2.default)().get();
-	  var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
-	  var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
-	  var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
-	  var fill = 'url(#color-' + String(layer.depth - 1) + ')';
-	  var dimensions = { fill: fill, height: height, transform: transform, width: width };
-	
-	  if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
-	    dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
-	  }
-	
-	  return dimensions;
+	exports.default = function (id) {
+	  return {
+	    id: "layer-" + id + "-custom"
+	  };
 	};
 	
 	module.exports = exports['default'];
 
 /***/ },
-/* 103 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48386,13 +48339,13 @@
 	
 	var _lodash = __webpack_require__(33);
 	
-	var _idsHandler = __webpack_require__(101);
+	var _idsHandler = __webpack_require__(97);
 	
 	var _idsHandler2 = _interopRequireDefault(_idsHandler);
 	
-	var _extendOpts = __webpack_require__(95);
+	var _parseOptsString = __webpack_require__(102);
 	
-	var _extendOpts2 = _interopRequireDefault(_extendOpts);
+	var _parseOptsString2 = _interopRequireDefault(_parseOptsString);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -48400,7 +48353,7 @@
 	  var layer = { text: text };
 	
 	  if ((0, _lodash.isArray)(opts)) items = opts;else {
-	    if ((0, _lodash.isString)(opts)) opts = (0, _extendOpts2.default)(opts);
+	    if ((0, _lodash.isString)(opts)) opts = (0, _parseOptsString2.default)(opts);
 	
 	    if ((0, _lodash.isObject)(opts)) layer = (0, _lodash.extend)(layer, opts);
 	  }
@@ -48416,7 +48369,55 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 104 */
+/* 102 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _lodash = __webpack_require__(33);
+	
+	var _idOpt = __webpack_require__(100);
+	
+	var _idOpt2 = _interopRequireDefault(_idOpt);
+	
+	var _getStaticOptsLetters = __webpack_require__(99);
+	
+	var _getStaticOptsLetters2 = _interopRequireDefault(_getStaticOptsLetters);
+	
+	var _connectWithOpt = __webpack_require__(90);
+	
+	var _connectWithOpt2 = _interopRequireDefault(_connectWithOpt);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = function () {
+	  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	    args[_key] = arguments[_key];
+	  }
+	
+	  var result = {};
+	
+	  (0, _lodash.each)(args, function (arg) {
+	    if (typeof arg === 'string') {
+	      (0, _lodash.each)(arg.split(' '), function (opt) {
+	        if (opt.substr(0, 3) === 'id-') result = (0, _lodash.extend)(result, (0, _idOpt2.default)(opt.substr(3, opt.length)));else if (opt.substr(0, 3) === 'ct-') (0, _connectWithOpt2.default)(Number(opt.substr(3, opt.length)), result);else if (opt.substr(0, 4) === 'ctd-') (0, _connectWithOpt2.default)(Number(opt.substr(4, opt.length)), result, 'dashed');else result = (0, _lodash.extend)(result, (0, _getStaticOptsLetters2.default)()[opt]);
+	      });
+	    } else if ((0, _lodash.isObject)(arg)) {
+	      result = (0, _lodash.extend)(result, arg);
+	    }
+	  });
+	
+	  return result;
+	};
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48427,7 +48428,7 @@
 	
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 	
-	var _newLayer = __webpack_require__(103);
+	var _newLayer = __webpack_require__(101);
 	
 	var _newLayer2 = _interopRequireDefault(_newLayer);
 	
@@ -48444,7 +48445,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 105 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48467,7 +48468,7 @@
 	
 	var _creation = __webpack_require__(83);
 	
-	var _constants = __webpack_require__(93);
+	var _constants = __webpack_require__(91);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	

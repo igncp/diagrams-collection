@@ -6,7 +6,7 @@ const creationIdMock = "creation-id"
 const returnedConf = {
   body: [{ items: [ { collapsedItems: [{ text: "bar" }], text: "foo" }] }],
 }
-const diagramsMock = {
+const diagramMock = {
   Diagram: {
     getDataWithCreationId: stub(),
   },
@@ -20,10 +20,10 @@ describeStd(__filename, () => {
 
   beforeEach(function() {
     this.resetMockery = mockWithMockery(require.resolve("../traverseBodyDataAndRefresh"), [
-      ["diagrams", diagramsMock],
+      ["../../../diagram", diagramMock],
       ["./addBodyItemsAndUpdateHeights", addBodyItemsAndUpdateHeightsMock],
     ])
-    diagramsMock.Diagram.getDataWithCreationId
+    diagramMock.Diagram.getDataWithCreationId
       .withArgs(creationIdMock)
       .returns([null, returnedConf])
     traverseBodyDataAndRefresh = require("../traverseBodyDataAndRefresh")
@@ -31,7 +31,7 @@ describeStd(__filename, () => {
   afterEach(function() {
     this.resetMockery()
     addBodyItemsAndUpdateHeightsMock.run.reset()
-    diagramsMock.Diagram.getDataWithCreationId.reset()
+    diagramMock.Diagram.getDataWithCreationId.reset()
   })
 
   it("Calls addBodyItemsAndUpdateHeights.", () => {

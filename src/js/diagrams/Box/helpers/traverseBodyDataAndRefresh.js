@@ -1,6 +1,6 @@
 import { forEach } from "ramda"
 
-import { Diagram } from 'diagrams'
+import { Diagram } from "../../../diagram"
 import addBodyItemsAndUpdateHeights from './addBodyItemsAndUpdateHeights'
 
 const recursiveFn = ({ cb, items, opts, parents }) => {

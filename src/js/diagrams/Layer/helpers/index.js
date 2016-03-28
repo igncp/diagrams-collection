@@ -5,10 +5,8 @@ import _getMethodsWithCode from "./_getMethodsWithCode"
 import Grid from "./Grid"
 import calculateLayerWithChildrenDimensions from "./calculateLayerWithChildrenDimensions"
 import connectWithOpt from "./connectWithOpt"
-import connectWithOptAndIdOpt from "./connectWithOptAndIdOpt"
 import dataFromGeneralToSpecific from "./dataFromGeneralToSpecific"
 import dataFromSpecificToGeneral from "./dataFromSpecificToGeneral"
-import extendOpts from "./extendOpts"
 import generateLayersData from "./generateLayersData"
 import getConfigHandler from "./getConfigHandler"
 import getFinalLayerDimensions from "./getFinalLayerDimensions"
@@ -18,16 +16,15 @@ import idOpt from "./idOpt"
 import idsHandler from "./idsHandler"
 import newLayer from "./newLayer"
 import newLayerConnectedToNext from "./newLayerConnectedToNext"
+import parseOptsString from "./parseOptsString"
 import shouldItemsOfLayerBeSorted from "./shouldItemsOfLayerBeSorted"
 
 const fileHelpers = {
   Grid,
   calculateLayerWithChildrenDimensions,
   connectWithOpt,
-  connectWithOptAndIdOpt,
   dataFromGeneralToSpecific,
   dataFromSpecificToGeneral,
-  extendOpts,
   generateLayersData,
   getConfigHandler,
   getFinalLayerDimensions,
@@ -37,6 +34,7 @@ const fileHelpers = {
   idsHandler,
   newLayer,
   newLayerConnectedToNext,
+  parseOptsString,
   shouldItemsOfLayerBeSorted,
 }
 

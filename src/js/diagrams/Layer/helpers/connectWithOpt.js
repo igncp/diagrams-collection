@@ -1,18 +1,18 @@
-import { each, isNumber, isUndefined } from "lodash"
+import { concat, curry, is, reduce } from "ramda"
 
-export default (ids, result, type) => {
-  const objs = []
+import { defaultConnectionType } from "../constants"
 
-  if (isNumber(ids)) ids = [ids]
-  type = type || 'standard'
+const isNumber = is(Number)
+const reduceIdsArray = curry((type, acc, id) => concat(acc, [{
+  id: `layer-${id}-custom`,
+  type,
+}]))
 
-  each(ids, (id) => {
-    objs.push({
-      id: `layer-${id}-custom`,
-      type,
-    })
-  })
+export default (ids, item, type = defaultConnectionType) => {
+  const idsArray = isNumber(ids) ? [ids] : ids
+  const connections = reduce(reduceIdsArray(type), [], idsArray)
 
-  if (isUndefined(result.connectedTo) === true) result.connectedTo = objs
-  else result.connectedTo = result.connectedTo.concat(objs)
+  item.connectedTo = !item.connectedTo
+    ? connections
+    : item.connectedTo.concat(connections)
 }

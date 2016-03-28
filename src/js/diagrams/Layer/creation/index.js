@@ -5,6 +5,7 @@ import d from 'diagrams'
 import shapes from "../../../shapes"
 
 import helpers from '../helpers'
+import { defaultConnectionType } from "../constants"
 
 let layerGId = 0
 const dTextFn = d.utils.textFn
@@ -121,10 +122,12 @@ export const getCreationFn = (diagram) => {
       const loopSidesToGetConnection = (sameTypeOfSidesCondition) => {
         eachSide((sideA) => {
           eachSide((sideB) => {
-            if (isUndefined(layerB.alreadyConnections)) layerB.alreadyConnections = []
+            if (isUndefined(layerB.connectionsAlreadyProcessed)) {
+              layerB.connectionsAlreadyProcessed = []
+            }
 
-            if (sideA !== sideB && layerA.alreadyConnections.indexOf(sideA) < 0
-              && layerB.alreadyConnections.indexOf(sideB) < 0) {
+            if (sideA !== sideB && layerA.connectionsAlreadyProcessed.indexOf(sideA) < 0
+              && layerB.connectionsAlreadyProcessed.indexOf(sideB) < 0) {
               if ((sameTypeOfSidesCondition === false && sameTypeOfSides(sideA, sideB) === false)
                 || sameTypeOfSides(sideA, sideB)) {
                 if (doesNotCrossAnyOfTwoLayers({ posA: layerAPos[sideA],
@@ -150,8 +153,8 @@ export const getCreationFn = (diagram) => {
 
       if (changed !== true) loopSidesToGetConnection(false)
 
-      layerA.alreadyConnections.push(distance.sideA)
-      layerB.alreadyConnections.push(distance.sideB)
+      layerA.connectionsAlreadyProcessed.push(distance.sideA)
+      layerB.connectionsAlreadyProcessed.push(distance.sideB)
 
       return distance
     }
@@ -206,7 +209,7 @@ export const getCreationFn = (diagram) => {
         each(layer.connectedTo, (layerConnected) => {
           layerConnectedId = isObject(layerConnected) ? layerConnected.id : layerConnected
           layerConnectedType = isObject(layerConnected) && layerConnected.type
-            ? layerConnected.type : 'standard'
+            ? layerConnected.type : defaultConnectionType
 
           layerConnectedObj = where(layers, {
             id: layerConnectedId,

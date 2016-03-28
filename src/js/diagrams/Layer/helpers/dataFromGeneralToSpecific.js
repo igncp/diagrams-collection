@@ -1,9 +1,9 @@
-import d from "diagrams"
-
 import { diagramName } from "../constants"
+import dataFromGeneralToSpecificForATreeStructureType
+  from "../../../utils/dataFromGeneralToSpecificForATreeStructureType"
 
 export default (generalData) => {
-  return d.utils.dataFromGeneralToSpecificForATreeStructureType(
+  return dataFromGeneralToSpecificForATreeStructureType(
     global.alert,
     diagramName,
     generalData

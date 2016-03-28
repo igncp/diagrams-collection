@@ -1,4 +1,5 @@
-import { each, isString } from "lodash"
+import { isString } from "lodash"
+import { each } from "../../../utils/pure"
 
 import d from 'diagrams'
 import { updateHeigthOfElWithOtherEl } from "../../../svg"
@@ -25,7 +26,7 @@ const addBodyItems = ({
 
   if (items === conf.body) bodyPosition = 1
 
-  each(items, (item, itemIndex) => {
+  if (items) each((item, itemIndex) => {
     if (item.hidden !== true) {
       const currentTextGId = `diagrams-box-text-${textGId++}`
 
@@ -112,7 +113,7 @@ const addBodyItems = ({
 
       diagram.addMouseListenersToEl(textEl, item)
     }
-  })
+  }, items)
 }
 
 export default ({ boxG, conf, diagram, svg, width }) => {

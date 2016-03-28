@@ -1,6 +1,6 @@
 /* eslint max-nested-callbacks:0 */
 
-import { each, refToProp } from "../pure"
+import { each, refToProp, removeUndefined } from "../pure"
 
 describeStd(__filename, () => {
   describe("each", () => {
@@ -32,6 +32,17 @@ describeStd(__filename, () => {
       const init = { foo: "baz" }
       const expected = { bar: "baz", foo: "baz" }
       const actual = fn(init)
+
+      expect(actual).to.eql(expected)
+    })
+  })
+
+  describe("removeUndefined", () => {
+    it("Removes just undefined from props", () => {
+      let foo
+      const init = { bam: '', bar: null, baz: 0, foo }
+      const expected = { bam: '', bar: null, baz: 0 }
+      const actual = removeUndefined(init)
 
       expect(actual).to.eql(expected)
     })

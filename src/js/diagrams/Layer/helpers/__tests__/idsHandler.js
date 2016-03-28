@@ -1,7 +1,7 @@
 import idsHandler from "../idsHandler"
 
 describeStd(__filename, () => {
-  beforeEach(function() {
+  afterEach(function() {
     idsHandler.reset()
   })
   it("Can increase the value.", () => {

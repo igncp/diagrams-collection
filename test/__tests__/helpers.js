@@ -1,14 +1,15 @@
 import helpers from "../helpers"
 
-const { resetAll, mockReplacing } = helpers
+const { mockReplacing, resetAll } = helpers
 
 function createResetableFn() {
   const fn = () => null
+
   fn.reset = spy()
   return fn
 }
 
-describeStd(__filename, () => {
+describe("test/helpers.js", () => {
   describe("resetAll", () => {
     it("Calls the reset method where expected.", () => {
       const init = {
@@ -16,6 +17,7 @@ describeStd(__filename, () => {
         baz: null,
         foo: createResetableFn(),
       }
+
       resetAll(init)
 
       expect(init.foo.reset).to.have.been.calledOnce
@@ -26,6 +28,7 @@ describeStd(__filename, () => {
         bar: { baz: createResetableFn() },
         foo: createResetableFn(),
       }
+
       resetAll(init)
 
       expect(init.foo.reset).to.have.been.calledOnce
@@ -37,6 +40,7 @@ describeStd(__filename, () => {
         { foo: createResetableFn() },
         { bar: createResetableFn() },
       ]
+
       resetAll(init)
 
       expect(init[0].foo.reset).to.have.been.calledOnce
@@ -48,12 +52,14 @@ describeStd(__filename, () => {
     it("Returns a function.", () => {
       const context = {}
       const resetFn = mockReplacing(context, [])
+
       expect(resetFn).to.be.a("function")
     })
 
     it("Stores the old variable in the context with the correct value.", () => {
       const context = {}
       const container = { foo: "bar" }
+
       mockReplacing(context, [
         [container, "foo", "baz"],
       ])
@@ -63,6 +69,7 @@ describeStd(__filename, () => {
     it("Stores the new variable in the container with the correct value.", () => {
       const context = {}
       const container = { foo: "bar" }
+
       mockReplacing(context, [
         [container, "foo", "baz"],
       ])
@@ -75,6 +82,7 @@ describeStd(__filename, () => {
       const resetFn = mockReplacing(context, [
         [container, "foo", "baz"],
       ])
+
       resetFn()
       expect(context).to.eql({})
       expect(container).to.eql({ foo: "bar" })
