@@ -14,4 +14,6 @@ const handler = {
   setDefault: () => config = merge({}, defaultConfig),
 }
 
+handler.setDefault()
+
 export default () => handler

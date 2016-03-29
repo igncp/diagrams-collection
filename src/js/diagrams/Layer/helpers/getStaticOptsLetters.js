@@ -1,3 +1,6 @@
+// The keys must be lowercase and with
+// three letters max
+
 export default () => {
   return {
     cn: {
