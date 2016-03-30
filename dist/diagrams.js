@@ -48169,6 +48169,8 @@
 	  }
 	};
 	
+	handler.setDefault();
+	
 	exports.default = function () {
 	  return handler;
 	};
@@ -48185,7 +48187,7 @@
 	  value: true
 	});
 	
-	var _lodash = __webpack_require__(33);
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 	
 	var _idsHandler = __webpack_require__(97);
 	
@@ -48193,26 +48195,32 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	var isObject = function isObject(vr) {
+	  return (typeof vr === "undefined" ? "undefined" : _typeof(vr)) === "object" && vr !== null;
+	};
+	var hasDifferentType = function hasDifferentType(layer) {
+	  return isObject(layer.connectedWithNext) && layer.connectedWithNext.type;
+	};
+	
+	function getConnectedToArr(layer, id) {
+	  return hasDifferentType(layer) ? [{ id: id, type: layer.connectedWithNext.type }] : [id];
+	}
+	
+	function setConnectedToOfLayer(layer, connectedTo) {
+	  layer.connectedTo = layer.connectedTo ? layer.connectedTo.concat(connectedTo) : connectedTo;
+	}
+	
 	exports.default = function (layers, currentIndex) {
 	  var layer = layers[currentIndex];
 	  var nextLayer = layers[currentIndex + 1];
-	  var connectedTo = void 0,
-	      newId = void 0;
 	
-	  if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-	    if (nextLayer.id) newId = nextLayer.id;else {
-	      newId = "to-next-" + String(_idsHandler2.default.increase());
-	      nextLayer.id = newId;
+	  if (layer.connectedWithNext && nextLayer) {
+	    if (!nextLayer.id) {
+	      nextLayer.id = "to-next-" + String(_idsHandler2.default.increase());
 	    }
+	    var connectedTo = getConnectedToArr(layer, nextLayer.id);
 	
-	    if ((0, _lodash.isObject)(layer.connectedWithNext) && layer.connectedWithNext.type) {
-	      connectedTo = {
-	        id: newId,
-	        type: layer.connectedWithNext.type
-	      };
-	    } else connectedTo = newId;
-	
-	    if (layer.connectedTo) layer.connectedTo.push(connectedTo);else layer.connectedTo = [connectedTo];
+	    setConnectedToOfLayer(layer, connectedTo);
 	  }
 	};
 	
@@ -48260,11 +48268,11 @@
 	  var height = layer.height * config.heightSize - config.depthHeightFactor * layer.depth * 2;
 	  var width = layer.width * config.widthSize - config.depthWidthFactor * layer.depth * 2;
 	  var transform = 'translate(' + config.depthWidthFactor * layer.depth + ',' + (config.depthHeightFactor * layer.depth + ')');
-	  var fill = 'url(#color-' + String(layer.depth - 1) + ')';
+	  var fill = 'url(#color-' + (layer.depth - 1) + ')';
 	  var dimensions = { fill: fill, height: height, transform: transform, width: width };
 	
 	  if (config.showNumbersAll === true || layer.containerData && layer.containerData.showNumbers === true) {
-	    dimensions.numberTransform = 'translate(' + (String(width - 15 + config.depthWidthFactor * layer.depth) + ',') + (String(config.depthHeightFactor * layer.depth + height + 0) + ')');
+	    dimensions.numberTransform = 'translate(' + (width - 15 + config.depthWidthFactor * layer.depth + ',') + (config.depthHeightFactor * layer.depth + height + 0 + ')');
 	  }
 	
 	  return dimensions;
@@ -48281,6 +48289,8 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	// The keys must be lowercase and with
+	// three letters max
 	
 	exports.default = function () {
 	  return {
@@ -48337,7 +48347,9 @@
 	  value: true
 	});
 	
-	var _lodash = __webpack_require__(33);
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	
+	var _ramda = __webpack_require__(5);
 	
 	var _idsHandler = __webpack_require__(97);
 	
@@ -48349,21 +48361,54 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	exports.default = function (text, opts, items) {
-	  var layer = { text: text };
+	var isUndefined = function isUndefined(vr) {
+	  return typeof vr === "undefined";
+	};
+	var isObject = function isObject(vr) {
+	  return (typeof vr === 'undefined' ? 'undefined' : _typeof(vr)) === "object" && vr !== null;
+	};
+	var isString = (0, _ramda.is)(String);
 	
-	  if ((0, _lodash.isArray)(opts)) items = opts;else {
-	    if ((0, _lodash.isString)(opts)) opts = (0, _parseOptsString2.default)(opts);
+	function getItemsAndOpts(extraArgs) {
+	  if ((0, _ramda.isArrayLike)(extraArgs[0])) return { items: extraArgs[0], opts: null };else {
+	    return {
+	      items: extraArgs[1] || null,
+	      opts: isString(extraArgs[0]) ? (0, _parseOptsString2.default)(extraArgs[0]) : extraArgs[0] || null
+	    };
+	  }
+	}
 	
-	    if ((0, _lodash.isObject)(opts)) layer = (0, _lodash.extend)(layer, opts);
+	var mergeOptsIfNecessary = (0, _ramda.curry)(function (opts, layer) {
+	  return isObject(opts) ? (0, _ramda.merge)(layer, opts) : layer;
+	});
+	
+	var addIdIfNeccessary = function addIdIfNeccessary(layer) {
+	  return isUndefined(layer.id) ? (0, _ramda.merge)(layer, { id: 'layer-' + _idsHandler2.default.increase() + '-auto' }) : layer;
+	};
+	
+	var addItemsIfNecessary = (0, _ramda.curry)(function (items, layer) {
+	  return items ? (0, _ramda.merge)(layer, { items: items }) : layer;
+	});
+	
+	/**
+	 * signatures
+	 * (text, items)
+	 * (text, opts, items)
+	 * (text, opts)
+	 */
+	
+	exports.default = function (text) {
+	  for (var _len = arguments.length, extraArgs = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	    extraArgs[_key - 1] = arguments[_key];
 	  }
 	
-	  if (items) layer.items = items;
+	  var _getItemsAndOpts = getItemsAndOpts(extraArgs);
 	
-	  // Have to limit the id by the two sides to enable .indexOf to work
-	  if ((0, _lodash.isUndefined)(layer.id)) layer.id = 'layer-' + _idsHandler2.default.increase() + '-auto';
+	  var items = _getItemsAndOpts.items;
+	  var opts = _getItemsAndOpts.opts;
 	
-	  return layer;
+	
+	  return (0, _ramda.compose)(addItemsIfNecessary(items), addIdIfNeccessary, mergeOptsIfNecessary(opts))({ text: text });
 	};
 	
 	module.exports = exports['default'];

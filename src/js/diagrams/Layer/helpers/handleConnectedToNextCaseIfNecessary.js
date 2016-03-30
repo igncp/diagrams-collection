@@ -1,27 +1,30 @@
-import { isObject } from "lodash"
-
 import idsHandler from "./idsHandler"
+
+const isObject = vr => typeof(vr) === "object" && vr !== null
+const hasDifferentType = layer => isObject(layer.connectedWithNext) && layer.connectedWithNext.type
+
+function getConnectedToArr(layer, id) {
+  return (hasDifferentType(layer))
+    ? [{ id, type: layer.connectedWithNext.type }]
+    : [id]
+}
+
+function setConnectedToOfLayer(layer, connectedTo) {
+  layer.connectedTo = (layer.connectedTo)
+    ? layer.connectedTo.concat(connectedTo)
+    : connectedTo
+}
 
 export default (layers, currentIndex) => {
   const layer = layers[currentIndex]
   const nextLayer = layers[currentIndex + 1]
-  let connectedTo, newId
 
-  if (layer.hasOwnProperty('connectedWithNext') === true && nextLayer) {
-    if (nextLayer.id) newId = nextLayer.id
-    else {
-      newId = `to-next-${String(idsHandler.increase())}`
-      nextLayer.id = newId
+  if (layer.connectedWithNext && nextLayer) {
+    if (!nextLayer.id) {
+      nextLayer.id = `to-next-${String(idsHandler.increase())}`
     }
+    const connectedTo = getConnectedToArr(layer, nextLayer.id)
 
-    if (isObject(layer.connectedWithNext) && layer.connectedWithNext.type) {
-      connectedTo = {
-        id: newId,
-        type: layer.connectedWithNext.type,
-      }
-    } else connectedTo = newId
-
-    if (layer.connectedTo) layer.connectedTo.push(connectedTo)
-    else layer.connectedTo = [connectedTo]
+    setConnectedToOfLayer(layer, connectedTo)
   }
 }

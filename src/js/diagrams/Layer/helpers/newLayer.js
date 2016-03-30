@@ -1,22 +1,50 @@
-import { extend, isArray, isObject, isString, isUndefined } from "lodash"
+import { compose, curry, is, isArrayLike, merge } from "ramda"
 
 import idsHandler from './idsHandler'
 import parseOptsString from './parseOptsString'
 
-export default (text, opts, items) => {
-  let layer = { text }
+const isUndefined = vr => typeof(vr) === "undefined"
+const isObject = vr => typeof(vr) === "object" && vr !== null
+const isString = is(String)
 
-  if (isArray(opts)) items = opts
+function getItemsAndOpts(extraArgs) {
+  if (isArrayLike(extraArgs[0])) return { items: extraArgs[0], opts: null }
   else {
-    if (isString(opts)) opts = parseOptsString(opts)
-
-    if (isObject(opts)) layer = extend(layer, opts)
+    return {
+      items: extraArgs[1] || null,
+      opts: isString(extraArgs[0]) ? parseOptsString(extraArgs[0]) : (extraArgs[0] || null),
+    }
   }
+}
 
-  if (items) layer.items = items
+const mergeOptsIfNecessary = curry((opts, layer) => {
+  return (isObject(opts))
+    ? merge(layer, opts)
+    : layer
+})
 
-   // Have to limit the id by the two sides to enable .indexOf to work
-  if (isUndefined(layer.id)) layer.id = `layer-${idsHandler.increase()}-auto`
+const addIdIfNeccessary = (layer) => {
+  return isUndefined(layer.id)
+    ? merge(layer, { id: `layer-${idsHandler.increase()}-auto` })
+    : layer
+}
 
-  return layer
+const addItemsIfNecessary = curry((items, layer) => {
+  return items ? merge(layer, { items }) : layer
+})
+
+/**
+ * signatures
+ * (text, items)
+ * (text, opts, items)
+ * (text, opts)
+ */
+export default (text, ...extraArgs) => {
+  const { items, opts } = getItemsAndOpts(extraArgs)
+
+  return compose(
+    addItemsIfNecessary(items),
+    addIdIfNeccessary,
+    mergeOptsIfNecessary(opts)
+  )({ text })
 }
